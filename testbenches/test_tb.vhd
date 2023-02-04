@@ -99,7 +99,7 @@ begin
 
             CASE simulation_counter is
                 WHEN 5 => processor_pipeline(0) <= (command => add_requested, data1 => 10, data2 => 5, data3 => -1);
-                WHEN 6 => processor_pipeline(0) <= (command => add_requested, data1 => -10, data2 => 2, data3 => -1);
+                WHEN 14 => processor_pipeline(0) <= (command => add_requested, data1 => -10, data2 => 2, data3 => -1);
                 -- WHEN 6 => processor_pipeline(0) <= (command => add_requested, data1 => -1, data2 => 5, data3 => -1);
                 when others => -- do nothing
             end CASE;
