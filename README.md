@@ -2,3 +2,5 @@
 VHDL module for running operations from memory with the software also written in vhdl. 
 
 Idea is to create functions to fill up a ram with commands that are then run sequeentially in a pipeline in a sw processor like design with all vhdl design.
+
+currently in doodle stage :)
