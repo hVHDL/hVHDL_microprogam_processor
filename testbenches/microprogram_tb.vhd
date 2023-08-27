@@ -66,25 +66,25 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-
+------------------------------------------------------------------------
         procedure sum
         (
             signal r : out real;
             a, b : real
         ) is
         begin
-            r <= a + b;
+            r <= execute(a,b,0);
         end sum;
-
+------------------------------------------------------------------------
         procedure subs
         (
             signal r : out real;
             a, b : real
         ) is
         begin
-            r <= a - b;
+            r <= execute(a,b,1);
         end subs;
-
+------------------------------------------------------------------------
         procedure mpy
         (
             signal r : out real;
@@ -93,7 +93,7 @@ begin
         begin
             r <= execute(a,b,2);
         end mpy;
-
+------------------------------------------------------------------------
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -107,9 +107,9 @@ begin
                 is_ready <= true;
             end if;
             CASE program_counter is
-                WHEN 0 => subs(acc, u, y);
-                WHEN 1 => mpy(reg(0), acc, g);
-                WHEN 2 => sum(y,y,reg(0));
+                WHEN 0 => subs ( acc     , u   , y);
+                WHEN 1 => mpy  ( reg( 0) , acc , g);
+                WHEN 2 => sum  ( y       , y   , reg( 0));
                 when others => --halt and wait;
             end CASE;
 
@@ -120,12 +120,10 @@ begin
             end if;
         -- assembly program for y = (y-u)*g;
             /*
-            subs r1 , y    , u;
-            mpy r1  , g
-            sum y   , diff
+            sub(r1 , y , u);
+            mpy(r1 , g)
+            sum(y  , mult_result)
             */
-
-
 
         end if; -- rising_edge
     end process stimulus;	
