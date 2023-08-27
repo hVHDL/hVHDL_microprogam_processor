@@ -37,28 +37,25 @@ architecture vunit_simulation of microprogram_execution_tb is
     constant r6 : integer   := 6;
     constant r7 : integer   := 7;
 
-    type program is array (natural range <>) of std_logic_vector(15 downto 0);
-    subtype command_pipeline_array is program;
-
-    signal executed_instruction : std_logic_vector(15 downto 0) := (others => '1');
-    signal decoded_command : t_command := nop;
-
-    type realarray is array (integer range 0 to 7) of real;
-    signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
+    type program_array is array (natural range <>) of std_logic_vector(15 downto 0);
+    subtype command_pipeline_array is program_array;
 
     signal result : real := 0.0;
 
-    signal command_pipeline : program(0 to 7) := (others => (others => '0'));
 ------------------------------------------------------------------------
-    constant test_program : program := (
-        write_instruction(sub   , temp , u    , y)    ,
-        write_instruction(mpy   , temp , temp , g)    ,
-        write_instruction(add   , y    , y    , temp) ,
-        write_instruction(ready , r0   , r0   , r1)   ,
-        write_instruction(nop   , r0   , r0   , r1));
+    constant test_program : program_array := (
+        write_instruction(sub         , temp , u    , y)    ,
+        write_instruction(mpy         , temp , temp , g)    ,
+        write_instruction(add         , y    , y    , temp) ,
+        write_instruction(ready       , r0   , r0   , r1)   ,
+        write_instruction(program_end , r0   , r0   , r1));
 
-    signal mcode : program(test_program'range) := test_program;
+    signal mcode : program_array(test_program'range) := test_program;
+
+    type realarray is array (integer range 0 to 7) of real;
+
     signal program_counter : natural := test_program'high;
+    signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
 
     -- function is_ready
     -- return boolean
@@ -66,6 +63,7 @@ architecture vunit_simulation of microprogram_execution_tb is
     -- begin
     --     
     -- end is_ready;
+    -- signal command_pipeline : program_array(0 to 7) := (others => (others => '0'));
 
 begin
 
@@ -83,6 +81,35 @@ begin
 
     stimulus : process(simulator_clock)
 
+        procedure create_alu
+        (
+            signal pgm_counter : inout natural;
+            instruction : in std_logic_vector;
+            signal reg  : inout realarray
+        )
+        is
+        begin
+            if decode(instruction) /= program_end then
+                pgm_counter <= pgm_counter + 1;
+            end if;
+            CASE decode(instruction) is
+                when add =>
+                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
+                when sub =>
+                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
+                when mpy =>
+                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+                when mpy_add =>
+                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+                when div =>
+                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
+                when program_end =>
+                when ready => -- do nothing
+                when nop   => --do nothing
+            end CASE;
+            
+        end create_alu;
+
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -91,35 +118,12 @@ begin
                 program_counter <= 0;
             end if;
 
-            if program_counter < mcode'high then
-                program_counter <= program_counter + 1;
-            end if;
+            create_alu(program_counter , mcode(program_counter) , registers);
 
-            if program_counter < mcode'high then
-                executed_instruction <= mcode(program_counter);
-                decoded_command      <= decode(mcode(program_counter));
-            end if;
-
-            CASE decode(mcode(program_counter)) is
-                when add =>
-                    registers(get_dest(mcode(program_counter))) <= registers(get_arg1(mcode(program_counter))) + registers(get_arg2(mcode(program_counter)));
-                when sub =>
-                    registers(get_dest(mcode(program_counter))) <= registers(get_arg1(mcode(program_counter))) - registers(get_arg2(mcode(program_counter)));
-                when mpy =>
-                    registers(get_dest(mcode(program_counter))) <= registers(get_arg1(mcode(program_counter))) * registers(get_arg2(mcode(program_counter)));
-                when mpy_add =>
-                    registers(get_dest(mcode(program_counter))) <= registers(get_arg1(mcode(program_counter))) * registers(get_arg2(mcode(program_counter)));
-                when div =>
-                    registers(get_dest(mcode(program_counter))) <= registers(get_arg1(mcode(program_counter))) / registers(get_arg2(mcode(program_counter)));
-                when ready => -- do nothing
-                when nop   => --do nothing
-            end CASE;
-
-            command_pipeline(0) <= mcode(program_counter);
-            for i in integer range 0 to command_pipeline'high-1 loop
-                command_pipeline(i+1) <= command_pipeline(i);
-            end loop;
-
+            -- command_pipeline(0) <= mcode(program_counter);
+            -- for i in integer range 0 to command_pipeline'high-1 loop
+            --     command_pipeline(i+1) <= command_pipeline(i);
+            -- end loop;
             result <= registers(y);
 
         end if; -- rising_edge

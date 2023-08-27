@@ -4,7 +4,7 @@ library ieee;
 
 package testprogram_pkg is
 
-    type t_command is (add, sub, mpy, mpy_add, div, ready, nop);
+    type t_command is (add, sub, mpy, mpy_add, div, ready, program_end,nop);
     type command_array is array (t_command range t_command'left to t_command'right) of integer;
 
     subtype comm is std_logic_vector(15 downto 13);
