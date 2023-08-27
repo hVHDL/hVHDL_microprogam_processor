@@ -49,22 +49,16 @@ architecture vunit_simulation of microprogram_execution_tb is
         write_instruction(nop),
         write_instruction(nop),
         write_instruction(program_end));
-
 ------------------------------------------------------------------------
+    -- constant call_low_pass_filter : program_array := (
+    --     write_instruction(jump, ),
+        -- write_instruction(program_end));
     constant test_program : program_array := dummy & low_pass_filter;
 
     signal mcode : program_array(test_program'range) := test_program;
 
     signal program_counter : natural := test_program'high;
     signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
-
-    -- function is_ready
-    -- return boolean
-    -- is
-    -- begin
-    --     
-    -- end is_ready;
-    -- signal command_pipeline : program_array(0 to 7) := (others => (others => '0'));
 
 begin
 
@@ -82,6 +76,11 @@ begin
 
     stimulus : process(simulator_clock)
 
+        procedure request_low_pass_filter is
+        begin
+            program_counter <= dummy'length;
+        end request_low_pass_filter;
+
 
     begin
         if rising_edge(simulator_clock) then
@@ -90,7 +89,7 @@ begin
 
             create_processor(program_counter , mcode(program_counter) , registers);
             if simulation_counter = 10 or decode(mcode(program_counter)) = ready then
-                program_counter <= dummy'length;
+                request_low_pass_filter;
             end if;
 
             -- command_pipeline(0) <= mcode(program_counter);

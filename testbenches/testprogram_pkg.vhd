@@ -4,18 +4,18 @@ library ieee;
 
 package testprogram_pkg is
 
-    type t_command is (add, sub, mpy, mpy_add, div, ready, program_end,nop);
+    type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end );
     type command_array is array (t_command range t_command'left to t_command'right) of natural;
     type realarray is array (integer range 0 to 7) of real;
 
-    subtype t_instruction is std_logic_vector(16 downto 0);
-    type program_array is array (natural range <>) of t_instruction;
+    subtype comm is std_logic_vector(15 downto 12);
+    subtype dest is std_logic_vector(11 downto 9);
+    subtype arg1 is std_logic_vector(8 downto 6);
+    subtype arg2 is std_logic_vector(5 downto 3);
+    subtype arg3 is std_logic_vector(2 downto 0);
 
-    subtype comm is std_logic_vector(16 downto 13);
-    subtype dest is std_logic_vector(12 downto 10);
-    subtype arg1 is std_logic_vector(9 downto 7);
-    subtype arg2 is std_logic_vector(6 downto 4);
-    subtype arg3 is std_logic_vector(3 downto 1);
+    subtype t_instruction is std_logic_vector(comm'high downto 0);
+    type program_array is array (natural range <>) of t_instruction;
 
     procedure create_processor (
         signal pgm_counter : inout natural;
@@ -195,9 +195,11 @@ package body testprogram_pkg is
     )
     is
     begin
+
         if decode(instruction) /= program_end then
             pgm_counter <= pgm_counter + 1;
         end if;
+
         CASE decode(instruction) is
             when add =>
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
@@ -209,9 +211,11 @@ package body testprogram_pkg is
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
             when div =>
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
+            when jump        =>
+            when ret         =>
             when program_end =>
-            when ready => -- do nothing
-            when nop   => --do nothing
+            when ready       => --do nothing
+            when nop         => --do nothing
         end CASE;
         
     end create_processor;
