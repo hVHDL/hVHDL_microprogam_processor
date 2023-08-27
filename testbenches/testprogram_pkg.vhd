@@ -6,12 +6,21 @@ package testprogram_pkg is
 
     type t_command is (add, sub, mpy, mpy_add, div, ready, program_end,nop);
     type command_array is array (t_command range t_command'left to t_command'right) of integer;
+    type realarray is array (integer range 0 to 7) of real;
+
+    type program_array is array (natural range <>) of std_logic_vector(15 downto 0);
+    subtype command_pipeline_array is program_array;
 
     subtype comm is std_logic_vector(15 downto 13);
     subtype dest is std_logic_vector(12 downto 10);
     subtype arg1 is std_logic_vector(9 downto 7);
     subtype arg2 is std_logic_vector(6 downto 4);
     subtype arg3 is std_logic_vector(3 downto 1);
+
+    procedure create_alu (
+        signal pgm_counter : inout natural;
+        instruction : in std_logic_vector;
+        signal reg  : inout realarray);
 
     function write_instruction ( command : in t_command)
         return std_logic_vector;
@@ -177,6 +186,35 @@ package body testprogram_pkg is
     begin
         return decode(get_instruction(number));
     end decode;
+------------------------------------------------------------------------
+    procedure create_alu
+    (
+        signal pgm_counter : inout natural;
+        instruction : in std_logic_vector;
+        signal reg  : inout realarray
+    )
+    is
+    begin
+        if decode(instruction) /= program_end then
+            pgm_counter <= pgm_counter + 1;
+        end if;
+        CASE decode(instruction) is
+            when add =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
+            when sub =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
+            when mpy =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+            when mpy_add =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+            when div =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
+            when program_end =>
+            when ready => -- do nothing
+            when nop   => --do nothing
+        end CASE;
+        
+    end create_alu;
 ------------------------------------------------------------------------
 
 end package body testprogram_pkg;

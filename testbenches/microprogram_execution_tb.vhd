@@ -37,8 +37,6 @@ architecture vunit_simulation of microprogram_execution_tb is
     constant r6 : integer   := 6;
     constant r7 : integer   := 7;
 
-    type program_array is array (natural range <>) of std_logic_vector(15 downto 0);
-    subtype command_pipeline_array is program_array;
 
     signal result : real := 0.0;
 
@@ -52,7 +50,6 @@ architecture vunit_simulation of microprogram_execution_tb is
 
     signal mcode : program_array(test_program'range) := test_program;
 
-    type realarray is array (integer range 0 to 7) of real;
 
     signal program_counter : natural := test_program'high;
     signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
@@ -81,34 +78,6 @@ begin
 
     stimulus : process(simulator_clock)
 
-        procedure create_alu
-        (
-            signal pgm_counter : inout natural;
-            instruction : in std_logic_vector;
-            signal reg  : inout realarray
-        )
-        is
-        begin
-            if decode(instruction) /= program_end then
-                pgm_counter <= pgm_counter + 1;
-            end if;
-            CASE decode(instruction) is
-                when add =>
-                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
-                when sub =>
-                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
-                when mpy =>
-                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
-                when mpy_add =>
-                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
-                when div =>
-                    reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
-                when program_end =>
-                when ready => -- do nothing
-                when nop   => --do nothing
-            end CASE;
-            
-        end create_alu;
 
     begin
         if rising_edge(simulator_clock) then
