@@ -24,32 +24,36 @@ architecture vunit_simulation of microprogram_execution_tb is
 
     signal start_program : boolean := false;
 
-    constant u : integer    := 1;
-    constant y : integer    := 0;
+    constant y    : integer := 0;
+    constant u    : integer := 1;
     constant temp : integer := 2;
-    constant g : integer    := 7;
-    constant r0 : integer   := 0;
-    constant r1 : integer   := 1;
-    constant r2 : integer   := 2;
-    constant r3 : integer   := 3;
-    constant r4 : integer   := 4;
-    constant r5 : integer   := 5;
-    constant r6 : integer   := 6;
-    constant r7 : integer   := 7;
-
+    constant g    : integer := 7;
 
     signal result : real := 0.0;
 
+    -- alias include is "&" [program_array, program_array return program_array];
+
 ------------------------------------------------------------------------
-    constant test_program : program_array := (
+    constant low_pass_filter : program_array := (
         write_instruction(sub         , temp , u    , y)    ,
         write_instruction(mpy         , temp , temp , g)    ,
         write_instruction(add         , y    , y    , temp) ,
-        write_instruction(ready       , r0   , r0   , r1)   ,
-        write_instruction(program_end , r0   , r0   , r1));
+        write_instruction(ready),
+        write_instruction(program_end));
+------------------------------------------------------------------------
+    constant dummy : program_array := (
+        write_instruction(nop),
+        write_instruction(nop),
+        write_instruction(nop),
+        write_instruction(nop),
+        write_instruction(nop),
+        write_instruction(nop),
+        write_instruction(program_end));
+
+------------------------------------------------------------------------
+    constant test_program : program_array := dummy & low_pass_filter;
 
     signal mcode : program_array(test_program'range) := test_program;
-
 
     signal program_counter : natural := test_program'high;
     signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
@@ -83,11 +87,11 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
-            if simulation_counter mod 10 = 0 then
-                program_counter <= 0;
-            end if;
 
-            create_alu(program_counter , mcode(program_counter) , registers);
+            create_processor(program_counter , mcode(program_counter) , registers);
+            if simulation_counter = 10 or decode(mcode(program_counter)) = ready then
+                program_counter <= dummy'length;
+            end if;
 
             -- command_pipeline(0) <= mcode(program_counter);
             -- for i in integer range 0 to command_pipeline'high-1 loop
