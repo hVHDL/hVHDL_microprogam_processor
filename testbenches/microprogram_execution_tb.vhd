@@ -7,6 +7,7 @@ library vunit_lib;
 context vunit_lib.vunit_context;
 
     use work.testprogram_pkg.all;
+    use work.test_programs_pkg.all;
 
 entity microprogram_execution_tb is
   generic (runner_cfg : string);
@@ -22,32 +23,11 @@ architecture vunit_simulation of microprogram_execution_tb is
     -----------------------------------
     -- simulation specific signals ----
 
-    signal start_program : boolean := false;
-
-    constant y    : integer := 0;
-    constant u    : integer := 1;
-    constant temp : integer := 2;
-    constant g    : integer := 7;
-
     signal result : real := 0.0;
 ------------------------------------------------------------------------
-    constant low_pass_filter : program_array := (
-        write_instruction(sub         , temp , u    , y)    ,
-        write_instruction(mpy         , temp , temp , g)    ,
-        write_instruction(add         , y    , y    , temp) ,
-        write_instruction(ready),
-        write_instruction(program_end));
-------------------------------------------------------------------------
-    constant dummy : program_array := (
-        write_instruction(nop),
-        write_instruction(nop),
-        write_instruction(nop),
-        write_instruction(nop),
-        write_instruction(nop),
-        write_instruction(nop),
-        write_instruction(program_end));
-------------------------------------------------------------------------
-    constant test_program : program_array := dummy & low_pass_filter;
+    constant dummy : program_array := get_dummy;
+    constant low_pass_filter : program_array := get_low_pass_filter;
+    constant test_program : program_array := get_dummy & get_low_pass_filter;
 
     signal mcode : program_array(test_program'range) := test_program;
 
@@ -86,7 +66,7 @@ begin
             end if;
 
             if decode(mcode(program_counter)) = ready then
-                result <= registers(y);
+                result <= registers(0);
             end if;
 
         end if; -- rising_edge
