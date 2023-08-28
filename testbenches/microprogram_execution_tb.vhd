@@ -30,9 +30,6 @@ architecture vunit_simulation of microprogram_execution_tb is
     constant g    : integer := 7;
 
     signal result : real := 0.0;
-
-    -- alias include is "&" [program_array, program_array return program_array];
-
 ------------------------------------------------------------------------
     constant low_pass_filter : program_array := (
         write_instruction(sub         , temp , u    , y)    ,
@@ -50,15 +47,12 @@ architecture vunit_simulation of microprogram_execution_tb is
         write_instruction(nop),
         write_instruction(program_end));
 ------------------------------------------------------------------------
-    -- constant call_low_pass_filter : program_array := (
-    --     write_instruction(jump, ),
-        -- write_instruction(program_end));
     constant test_program : program_array := dummy & low_pass_filter;
 
     signal mcode : program_array(test_program'range) := test_program;
 
     signal program_counter : natural := test_program'high;
-    signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1);
+    signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1, 0.0);
 
 begin
 
@@ -81,7 +75,6 @@ begin
             program_counter <= dummy'length;
         end request_low_pass_filter;
 
-
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -92,11 +85,9 @@ begin
                 request_low_pass_filter;
             end if;
 
-            -- command_pipeline(0) <= mcode(program_counter);
-            -- for i in integer range 0 to command_pipeline'high-1 loop
-            --     command_pipeline(i+1) <= command_pipeline(i);
-            -- end loop;
-            result <= registers(y);
+            if decode(mcode(program_counter)) = ready then
+                result <= registers(y);
+            end if;
 
         end if; -- rising_edge
     end process stimulus;	

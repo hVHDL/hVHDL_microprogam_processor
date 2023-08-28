@@ -6,30 +6,42 @@ package testprogram_pkg is
 
     type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end );
     type command_array is array (t_command range t_command'left to t_command'right) of natural;
-    type realarray is array (integer range 0 to 7) of real;
 
-    subtype comm is std_logic_vector(15 downto 12);
-    subtype dest is std_logic_vector(11 downto 9);
-    subtype arg1 is std_logic_vector(8 downto 6);
-    subtype arg2 is std_logic_vector(5 downto 3);
-    subtype arg3 is std_logic_vector(2 downto 0);
+    constant number_of_registers : natural := 9;
+    constant register_bits : natural := 4;
+    type realarray is array (integer range 0 to 8) of real;
+
+    subtype comm is std_logic_vector(19 downto 16);
+    subtype dest is std_logic_vector(15 downto 12);
+    subtype arg1 is std_logic_vector(11 downto 8);
+    subtype arg2 is std_logic_vector(7 downto 4);
+    subtype arg3 is std_logic_vector(3 downto 0);
 
     subtype t_instruction is std_logic_vector(comm'high downto 0);
     type program_array is array (natural range <>) of t_instruction;
 
+------------------------------------------------------------------------
     procedure create_processor (
         signal pgm_counter : inout natural;
         instruction : in std_logic_vector;
         signal reg  : inout realarray);
-
+------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
         return std_logic_vector;
 ------------------------------------------------------------------------
     function write_instruction (
         command     : in t_command;
-        destination : in natural range 0 to 7;
-        argument1   : in natural range 0 to 7;
-        argument2   : in natural range 0 to 7)
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural range 0 to number_of_registers-1;
+        argument2   : in natural range 0 to number_of_registers-1)
+    return std_logic_vector;
+------------------------------------------------------------------------
+    function write_instruction (
+        command     : in t_command;
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural range 0 to number_of_registers-1;
+        argument2   : in natural range 0 to number_of_registers-1;
+        argument3   : in natural range 0 to number_of_registers-1)
     return std_logic_vector;
 ------------------------------------------------------------------------
     function get_instruction ( input_register : std_logic_vector )
@@ -61,10 +73,10 @@ package body testprogram_pkg is
     function write_instruction
     (
         command     : in t_command;
-        destination : in natural range 0 to 7;
-        argument1   : in natural range 0 to 7;
-        argument2   : in natural range 0 to 7;
-        argument3   : in natural range 0 to 7
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural range 0 to number_of_registers-1;
+        argument2   : in natural range 0 to number_of_registers-1;
+        argument3   : in natural range 0 to number_of_registers-1
     )
     return std_logic_vector
     is
@@ -72,10 +84,10 @@ package body testprogram_pkg is
     begin
 
         instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
-        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , 3));
-        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , 3));
-        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , 3));
-        instruction(arg3'range) := std_logic_vector(to_unsigned(argument3              , 3));
+        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , register_bits));
+        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , register_bits));
+        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , register_bits));
+        instruction(arg3'range) := std_logic_vector(to_unsigned(argument3              , register_bits));
 
         return instruction;
         
@@ -84,9 +96,9 @@ package body testprogram_pkg is
     function write_instruction
     (
         command     : in t_command;
-        destination : in natural range 0 to 7;
-        argument1   : in natural range 0 to 7;
-        argument2   : in natural range 0 to 7
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural range 0 to number_of_registers-1;
+        argument2   : in natural range 0 to number_of_registers-1
     )
     return std_logic_vector
     is
@@ -94,9 +106,9 @@ package body testprogram_pkg is
     begin
 
         instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
-        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , 3));
-        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , 3));
-        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , 3));
+        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , register_bits));
+        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , register_bits));
+        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , register_bits));
 
         return instruction;
         
@@ -190,8 +202,8 @@ package body testprogram_pkg is
     procedure create_processor
     (
         signal pgm_counter : inout natural;
-        instruction : in std_logic_vector;
-        signal reg  : inout realarray
+        instruction        : in std_logic_vector;
+        signal reg         : inout realarray
     )
     is
     begin
@@ -208,7 +220,7 @@ package body testprogram_pkg is
             when mpy =>
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
             when mpy_add =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
             when div =>
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
             when jump        =>
