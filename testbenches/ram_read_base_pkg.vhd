@@ -156,12 +156,12 @@ package ram_write_pkg is
 
     type ram_write_port_record is record
         write_address             : address_integer;
-        write_is_requested_with_1 : std_logic;
+        write_is_requested_with_1 : std_logic_vector(1 downto 0);
         write_is_ready            : boolean;
         write_buffer              : t_ram_data;
     end record;
 
-    constant init_ram_write_port : ram_write_port_record := (0, '0', false, (others => '0'));
+    constant init_ram_write_port : ram_write_port_record := (0, (others => '0'), false, (others => '0'));
 ------------------------------------------------------------------------
     procedure create_ram_write_port (
         signal self : inout ram_write_port_record);
@@ -171,6 +171,15 @@ package ram_write_pkg is
         signal self : inout ram_write_port_record;
         address           : in integer;
         data              : in integer);
+------------------------------------------------------------------------
+    function write_is_requested ( self : ram_write_port_record)
+        return boolean;
+------------------------------------------------------------------------
+    function write_is_ready ( self : ram_write_port_record)
+        return boolean;
+------------------------------------------------------------------------
+    function get_write_address ( self : ram_write_port_record)
+        return integer;
 ------------------------------------------------------------------------
 end package ram_write_pkg;
 
@@ -182,7 +191,7 @@ package body ram_write_pkg is
     ) is
     begin
 
-        self.write_is_requested_with_1 <= '0';
+        self.write_is_requested_with_1 <= self.write_is_requested_with_1(0) & '0';
         -- this needs to be external to this procedure
         -- if self.write_is_requested_with_1 = '1' then
         --     ram_memory(self.write_address) <= self.write_buffer;
@@ -197,7 +206,7 @@ package body ram_write_pkg is
         data    : in integer
     ) is
     begin
-        self.write_is_requested_with_1 <= '1';
+        self.write_is_requested_with_1(0) <= '1';
         self.write_buffer <= std_logic_vector(to_signed(data,t_ram_data'length));
         self.write_address <= address;
         
@@ -215,5 +224,45 @@ package body ram_write_pkg is
         write_data_to_ram(self, address, data);
         
     end write_data_to_ram;
+------------------------------------------------------------------------
+    function write_is_requested
+    (
+        self : ram_write_port_record
+    )
+    return boolean
+    is
+    begin
+        return self.write_is_requested_with_1(0) = '1';
+    end write_is_requested;
+------------------------------------------------------------------------
+    function write_is_ready
+    (
+        self : ram_write_port_record
+    )
+    return boolean
+    is
+    begin
+        return self.write_is_requested_with_1(1) = '1';
+    end write_is_ready;
+------------------------------------------------------------------------
+    function get_ram_address
+    (
+        self : ram_write_port_record
+    )
+    return integer
+    is
+    begin
+        return self.write_address;
+    end get_ram_address;
+------------------------------------------------------------------------
+    function get_write_address
+    (
+        self : ram_write_port_record
+    )
+    return integer
+    is
+    begin
+        return self.write_address;
+    end get_write_address;
 ------------------------------------------------------------------------
 end package body ram_write_pkg;

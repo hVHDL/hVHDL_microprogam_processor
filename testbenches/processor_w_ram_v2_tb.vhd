@@ -9,6 +9,7 @@ context vunit_lib.vunit_context;
     use work.testprogram_pkg.all;
     use work.test_programs_pkg.all;
     use work.ram_read_pkg.all;
+    use work.ram_write_pkg.all;
 
 entity processor_w_ram_v2_tb is
   generic (runner_cfg : string);
@@ -44,8 +45,9 @@ architecture vunit_simulation of processor_w_ram_v2_tb is
         return retval;
     end init_ram;
 
-    signal ram_contents : ram_array         := init_ram(test_program);
-    signal ram_read_port : ram_read_port_record := init_ram_read_port;
+    signal ram_contents   : ram_array             := init_ram(test_program);
+    signal ram_read_port  : ram_read_port_record  := init_ram_read_port;
+    signal ram_write_port : ram_write_port_record := init_ram_write_port;
 
 
 begin
@@ -76,7 +78,11 @@ begin
             if read_is_requested(ram_read_port) then
                 ram_read_port.data <= ram_contents(get_ram_address(ram_read_port));
             end if;
-
+            create_ram_write_port(ram_write_port);
+            if write_is_requested(ram_write_port) then
+                ram_contents(get_write_address(ram_write_port)) <= ram_write_port.write_buffer;
+            end if;
+    ------------------------------
             request_data_from_ram(ram_read_port, program_counter);
             create_processor(program_counter , get_ram_data(ram_read_port) , registers);
             if simulation_counter = 10 or decode(get_ram_data(ram_read_port)) = ready then
