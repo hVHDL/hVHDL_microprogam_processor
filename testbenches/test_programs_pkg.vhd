@@ -21,13 +21,15 @@ package body test_programs_pkg is
         constant temp : integer := 2;
         constant g    : integer := 7;
 
-        variable returned_code : program_array(0 to 4);
+        variable returned_code : program_array(0 to 6);
     begin
         returned_code := (
             write_instruction(sub    , temp , u    , y)    ,
             write_instruction(mpy    , temp , temp , g)    ,
             write_instruction(add    , y    , y    , temp) ,
             write_instruction(ready) ,
+            write_instruction(program_end),
+            write_instruction(program_end),
             write_instruction(program_end)
         );
 

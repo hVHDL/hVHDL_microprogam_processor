@@ -6,6 +6,7 @@ package testprogram_pkg is
 
     type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end );
     type command_array is array (t_command range t_command'left to t_command'right) of natural;
+    type counter_array is array (integer range 0 to 1) of natural;
 
     constant number_of_registers : natural := 9;
     constant register_bits : natural := 4;
@@ -18,6 +19,7 @@ package testprogram_pkg is
     subtype arg3 is std_logic_vector(3 downto 0);
 
     subtype t_instruction is std_logic_vector(comm'high downto 0);
+    type instruction_array is array (integer range 0 to 4) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
 
 ------------------------------------------------------------------------
@@ -25,6 +27,12 @@ package testprogram_pkg is
         signal pgm_counter : inout natural;
         instruction : in std_logic_vector;
         signal reg  : inout realarray);
+
+    procedure create_processor (
+        signal pgm_counter   : inout counter_array;
+        ram_data             : in t_instruction;
+        signal instruction_pipeline : inout instruction_array;
+        signal reg           : inout realarray);
 ------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
         return std_logic_vector;
@@ -232,5 +240,43 @@ package body testprogram_pkg is
         
     end create_processor;
 ------------------------------------------------------------------------
+    procedure create_processor
+    (
+        signal pgm_counter          : inout counter_array;
+        ram_data                    : in t_instruction;
+        signal instruction_pipeline : inout instruction_array;
+        signal reg                  : inout realarray
+    )
+    is
+        alias instruction is instruction_pipeline(0);
+    begin
+
+        instruction_pipeline(0) <= ram_data;
+        instruction_pipeline(1) <= instruction_pipeline(0);
+
+        if decode(instruction_pipeline(0)) /= program_end then
+            pgm_counter(0) <= pgm_counter(0) + 1;
+        end if;
+        pgm_counter(1) <= pgm_counter(0);
+
+        CASE decode(instruction) is
+            when add =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
+            when sub =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
+            when mpy =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+            when mpy_add =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
+            when div =>
+                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
+            when jump        =>
+            when ret         =>
+            when program_end =>
+            when ready       => --do nothing
+            when nop         => --do nothing
+        end CASE;
+        
+    end create_processor;
 
 end package body testprogram_pkg;

@@ -1,20 +1,20 @@
 LIBRARY ieee  ; 
-    USE ieee.std_logic_1164.all  ; 
     USE ieee.NUMERIC_STD.all  ; 
+    USE ieee.std_logic_1164.all  ; 
     use ieee.math_real.all;
 
 library vunit_lib;
 context vunit_lib.vunit_context;
-    
-    use work.ram_read_pkg.all;
+
     use work.testprogram_pkg.all;
     use work.test_programs_pkg.all;
+    use work.ram_read_pkg.all;
 
-entity processor_w_ram_tb is
+entity processor_w_ram_v2_tb is
   generic (runner_cfg : string);
 end;
 
-architecture vunit_simulation of processor_w_ram_tb is
+architecture vunit_simulation of processor_w_ram_v2_tb is
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 500;
@@ -24,7 +24,14 @@ architecture vunit_simulation of processor_w_ram_tb is
     -----------------------------------
     -- simulation specific signals ----
 
-    constant test_program : program_array := get_low_pass_filter & get_sos_filter & get_dummy;
+    signal result : real := 0.0;
+------------------------------------------------------------------------
+    constant dummy : program_array := get_dummy;
+    constant low_pass_filter : program_array := get_low_pass_filter;
+    constant test_program : program_array := get_dummy & get_low_pass_filter;
+
+    signal program_counter : natural := test_program'high;
+    signal registers : realarray := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1, 0.0);
 
     function init_ram(program : program_array) return ram_array
     is
@@ -40,9 +47,6 @@ architecture vunit_simulation of processor_w_ram_tb is
     signal ram_contents : ram_array         := init_ram(test_program);
     signal ram_read_port : ram_read_port_record := init_ram_read_port;
 
-    signal counter_pipeline : counter_array :=(others => test_program'high);
-    signal registers        : realarray     := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
-    signal instruction_pipeline : instruction_array;
 
 begin
 
@@ -59,12 +63,12 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-        procedure low_pass_filter is
-            constant dummy : program_array := get_dummy;
+
+        procedure request_low_pass_filter is
         begin
-            counter_pipeline(0) <= dummy'length;
-            
-        end low_pass_filter;
+            program_counter <= dummy'length;
+        end request_low_pass_filter;
+
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -73,14 +77,16 @@ begin
                 ram_read_port.data <= ram_contents(get_ram_address(ram_read_port));
             end if;
 
-            create_processor(counter_pipeline , get_ram_data(ram_read_port), instruction_pipeline , registers);
-            request_data_from_ram(ram_read_port, counter_pipeline(0) mod ram_array'length);
 
-            if simulation_counter = 10 or decode(instruction_pipeline(0)) = ready then
-                low_pass_filter;
+            request_data_from_ram(ram_read_port, program_counter);
+            create_processor(program_counter , get_ram_data(ram_read_port) , registers);
+            if simulation_counter = 10 or decode(get_ram_data(ram_read_port)) = ready then
+                request_low_pass_filter;
             end if;
 
-
+            if decode(get_ram_data(ram_read_port)) = ready then
+                result <= registers(0);
+            end if;
 
         end if; -- rising_edge
     end process stimulus;	
