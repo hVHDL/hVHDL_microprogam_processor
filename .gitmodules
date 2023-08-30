@@ -1,3 +1,6 @@
 [submodule "source/hVHDL_memory_library"]
 	path = source/hVHDL_memory_library
 	url = https://github.com/hVHDL/hVHDL_memory_library.git
+[submodule "source/hVHDL_fixed_point"]
+	path = source/hVHDL_fixed_point
+	url = https://github.com/hVHDL/hVHDL_fixed_point.git

@@ -77,7 +77,6 @@ begin
                 ram_read_port.data <= ram_contents(get_ram_address(ram_read_port));
             end if;
 
-
             request_data_from_ram(ram_read_port, program_counter);
             create_processor(program_counter , get_ram_data(ram_read_port) , registers);
             if simulation_counter = 10 or decode(get_ram_data(ram_read_port)) = ready then
