@@ -74,6 +74,7 @@ begin
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
+            ------------------------------
             create_ram_read_port(ram_read_port);
             if read_is_requested(ram_read_port) then
                 ram_read_port.data <= ram_contents(get_ram_address(ram_read_port));
@@ -82,7 +83,7 @@ begin
             if write_is_requested(ram_write_port) then
                 ram_contents(get_write_address(ram_write_port)) <= ram_write_port.write_buffer;
             end if;
-    ------------------------------
+            ------------------------------
             request_data_from_ram(ram_read_port, program_counter);
             create_processor(program_counter , get_ram_data(ram_read_port) , registers);
             if simulation_counter = 10 or decode(get_ram_data(ram_read_port)) = ready then
