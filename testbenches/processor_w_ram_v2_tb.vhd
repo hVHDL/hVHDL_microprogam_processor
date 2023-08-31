@@ -132,7 +132,7 @@ begin
                 save_registers_to_ram;
             end if;
 
-            if write_address = 32 then
+            if write_address = 40-registers'length then
                 read_address <= 40-registers'length;
                 register_address <= 0;
             end if;

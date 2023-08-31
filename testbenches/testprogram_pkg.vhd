@@ -248,13 +248,15 @@ package body testprogram_pkg is
         signal reg                  : inout realarray
     )
     is
-        alias instruction is instruction_pipeline(0);
+        variable instruction : t_instruction;
     begin
+
+        instruction := ram_data;
 
         instruction_pipeline(0) <= ram_data;
         instruction_pipeline(1) <= instruction_pipeline(0);
 
-        if decode(instruction_pipeline(0)) /= program_end then
+        if decode(instruction) /= program_end then
             pgm_counter(0) <= pgm_counter(0) + 1;
         end if;
         pgm_counter(1) <= pgm_counter(0);
