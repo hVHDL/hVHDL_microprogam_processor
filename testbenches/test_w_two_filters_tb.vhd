@@ -6,10 +6,9 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.testprogram_pkg.all;
-    use work.test_programs_pkg.all;
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
     use work.microcode_processor_pkg.all;
+    use work.test_programs_pkg.all;
 
 entity test_w_two_filters_tb is
   generic (runner_cfg : string);

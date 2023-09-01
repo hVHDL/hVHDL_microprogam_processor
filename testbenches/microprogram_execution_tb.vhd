@@ -6,7 +6,7 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
     use work.microcode_processor_pkg.all;
 
@@ -59,7 +59,6 @@ begin
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-
 
             create_processor(program_counter , mcode(program_counter) , registers);
             if simulation_counter = 10 or decode(mcode(program_counter)) = ready then

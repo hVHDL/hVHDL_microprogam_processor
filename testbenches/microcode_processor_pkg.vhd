@@ -3,7 +3,7 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
     use ieee.math_real.all;
 
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
     use work.ram_read_pkg.all;
     use work.ram_write_pkg.all;

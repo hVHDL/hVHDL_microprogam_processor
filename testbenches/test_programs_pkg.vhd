@@ -2,7 +2,7 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
 
 package test_programs_pkg is
 

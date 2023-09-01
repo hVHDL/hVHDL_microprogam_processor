@@ -6,7 +6,7 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
     use work.ram_read_pkg.all;
     use work.ram_write_pkg.all;
@@ -27,23 +27,22 @@ architecture vunit_simulation of processor_w_ram_v2_tb is
     -----------------------------------
     -- simulation specific signals ----
 
-------------------------------------------------------------------------
-
+    ------------------------------------------------------------------------
     function init_ram(program : program_array) return ram_array
     is
         variable retval : ram_array;
     begin
+
         for i in program'range loop
             retval(i) := program(i);
         end loop;
 
         return retval;
     end init_ram;
-
+    ------------------------
     constant dummy           : program_array := get_dummy;
     constant low_pass_filter : program_array := get_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_low_pass_filter;
-
 
     signal ram_contents : ram_array := init_ram(test_program);
     signal self         : processor_with_ram_record := init_processor(test_program'high);
@@ -79,19 +78,20 @@ begin
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-            ------------------------------
+            --------------------
             create_processor_w_ram(self);
             if read_is_requested(self.ram_read_port) then
                 self.ram_read_port.data <= ram_contents(get_ram_address(self.ram_read_port));
             end if;
+            --------------------
             if read_is_requested(self.ram_read_data_port) then
                 self.ram_read_data_port.data <= ram_contents(get_ram_address(self.ram_read_data_port));
             end if;
+            --------------------
             if write_is_requested(self.ram_write_port) then
                 ram_contents(get_write_address(self.ram_write_port)) <= self.ram_write_port.write_buffer;
             end if;
-            ------------------------------
-
+            --------------------
             if simulation_counter = 10 then
                 request_low_pass_filter;
             end if;
@@ -100,7 +100,7 @@ begin
                 save_registers_to_ram;
             end if;
 
-            if self.write_address = 40-self.registers'length then
+            if self.write_address =  40-self.registers'length then
                 self.read_address <= 40-self.registers'length;
                 self.register_address <= 0;
             end if;

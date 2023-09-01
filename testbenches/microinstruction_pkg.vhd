@@ -2,7 +2,7 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-package testprogram_pkg is
+package microinstruction_pkg is
 
     type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end );
     type command_array is array (t_command range t_command'left to t_command'right) of natural;
@@ -11,6 +11,7 @@ package testprogram_pkg is
     constant number_of_registers : natural := 9;
     constant register_bits : natural := 4;
     type realarray is array (integer range 0 to 8) of real;
+    type stdarray is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
 
     subtype comm is std_logic_vector(19 downto 16);
     subtype dest is std_logic_vector(15 downto 12);
@@ -22,7 +23,6 @@ package testprogram_pkg is
     type instruction_array is array (integer range 0 to 4) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
 
-------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
         return std_logic_vector;
@@ -64,9 +64,9 @@ package testprogram_pkg is
         return natural;
 ------------------------------------------------------------------------
 
-end package testprogram_pkg;
+end package microinstruction_pkg;
 
-package body testprogram_pkg is
+package body microinstruction_pkg is
 ------------------------------------------------------------------------
     function write_instruction
     (
@@ -197,4 +197,4 @@ package body testprogram_pkg is
         return decode(get_instruction(number));
     end decode;
 ------------------------------------------------------------------------
-end package body testprogram_pkg;
+end package body microinstruction_pkg;

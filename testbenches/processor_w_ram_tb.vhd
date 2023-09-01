@@ -7,7 +7,7 @@ library vunit_lib;
 context vunit_lib.vunit_context;
     
     use work.ram_read_pkg.all;
-    use work.testprogram_pkg.all;
+    use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
     use work.microcode_processor_pkg.all;
 
