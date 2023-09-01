@@ -8,6 +8,7 @@ context vunit_lib.vunit_context;
 
     use work.testprogram_pkg.all;
     use work.test_programs_pkg.all;
+    use work.microcode_processor_pkg.all;
 
 entity microprogram_execution_tb is
   generic (runner_cfg : string);
