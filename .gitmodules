@@ -4,3 +4,6 @@
 [submodule "source/hVHDL_fixed_point"]
 	path = source/hVHDL_fixed_point
 	url = https://github.com/hVHDL/hVHDL_fixed_point.git
+[submodule "source/hVHDL_floating_point"]
+	path = source/hVHDL_floating_point
+	url = https://github.com/hVHDL/hVHDL_floating_point.git

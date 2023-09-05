@@ -13,6 +13,9 @@ testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_ba
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/configuration/multiply_with_1_input_and_output_registers_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_base_types_20bit_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_pkg.vhd")
+
+testi.add_source_files(ROOT / "ram/ram_configuration_pkg.vhd")
+testi.add_source_files(ROOT / "ram/ram_read_base_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "*.vhd")
 
 VU.main()
