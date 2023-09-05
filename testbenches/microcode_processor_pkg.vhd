@@ -150,7 +150,7 @@ package body microcode_processor_pkg is
     --------------------------------------------------
         if self.write_address < 40 then
             self.write_address <= self.write_address + 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, to_fixed(self.registers(self.write_address-(40-self.registers'length)), 19));
+            write_data_to_ram(self.ram_write_port, self.write_address, to_fixed(self.registers(self.write_address-register_memory_start_address), 19));
         end if;
 
         if self.read_address > 30 then
@@ -165,8 +165,8 @@ package body microcode_processor_pkg is
             self.register_address <= self.register_address + 1;
         end if;
 
-        if self.write_address =  40-self.registers'length then
-            self.read_address <= 40-self.registers'length;
+        if self.write_address =  register_memory_start_address then
+            self.read_address <= register_memory_start_address;
             self.register_address <= 0;
         end if;
 
