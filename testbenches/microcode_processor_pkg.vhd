@@ -13,14 +13,14 @@ package microcode_processor_pkg is
 
 
     type processor_with_ram_record is record
-        ram_read_port      : ram_read_port_record  ;
-        ram_read_data_port : ram_read_port_record  ;
-        ram_write_port     : ram_write_port_record ;
-        write_address      : natural               ;
-        read_address       : natural               ;
-        register_address   : natural               ;
-        program_counter    : natural;
-        registers : realarray;
+        ram_read_instruction_port : ram_read_port_record  ;
+        ram_read_data_port        : ram_read_port_record  ;
+        ram_write_port            : ram_write_port_record ;
+        write_address             : natural               ;
+        read_address              : natural               ;
+        register_address          : natural               ;
+        program_counter           : natural;
+        registers                 : realarray;
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
@@ -140,12 +140,13 @@ package body microcode_processor_pkg is
     (
         signal self : inout processor_with_ram_record
     ) is
+        constant register_memory_start_address : integer := 40-self.registers'length;
     begin
-        create_ram_read_port(self.ram_read_port);
+        create_ram_read_port(self.ram_read_instruction_port);
         create_ram_read_port(self.ram_read_data_port);
         create_ram_write_port(self.ram_write_port);
-        request_data_from_ram(self.ram_read_port, self.program_counter);
-        create_processor(self.program_counter , get_ram_data(self.ram_read_port) , self.registers);
+        request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
+        create_processor(self.program_counter , get_ram_data(self.ram_read_instruction_port) , self.registers);
     --------------------------------------------------
         if self.write_address < 40 then
             self.write_address <= self.write_address + 1;
@@ -164,8 +165,15 @@ package body microcode_processor_pkg is
             self.register_address <= self.register_address + 1;
         end if;
 
-        ------------------------------------------------------------------------
-            
+        if self.write_address =  40-self.registers'length then
+            self.read_address <= 40-self.registers'length;
+            self.register_address <= 0;
+        end if;
+
+        -- save registers to ram
+        if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
+            self.write_address <= register_memory_start_address;
+        end if;
     end create_processor_w_ram;
 
 end package body microcode_processor_pkg;

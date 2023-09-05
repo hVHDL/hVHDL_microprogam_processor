@@ -80,8 +80,8 @@ begin
             simulation_counter <= simulation_counter + 1;
             --------------------
             create_processor_w_ram(self);
-            if read_is_requested(self.ram_read_port) then
-                self.ram_read_port.data <= ram_contents(get_ram_address(self.ram_read_port));
+            if read_is_requested(self.ram_read_instruction_port) then
+                self.ram_read_instruction_port.data <= ram_contents(get_ram_address(self.ram_read_instruction_port));
             end if;
             --------------------
             if read_is_requested(self.ram_read_data_port) then
@@ -96,7 +96,7 @@ begin
                 request_low_pass_filter;
             end if;
 
-            if decode(get_ram_data(self.ram_read_port)) = ready then
+            if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
                 save_registers_to_ram;
             end if;
 
@@ -109,7 +109,7 @@ begin
                 request_low_pass_filter;
             end if;
 
-            if decode(get_ram_data(self.ram_read_port)) = ready then
+            if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
                 result <= self.registers(0);
             end if;
 
