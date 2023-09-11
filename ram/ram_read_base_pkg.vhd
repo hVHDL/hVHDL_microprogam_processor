@@ -3,7 +3,10 @@ library ieee;
     use ieee.numeric_std.all;
     use ieee.math_real.all;
 
-    use work.ram_configuration_pkg.all;
+    use work.ram_configuration_pkg.ram_bit_width;
+    use work.ram_configuration_pkg.ram_depth;
+    use work.ram_configuration_pkg.address_integer;
+    use work.ram_configuration_pkg.t_ram_data;
 
 package ram_read_pkg is
 

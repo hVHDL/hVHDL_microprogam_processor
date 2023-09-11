@@ -26,7 +26,8 @@ package microcode_processor_pkg is
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
 
     procedure create_processor_w_ram (
-        signal self : inout processor_with_ram_record);
+        signal self : inout processor_with_ram_record;
+        ramsize : in natural);
 
     procedure create_processor (
         signal pgm_counter : inout natural;
@@ -117,7 +118,10 @@ package body microcode_processor_pkg is
     end create_processor;
 ------------------------------------------------------------------------
 
-    function init_processor ( program_start_point : natural)
+    function init_processor 
+    ( 
+        program_start_point : natural
+    )
     return processor_with_ram_record
     is
         variable retval : processor_with_ram_record;
@@ -126,8 +130,8 @@ package body microcode_processor_pkg is
         init_ram_read_port  ,
         init_ram_read_port  ,
         init_ram_write_port ,
-        40                  ,
-        40                  ,
+        63                  ,
+        63                  ,
         0                   ,
         program_start_point,
         (0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0));
@@ -138,9 +142,10 @@ package body microcode_processor_pkg is
 
     procedure create_processor_w_ram
     (
-        signal self : inout processor_with_ram_record
+        signal self : inout processor_with_ram_record;
+        ramsize : in natural
     ) is
-        constant register_memory_start_address : integer := 40-self.registers'length;
+        constant register_memory_start_address : integer := ramsize-self.registers'length;
     begin
         create_ram_read_port(self.ram_read_instruction_port);
         create_ram_read_port(self.ram_read_data_port);
@@ -148,13 +153,13 @@ package body microcode_processor_pkg is
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
         create_processor(self.program_counter , get_ram_data(self.ram_read_instruction_port) , self.registers);
     --------------------------------------------------
-        if self.write_address < 40 then
+        if self.write_address < ramsize then
             self.write_address <= self.write_address + 1;
             write_data_to_ram(self.ram_write_port, self.write_address, to_fixed(self.registers(self.write_address-register_memory_start_address), 19));
         end if;
 
-        if self.read_address > 30 then
-            if self.read_address < 40 then
+        if self.read_address > register_memory_start_address then
+            if self.read_address < ramsize then
                 self.read_address <= self.read_address + 1;
                 request_data_from_ram(self.ram_read_data_port, self.read_address);
             end if;

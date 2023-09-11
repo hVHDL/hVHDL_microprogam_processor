@@ -21,9 +21,7 @@ package body test_programs_pkg is
         constant temp : integer := 2;
         constant g    : integer := 7;
 
-        variable returned_code : program_array(0 to 6);
-    begin
-        returned_code := (
+        constant lpf : program_array := (
             write_instruction(sub    , temp , u    , y)    ,
             write_instruction(mpy    , temp , temp , g)    ,
             write_instruction(add    , y    , y    , temp) ,
@@ -32,6 +30,11 @@ package body test_programs_pkg is
             write_instruction(program_end),
             write_instruction(program_end)
         );
+
+        variable returned_code : program_array(0 to lpf'length-1);
+    begin
+
+        returned_code := lpf;
 
         return returned_code;
         
@@ -58,7 +61,7 @@ package body test_programs_pkg is
             write_instruction(ready)  ,
             write_instruction(program_end)
         );
-        variable returned_code : program_array(0 to 6);
+        variable returned_code : program_array(0 to sos_program'length-1);
     begin
 
         returned_code := sos_program;
@@ -78,7 +81,7 @@ package body test_programs_pkg is
             write_instruction(nop),
             write_instruction(program_end));
 
-        variable returned_code : program_array(0 to 6);
+        variable returned_code : program_array(0 to dummy'length-1);
     begin
 
         returned_code := dummy;

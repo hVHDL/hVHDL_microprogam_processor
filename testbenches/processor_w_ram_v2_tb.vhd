@@ -68,18 +68,11 @@ begin
         begin
             self.program_counter <= dummy'length;
         end request_low_pass_filter;
-
-        procedure save_registers_to_ram is
-        begin
-            self.write_address <= 40-self.registers'length;
-            
-        end save_registers_to_ram;
-
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
-            create_processor_w_ram(self);
+            create_processor_w_ram(self, ram_contents'length);
             if read_is_requested(self.ram_read_instruction_port) then
                 self.ram_read_instruction_port.data <= ram_contents(get_ram_address(self.ram_read_instruction_port));
             end if;
@@ -91,21 +84,12 @@ begin
             if write_is_requested(self.ram_write_port) then
                 ram_contents(get_write_address(self.ram_write_port)) <= self.ram_write_port.write_buffer;
             end if;
-            --------------------
-            if simulation_counter = 10 then
+------------------------------------------------------------------------
+            if simulation_counter = 0 then
                 request_low_pass_filter;
             end if;
 
-            if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
-                save_registers_to_ram;
-            end if;
-
-            if self.write_address =  40-self.registers'length then
-                self.read_address <= 40-self.registers'length;
-                self.register_address <= 0;
-            end if;
-
-            if self.read_address = 39 then
+            if simulation_counter mod 20 = 0 then
                 request_low_pass_filter;
             end if;
 
