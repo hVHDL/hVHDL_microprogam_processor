@@ -2,6 +2,8 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+    use work.real_to_fixed_pkg.all;
+
 package microinstruction_pkg is
 
     type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end );
@@ -10,8 +12,8 @@ package microinstruction_pkg is
     constant number_of_registers : natural := 9;
     constant register_bits : natural := 4;
     type stdarray is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
-    type reg_array is array (integer range 0 to 8) of real;
-    -- alias reg_array is stdarray;
+    type realarray is array (integer range 0 to 8) of real;
+    alias reg_array is stdarray;
 
     subtype comm is std_logic_vector(19 downto 16);
     subtype dest is std_logic_vector(15 downto 12);
@@ -22,6 +24,11 @@ package microinstruction_pkg is
     subtype t_instruction is std_logic_vector(comm'high downto 0);
     type instruction_array is array (integer range 0 to 4) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
+
+    function to_fixed (
+        array_of_reals : realarray;
+        radix  : natural )
+    return reg_array;
 
 ------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
@@ -196,5 +203,24 @@ package body microinstruction_pkg is
     begin
         return decode(get_instruction(number));
     end decode;
+------------------------------------------------------------------------
+    function to_fixed
+    (
+        array_of_reals : realarray;
+        radix  : natural 
+    )
+    return reg_array
+    is
+        variable retval : reg_array;
+    begin
+
+        for i in array_of_reals'range loop
+            retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
+        end loop;
+
+        return retval;
+            
+        
+    end to_fixed;
 ------------------------------------------------------------------------
 end package body microinstruction_pkg;

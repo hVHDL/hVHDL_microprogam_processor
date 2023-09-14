@@ -30,7 +30,7 @@ architecture vunit_simulation of processor_w_ram_v2_tb is
     ------------------------------------------------------------------------
     function init_ram(program : program_array) return ram_array
     is
-        variable retval : ram_array;
+        variable retval : ram_array := (others => (others => '0'));
     begin
 
         for i in program'range loop
@@ -90,7 +90,7 @@ begin
             end if;
 
             if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
-                result <= self.registers(0);
+                result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
             end if;
 
         end if; -- rising_edge

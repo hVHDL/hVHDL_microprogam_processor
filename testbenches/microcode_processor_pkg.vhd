@@ -8,6 +8,7 @@ LIBRARY ieee  ;
     use work.ram_read_pkg.all;
     use work.ram_write_pkg.all;
     use work.real_to_fixed_pkg.all;
+    use work.multiplier_pkg.radix_multiply;
 
 package microcode_processor_pkg is
 
@@ -44,6 +45,37 @@ end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
 ------------------------------------------------------------------------
+    function "+"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(signed(left) + signed(right));
+    end "+";
+------------------------------------------------------------------------
+    function "-"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(signed(left) - signed(right));
+    end "-";
+------------------------------------------------------------------------
+    function "*"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+        
+    begin
+        return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
+    end "*";
+------------------------------------------------------------------------
     procedure create_processor
     (
         signal pgm_counter : inout natural;
@@ -67,7 +99,6 @@ package body microcode_processor_pkg is
             when mpy_add =>
                 reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
             when div =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
             when jump        =>
             when ret         =>
             when program_end =>
@@ -117,7 +148,6 @@ package body microcode_processor_pkg is
         
     end create_processor;
 ------------------------------------------------------------------------
-
     function init_processor 
     ( 
         program_start_point : natural
@@ -134,7 +164,7 @@ package body microcode_processor_pkg is
         63                  ,
         0                   ,
         program_start_point,
-        (0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0));
+        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0), 19));
         
         return retval;
     end init_processor;
@@ -155,7 +185,7 @@ package body microcode_processor_pkg is
     --------------------------------------------------
         if self.write_address < ramsize then
             self.write_address <= self.write_address + 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, to_fixed(self.registers(self.write_address-register_memory_start_address), 19));
+            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(self.write_address-register_memory_start_address));
         end if;
 
         if self.read_address > register_memory_start_address then
@@ -166,7 +196,7 @@ package body microcode_processor_pkg is
         end if;
 
         if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers(self.register_address) <= to_real(get_ram_data(self.ram_read_data_port), 19);
+            self.registers(self.register_address) <= get_ram_data(self.ram_read_data_port);
             self.register_address <= self.register_address + 1;
         end if;
 

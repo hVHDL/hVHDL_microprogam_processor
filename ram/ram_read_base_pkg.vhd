@@ -159,6 +159,11 @@ package ram_write_pkg is
         signal self : inout ram_write_port_record;
         address           : in integer;
         data              : in integer);
+
+    procedure write_data_to_ram (
+        signal self : inout ram_write_port_record;
+        address : in integer;
+        data    : in std_logic_vector);
 ------------------------------------------------------------------------
     function write_is_requested ( self : ram_write_port_record)
         return boolean;
@@ -187,6 +192,19 @@ package body ram_write_pkg is
 
     end create_ram_write_port;
 ------------------------------------------------------------------------
+    procedure write_data_to_ram
+    (
+        signal self : inout ram_write_port_record;
+        address : in integer;
+        data    : in std_logic_vector
+    ) is
+    begin
+        self.write_is_requested_with_1(0) <= '1';
+        self.write_buffer <= data;
+        self.write_address <= address;
+        
+    end write_data_to_ram;
+------------------------------
     procedure write_data_to_ram
     (
         signal self : inout ram_write_port_record;
