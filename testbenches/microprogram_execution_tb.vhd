@@ -33,9 +33,9 @@ architecture vunit_simulation of microprogram_execution_tb is
 
     signal mcode : program_array(test_program'range) := test_program;
 
-    signal program_counter : natural := test_program'high;
+    signal program_counter : natural    := test_program'high;
     constant init_registers : reg_array := (others => (others => '0'));
-    signal registers        : reg_array     := to_fixed((0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0),init_registers(0)'length);
+    signal registers        : reg_array := to_fixed((0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0),init_registers(0)'length);
 
 begin
 
