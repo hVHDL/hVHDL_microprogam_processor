@@ -9,6 +9,7 @@ context vunit_lib.vunit_context;
     use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
     use work.microcode_processor_pkg.all;
+    use work.real_to_fixed_pkg.all;
 
 entity microprogram_execution_tb is
   generic (runner_cfg : string);
@@ -33,7 +34,8 @@ architecture vunit_simulation of microprogram_execution_tb is
     signal mcode : program_array(test_program'range) := test_program;
 
     signal program_counter : natural := test_program'high;
-    signal registers : reg_array := (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1, 0.0);
+    constant init_registers : reg_array := (others => (others => '0'));
+    signal registers        : reg_array     := to_fixed((0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0),init_registers(0)'length);
 
 begin
 
@@ -66,7 +68,7 @@ begin
             end if;
 
             if decode(mcode(program_counter)) = ready then
-                result <= registers(0);
+                result <= to_real(signed(registers(0)),registers(0)'length-1);
             end if;
 
         end if; -- rising_edge

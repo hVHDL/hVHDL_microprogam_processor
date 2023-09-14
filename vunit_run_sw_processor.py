@@ -33,6 +33,9 @@ testi.add_source_files(ROOT / "ram/ram_read_base_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "microcode_processor_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "test_programs_pkg.vhd")
+
+testi.add_source_files(ROOT / "testbenches/" "processor_w_ram_tb.vhd")
+testi.add_source_files(ROOT / "testbenches/" "ram_read_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/" "processor_w_ram_v2_tb.vhd")
 
 VU.main()

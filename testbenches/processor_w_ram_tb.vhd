@@ -29,7 +29,7 @@ architecture vunit_simulation of processor_w_ram_tb is
 
     function init_ram(program : program_array) return ram_array
     is
-        variable retval : ram_array;
+        variable retval : ram_array := (others => (others => '0'));
     begin
         for i in program'range loop
             retval(i) := program(i);
@@ -42,7 +42,8 @@ architecture vunit_simulation of processor_w_ram_tb is
     signal ram_read_port : ram_read_port_record := init_ram_read_port;
 
     signal counter_pipeline : counter_array :=(others => test_program'high);
-    signal registers        : reg_array     := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
+    constant init_registers : reg_array := (others => (others => '0'));
+    signal registers        : reg_array     := to_fixed((0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0),init_registers(0)'length);
     signal instruction_pipeline : instruction_array;
 
 begin
