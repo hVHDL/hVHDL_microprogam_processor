@@ -33,8 +33,8 @@ architecture vunit_simulation of test_w_two_filters_tb is
     signal mcode : program_array(test_program'range) := test_program;
 
     signal program_counter : natural := test_program'high;
-    signal registers       : realarray := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
-    signal register_cache  : realarray := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.3 , 0.0);
+    signal registers       : reg_array := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
+    signal register_cache  : reg_array := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.3 , 0.0);
     signal result1         : real := 0.0;
     signal result2         : real := 0.0;
 

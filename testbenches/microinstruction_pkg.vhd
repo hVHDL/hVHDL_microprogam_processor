@@ -9,8 +9,9 @@ package microinstruction_pkg is
 
     constant number_of_registers : natural := 9;
     constant register_bits : natural := 4;
-    type realarray is array (integer range 0 to 8) of real;
     type stdarray is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
+    type reg_array is array (integer range 0 to 8) of real;
+    -- alias reg_array is stdarray;
 
     subtype comm is std_logic_vector(19 downto 16);
     subtype dest is std_logic_vector(15 downto 12);

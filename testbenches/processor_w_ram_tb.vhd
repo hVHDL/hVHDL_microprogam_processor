@@ -42,7 +42,7 @@ architecture vunit_simulation of processor_w_ram_tb is
     signal ram_read_port : ram_read_port_record := init_ram_read_port;
 
     signal counter_pipeline : counter_array :=(others => test_program'high);
-    signal registers        : realarray     := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
+    signal registers        : reg_array     := (0.0 , 1.0 , 2.0 , 3.0 , 4.0 , 5.0 , 6.0 , 0.1 , 0.0);
     signal instruction_pipeline : instruction_array;
 
 begin

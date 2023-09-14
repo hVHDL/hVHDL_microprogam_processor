@@ -20,7 +20,7 @@ package microcode_processor_pkg is
         read_address              : natural               ;
         register_address          : natural               ;
         program_counter           : natural;
-        registers                 : realarray;
+        registers                 : reg_array;
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
@@ -32,13 +32,13 @@ package microcode_processor_pkg is
     procedure create_processor (
         signal pgm_counter : inout natural;
         instruction : in std_logic_vector;
-        signal reg  : inout realarray);
+        signal reg  : inout reg_array);
 
     procedure create_processor (
         signal pgm_counter   : inout counter_array;
         ram_data             : in t_instruction;
         signal instruction_pipeline : inout instruction_array;
-        signal reg           : inout realarray);
+        signal reg           : inout reg_array);
 
 end package microcode_processor_pkg;
 
@@ -48,7 +48,7 @@ package body microcode_processor_pkg is
     (
         signal pgm_counter : inout natural;
         instruction        : in std_logic_vector;
-        signal reg         : inout realarray
+        signal reg         : inout reg_array
     )
     is
     begin
@@ -82,7 +82,7 @@ package body microcode_processor_pkg is
         signal pgm_counter          : inout counter_array;
         ram_data                    : in t_instruction;
         signal instruction_pipeline : inout instruction_array;
-        signal reg                  : inout realarray
+        signal reg                  : inout reg_array
     )
     is
         variable instruction : t_instruction;
