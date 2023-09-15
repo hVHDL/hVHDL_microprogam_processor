@@ -84,6 +84,10 @@ begin
             if write_is_requested(self.ram_write_port) then
                 ram_contents(get_write_address(self.ram_write_port)) <= self.ram_write_port.write_buffer;
             end if;
+            --------------------
+            if write_is_requested(self.ram_write_port2) then
+                ram_contents(get_write_address(self.ram_write_port2)) <= self.ram_write_port2.write_buffer;
+            end if;
 ------------------------------------------------------------------------
             if simulation_counter mod 20 = 0 then
                 request_low_pass_filter;
