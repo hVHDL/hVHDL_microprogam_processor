@@ -18,10 +18,10 @@ package microcode_processor_pkg is
         ram_read_data_port        : ram_read_port_record  ;
         ram_write_port            : ram_write_port_record ;
         ram_write_port2           : ram_write_port_record ;
-        write_address             : natural               ;
-        read_address              : natural               ;
-        register_address          : natural               ;
-        program_counter           : natural;
+        write_address             : natural range 0 to 1023              ;
+        read_address              : natural range 0 to 1023               ;
+        register_address          : natural range 0 to 1023               ;
+        program_counter           : natural range 0 to 1023;
         registers                 : reg_array;
     end record;
 
@@ -179,10 +179,7 @@ package body microcode_processor_pkg is
     ) is
         constant register_memory_start_address : integer := ramsize-self.registers'length;
     begin
-        create_ram_read_port(self.ram_read_instruction_port);
-        create_ram_read_port(self.ram_read_data_port);
-        create_ram_write_port(self.ram_write_port);
-        create_ram_write_port(self.ram_write_port2);
+
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
         create_processor(self.program_counter , get_ram_data(self.ram_read_instruction_port) , self.registers);
     --------------------------------------------------
