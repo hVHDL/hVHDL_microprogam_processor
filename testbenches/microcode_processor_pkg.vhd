@@ -77,6 +77,38 @@ package body microcode_processor_pkg is
         return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
     end "*";
 ------------------------------------------------------------------------
+    function testi
+    (
+        instruction : std_logic_vector;
+        reg : reg_array 
+    )
+    return reg_array
+    is
+        variable retval : reg_array := reg;
+
+    begin
+
+        CASE decode(instruction) is
+            when add =>
+                retval(get_dest(instruction)) := reg(get_arg1(instruction)) + reg(get_arg2(instruction));
+            when sub =>
+                retval(get_dest(instruction)) := reg(get_arg1(instruction)) - reg(get_arg2(instruction));
+            when mpy =>
+                retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction));
+            when mpy_add =>
+                retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
+            when div =>
+            when jump        =>
+            when ret         =>
+            when program_end =>
+            when ready       => --do nothing
+            when nop         => --do nothing
+        end CASE;
+
+        return retval;
+        
+    end testi;
+------------------------------------------------------------------------
     procedure create_processor
     (
         signal pgm_counter : inout natural;
@@ -90,22 +122,7 @@ package body microcode_processor_pkg is
             pgm_counter <= pgm_counter + 1;
         end if;
 
-        CASE decode(instruction) is
-            when add =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
-            when sub =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
-            when mpy =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
-            when mpy_add =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
-            when div =>
-            when jump        =>
-            when ret         =>
-            when program_end =>
-            when ready       => --do nothing
-            when nop         => --do nothing
-        end CASE;
+        reg <= testi(instruction, reg);
         
     end create_processor;
 ------------------------------------------------------------------------
@@ -117,35 +134,16 @@ package body microcode_processor_pkg is
         signal reg                  : inout reg_array
     )
     is
-        variable instruction : t_instruction;
     begin
 
-        instruction := instruction_pipeline(0);
-
-
-        if decode(instruction) /= program_end then
+        if decode(instruction_pipeline(1)) /= program_end then
             pgm_counter(0)          <= pgm_counter(0) + 1;
             instruction_pipeline(0) <= ram_data;
             instruction_pipeline(1) <= instruction_pipeline(0);
         end if;
         pgm_counter(1) <= pgm_counter(0);
 
-        CASE decode(instruction) is
-            when add =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) + reg(get_arg2(instruction));
-            when sub =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) - reg(get_arg2(instruction));
-            when mpy =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction));
-            when mpy_add =>
-                reg(get_dest(instruction)) <= reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
-            when div         => -- reg(get_dest(instruction)) <= reg(get_arg1(instruction)) / reg(get_arg2(instruction));
-            when jump        =>
-            when ret         =>
-            when program_end =>
-            when ready       => --do nothing
-            when nop         => --do nothing
-        end CASE;
+        reg <= testi(instruction_pipeline(1), reg);
         
     end create_processor;
 ------------------------------------------------------------------------
@@ -178,16 +176,12 @@ package body microcode_processor_pkg is
         ramsize : in natural
     ) is
         constant register_memory_start_address : integer := ramsize-self.registers'length;
+        constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
     begin
 
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
         create_processor(self.program_counter , get_ram_data(self.ram_read_instruction_port) , self.registers);
     --------------------------------------------------
-        if self.write_address < ramsize then
-            self.write_address <= self.write_address + 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(self.write_address-register_memory_start_address));
-        end if;
-
         if self.read_address > register_memory_start_address then
             if self.read_address < ramsize then
                 self.read_address <= self.read_address + 1;
@@ -196,7 +190,7 @@ package body microcode_processor_pkg is
         end if;
 
         if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers(self.register_address) <= get_ram_data(self.ram_read_data_port);
+            self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
             self.register_address <= self.register_address + 1;
         end if;
 
@@ -205,10 +199,18 @@ package body microcode_processor_pkg is
             self.register_address <= 0;
         end if;
 
+    --------------------------------------------------
         -- save registers to ram
         if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
             self.write_address <= register_memory_start_address;
         end if;
+
+        if self.write_address < ramsize then
+            self.write_address <= self.write_address + 1;
+            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
+            self.registers <= self.registers(0 to self.registers'length-2) & zero;
+        end if;
+
     end create_processor_w_ram;
 
 end package body microcode_processor_pkg;
