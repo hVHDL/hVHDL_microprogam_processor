@@ -46,27 +46,22 @@ package body test_programs_pkg is
         constant u    : integer := 1;
         constant temp : integer := 2;
         constant g    : integer := 7;
+        alias "+" is "&" [program_array, t_instruction return program_array];
 
         constant lpf : program_array := (
-            write_instruction(sub    , temp , u    , y)    ,
-
-            write_instruction(nop, 0,0, 0),
-            write_instruction(nop, 0,0, 0),
-
-            write_instruction(mpy    , temp , temp , g)    ,
-
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-
-            write_instruction(add    , y    , y    , temp) ,
-
-            write_instruction(nop),
-            write_instruction(nop),
-
-            write_instruction(ready) ,
-            write_instruction(program_end),
-            write_instruction(program_end),
+            write_instruction(sub          , temp , u    , y)    &
+            write_instruction(nop)                               +
+            write_instruction(nop)                               +
+            write_instruction(mpy          , temp , temp , g)    +
+            write_instruction(nop)                               +
+            write_instruction(nop)                               +
+            write_instruction(nop)                               +
+            write_instruction(add          , y    , y    , temp) +
+            write_instruction(nop)                               +
+            write_instruction(nop)                               +
+            write_instruction(ready)                             +
+            write_instruction(program_end)                       +
+            write_instruction(program_end)                       +
             write_instruction(program_end)
         );
 

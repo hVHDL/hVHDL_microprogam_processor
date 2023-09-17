@@ -298,11 +298,12 @@ package body microcode_processor_pkg is
         end CASE;
 
         --stage 1
-        self.add_result <= self.add_a + self.add_b;
+        self.add_result     <= self.add_a + self.add_b;
         self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
-        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
 
         --stage 2
+        self.mpy_result     <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
+        
         CASE decode(self.instruction_pipeline(2)) is
             WHEN add =>
                 self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;

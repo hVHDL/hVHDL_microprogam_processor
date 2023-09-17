@@ -181,7 +181,6 @@ package body microinstruction_pkg is
     is
     begin
         return to_integer(unsigned(input_register(comm'range)));
-        
     end get_instruction;
 ------------------------------------------------------------------------
     function decode
@@ -219,7 +218,6 @@ package body microinstruction_pkg is
         end loop;
 
         return retval;
-            
         
     end to_fixed;
 ------------------------------------------------------------------------
