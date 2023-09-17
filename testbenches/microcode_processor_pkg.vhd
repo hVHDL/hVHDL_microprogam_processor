@@ -23,7 +23,15 @@ package microcode_processor_pkg is
         register_address          : natural range 0 to 1023 ;
         program_counter           : natural range 0 to 1023 ;
         registers                 : reg_array               ;
-        add_pipeline              : std_logic_vector(19 downto 0);
+        instruction_pipeline      : instruction_array;
+        -- math unit
+        add_a                     : std_logic_vector(19 downto 0);
+        add_b                     : std_logic_vector(19 downto 0);
+        add_result                : std_logic_vector(19 downto 0);
+
+        mpy_a                     : std_logic_vector(19 downto 0);
+        mpy_b                     : std_logic_vector(19 downto 0);
+        mpy_result                : std_logic_vector(19 downto 0);
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
@@ -37,11 +45,11 @@ package microcode_processor_pkg is
         instruction : in std_logic_vector;
         signal reg  : inout reg_array);
 
-    procedure create_processor (
-        signal pgm_counter   : inout counter_array;
-        ram_data             : in t_instruction;
+    procedure create_pipelined_processor (
+        signal pgm_counter          : inout natural;
+        ram_data                    : in t_instruction;
         signal instruction_pipeline : inout instruction_array;
-        signal reg           : inout reg_array);
+        signal reg                  : inout reg_array);
 
 end package microcode_processor_pkg;
 
@@ -66,6 +74,17 @@ package body microcode_processor_pkg is
     begin
         return std_logic_vector(signed(left) - signed(right));
     end "-";
+
+    function "-"
+    (
+        left : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(-signed(left));
+    end "-";
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function "*"
     (
@@ -98,12 +117,13 @@ package body microcode_processor_pkg is
                 retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction));
             when mpy_add =>
                 retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
-            when div =>
+            when div         =>
             when jump        =>
             when ret         =>
             when program_end =>
             when ready       => --do nothing
             when nop         => --do nothing
+            when others      => --do nothing
         end CASE;
 
         return retval;
@@ -127,25 +147,22 @@ package body microcode_processor_pkg is
         
     end create_processor;
 ------------------------------------------------------------------------
-    procedure create_processor
+    procedure create_pipelined_processor
     (
-        signal pgm_counter          : inout counter_array;
+        signal pgm_counter          : inout natural;
         ram_data                    : in t_instruction;
         signal instruction_pipeline : inout instruction_array;
         signal reg                  : inout reg_array
     )
     is
     begin
-
-        if decode(instruction_pipeline(2)) /= program_end then
-            pgm_counter(0)          <= pgm_counter(0) + 1;
-            instruction_pipeline(0) <= ram_data;
-            instruction_pipeline(1) <= instruction_pipeline(0);
+        instruction_pipeline <= ram_data & instruction_pipeline(1 to instruction_pipeline'high);
+        if decode(ram_data) /= program_end then
+            pgm_counter          <= pgm_counter + 1;
         end if;
-        pgm_counter(1) <= pgm_counter(0);
-        reg <= testi(instruction_pipeline(2), reg);
+
         
-    end create_processor;
+    end create_pipelined_processor;
 ------------------------------------------------------------------------
     function init_processor 
     ( 
@@ -165,14 +182,19 @@ package body microcode_processor_pkg is
         0                   ,
         program_start_point,
         to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0), 19),
+        (others => (others => '0')),
+        (others => '0'),
+        (others => '0'),
+        (others => '0'),
+        (others => '0'),
+        (others => '0'),
         (others => '0')
         );
         
         return retval;
     end init_processor;
 ------------------------------------------------------------------------
-
-    procedure create_processor_w_ram
+    procedure create_memory_control
     (
         signal self : inout processor_with_ram_record;
         ramsize : in natural
@@ -180,10 +202,6 @@ package body microcode_processor_pkg is
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
     begin
-
-        request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
-        create_processor(self.program_counter , get_ram_data(self.ram_read_instruction_port) , self.registers);
-    --------------------------------------------------
         if self.read_address > register_memory_start_address then
             if self.read_address < ramsize then
                 self.read_address <= self.read_address + 1;
@@ -203,7 +221,7 @@ package body microcode_processor_pkg is
 
     --------------------------------------------------
         -- save registers to ram
-        if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
+        if decode(self.instruction_pipeline(2)) = ready then
             self.write_address <= register_memory_start_address;
         end if;
 
@@ -212,7 +230,54 @@ package body microcode_processor_pkg is
             write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
             self.registers <= self.registers(0 to self.registers'length-2) & zero;
         end if;
+        
+    end create_memory_control;
+------------------------------------------------------------------------
+    procedure create_processor_w_ram
+    (
+        signal self : inout processor_with_ram_record;
+        ramsize : in natural
+    ) is
+        variable ram_data : std_logic_vector(19 downto 0);
+    begin
+        create_memory_control(self, ramsize);
+        request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
 
+        ram_data := get_ram_data(self.ram_read_instruction_port);
+
+        self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+        if decode(ram_data) /= program_end then
+            self.program_counter          <= self.program_counter + 1;
+        end if;
+
+        --stage 0
+        CASE decode(self.instruction_pipeline(0)) is
+            WHEN add =>
+                self.add_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
+                self.add_b <= self.registers(get_arg2(self.instruction_pipeline(0)));
+            WHEN sub =>
+                self.add_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
+                self.add_b <= -self.registers(get_arg2(self.instruction_pipeline(0)));
+            WHEN mpy =>
+                self.mpy_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
+                self.mpy_b <= self.registers(get_arg2(self.instruction_pipeline(0)));
+            WHEN others => -- do nothing
+        end CASE;
+
+        --stage 1
+        self.add_result <= self.add_a + self.add_b;
+        self.mpy_result <= self.mpy_a * self.mpy_b;
+
+        --stage 2
+        CASE decode(self.instruction_pipeline(2)) is
+            WHEN add =>
+                self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
+            WHEN sub =>
+                self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
+            WHEN mpy =>
+                self.registers(get_dest(self.instruction_pipeline(2))) <= self.mpy_result;
+            WHEN others => -- do nothing
+        end CASE;
     end create_processor_w_ram;
-
+------------------------------------------------------------------------
 end package body microcode_processor_pkg;
