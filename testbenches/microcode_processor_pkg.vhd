@@ -14,15 +14,16 @@ package microcode_processor_pkg is
 
 
     type processor_with_ram_record is record
-        ram_read_instruction_port : ram_read_port_record  ;
-        ram_read_data_port        : ram_read_port_record  ;
-        ram_write_port            : ram_write_port_record ;
-        ram_write_port2           : ram_write_port_record ;
-        write_address             : natural range 0 to 1023              ;
-        read_address              : natural range 0 to 1023               ;
-        register_address          : natural range 0 to 1023               ;
-        program_counter           : natural range 0 to 1023;
-        registers                 : reg_array;
+        ram_read_instruction_port : ram_read_port_record    ;
+        ram_read_data_port        : ram_read_port_record    ;
+        ram_write_port            : ram_write_port_record   ;
+        ram_write_port2           : ram_write_port_record   ;
+        write_address             : natural range 0 to 1023 ;
+        read_address              : natural range 0 to 1023 ;
+        register_address          : natural range 0 to 1023 ;
+        program_counter           : natural range 0 to 1023 ;
+        registers                 : reg_array               ;
+        add_pipeline              : std_logic_vector(19 downto 0);
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
@@ -136,14 +137,13 @@ package body microcode_processor_pkg is
     is
     begin
 
-        if decode(instruction_pipeline(1)) /= program_end then
+        if decode(instruction_pipeline(2)) /= program_end then
             pgm_counter(0)          <= pgm_counter(0) + 1;
             instruction_pipeline(0) <= ram_data;
             instruction_pipeline(1) <= instruction_pipeline(0);
         end if;
         pgm_counter(1) <= pgm_counter(0);
-
-        reg <= testi(instruction_pipeline(1), reg);
+        reg <= testi(instruction_pipeline(2), reg);
         
     end create_processor;
 ------------------------------------------------------------------------
@@ -164,7 +164,9 @@ package body microcode_processor_pkg is
         63                  ,
         0                   ,
         program_start_point,
-        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0), 19));
+        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0), 19),
+        (others => '0')
+        );
         
         return retval;
     end init_processor;
