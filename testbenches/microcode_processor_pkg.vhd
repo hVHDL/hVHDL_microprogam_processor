@@ -182,7 +182,7 @@ package body microcode_processor_pkg is
         63                  ,
         0                   ,
         program_start_point,
-        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.0104166, 0.0), 19),
+        to_fixed((0.0, 0.00, 0.2, 0.3, 0.4, 0.5, 0.6, 0.0104166, 0.0), 19),
         (others => (others => '0')),
         (others => '0'),
         (others => '0'),
@@ -272,6 +272,8 @@ package body microcode_processor_pkg is
             write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
             self.registers <= self.registers(0 to self.registers'length-2) & zero;
         end if;
+    ------------------------------------------------------------------------
+    ------------------------------------------------------------------------
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
 
         ram_data := get_ram_data(self.ram_read_instruction_port);

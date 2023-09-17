@@ -21,7 +21,7 @@ end;
 architecture vunit_simulation of tb_pipelined_operations is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1500;
+    constant simtime_in_clocks : integer := 15500;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -99,8 +99,9 @@ begin
 
             create_processor_w_ram(self, ram_contents'length);
 ------------------------------------------------------------------------
-            if simulation_counter mod 13 = 0 then
+            if simulation_counter mod 17 = 0 then
                 request_low_pass_filter;
+                self.registers(1) <= to_fixed(0.44252,self.registers(0)'length, self.registers(0)'length-1);
             end if;
 
             if decode(self.instruction_pipeline(1)) = ready then
