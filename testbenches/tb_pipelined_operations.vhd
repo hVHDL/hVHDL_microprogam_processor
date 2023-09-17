@@ -49,9 +49,6 @@ architecture vunit_simulation of tb_pipelined_operations is
     signal self         : processor_with_ram_record := init_processor(test_program'high);
     signal result       : real := 0.0;
 
-    signal is_run : boolean := true;
-
-
 begin
 
 ------------------------------------------------------------------------
@@ -68,38 +65,6 @@ begin
 
     stimulus : process(simulator_clock)
 ------------------------------------------------------------------------
-    function "+"
-    (
-        left, right : std_logic_vector 
-    )
-    return std_logic_vector 
-    is
-    begin
-        return std_logic_vector(signed(left) + signed(right));
-    end "+";
-------------------------------------------------------------------------
-    function "-"
-    (
-        left, right : std_logic_vector 
-    )
-    return std_logic_vector 
-    is
-    begin
-        return std_logic_vector(signed(left) - signed(right));
-    end "-";
-------------------------------------------------------------------------
-    function "*"
-    (
-        left, right : std_logic_vector 
-    )
-    return std_logic_vector 
-    is
-        
-    begin
-        return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
-    end "*";
-------------------------------------------------------------------------
-
         procedure request_low_pass_filter is
         begin
             self.program_counter <= dummy'length;
@@ -134,7 +99,7 @@ begin
 
             create_processor_w_ram(self, ram_contents'length);
 ------------------------------------------------------------------------
-            if simulation_counter mod 40 = 0 then
+            if simulation_counter mod 13 = 0 then
                 request_low_pass_filter;
             end if;
 

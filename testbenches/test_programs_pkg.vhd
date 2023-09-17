@@ -55,13 +55,14 @@ package body test_programs_pkg is
 
             write_instruction(mpy    , temp , temp , g)    ,
 
-            write_instruction(nop, 0,0, 0),
-            write_instruction(nop, 0,0, 0),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
 
             write_instruction(add    , y    , y    , temp) ,
 
-            write_instruction(nop, 0,0, 0),
-            write_instruction(nop, 0,0, 0),
+            write_instruction(nop),
+            write_instruction(nop),
 
             write_instruction(ready) ,
             write_instruction(program_end),

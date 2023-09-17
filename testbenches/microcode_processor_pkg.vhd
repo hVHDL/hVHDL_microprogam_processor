@@ -31,6 +31,7 @@ package microcode_processor_pkg is
 
         mpy_a                     : std_logic_vector(19 downto 0);
         mpy_b                     : std_logic_vector(19 downto 0);
+        mpy_raw_result            : signed(39 downto 0);
         mpy_result                : std_logic_vector(19 downto 0);
     end record;
 
@@ -181,8 +182,9 @@ package body microcode_processor_pkg is
         63                  ,
         0                   ,
         program_start_point,
-        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.1, 0.0), 19),
+        to_fixed((0.0, 0.10, 0.2, 0.3, 0.4, 0.5, 0.6, 0.0104166, 0.0), 19),
         (others => (others => '0')),
+        (others => '0'),
         (others => '0'),
         (others => '0'),
         (others => '0'),
@@ -239,8 +241,37 @@ package body microcode_processor_pkg is
         ramsize : in natural
     ) is
         variable ram_data : std_logic_vector(19 downto 0);
+        constant register_memory_start_address : integer := ramsize-self.registers'length;
+        constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
     begin
-        create_memory_control(self, ramsize);
+        if self.read_address > register_memory_start_address then
+            if self.read_address < ramsize then
+                self.read_address <= self.read_address + 1;
+                request_data_from_ram(self.ram_read_data_port, self.read_address);
+            end if;
+        end if;
+
+        if ram_read_is_ready(self.ram_read_data_port) then
+            self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
+            self.register_address <= self.register_address + 1;
+        end if;
+
+        if self.write_address =  register_memory_start_address then
+            self.read_address <= register_memory_start_address;
+            self.register_address <= 0;
+        end if;
+
+    --------------------------------------------------
+        -- save registers to ram
+        if decode(self.instruction_pipeline(2)) = ready then
+            self.write_address <= register_memory_start_address;
+        end if;
+
+        if self.write_address < ramsize then
+            self.write_address <= self.write_address + 1;
+            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
+            self.registers <= self.registers(0 to self.registers'length-2) & zero;
+        end if;
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
 
         ram_data := get_ram_data(self.ram_read_instruction_port);
@@ -266,7 +297,8 @@ package body microcode_processor_pkg is
 
         --stage 1
         self.add_result <= self.add_a + self.add_b;
-        self.mpy_result <= self.mpy_a * self.mpy_b;
+        self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
+        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
 
         --stage 2
         CASE decode(self.instruction_pipeline(2)) is
@@ -274,8 +306,13 @@ package body microcode_processor_pkg is
                 self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
             WHEN sub =>
                 self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
+            WHEN others => -- do nothing
+        end CASE;
+
+        --stage 3
+        CASE decode(self.instruction_pipeline(3)) is
             WHEN mpy =>
-                self.registers(get_dest(self.instruction_pipeline(2))) <= self.mpy_result;
+                self.registers(get_dest(self.instruction_pipeline(3))) <= self.mpy_result;
             WHEN others => -- do nothing
         end CASE;
     end create_processor_w_ram;
