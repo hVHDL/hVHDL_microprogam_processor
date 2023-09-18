@@ -272,3 +272,40 @@ package body ram_write_pkg is
     end get_write_address;
 ------------------------------------------------------------------------
 end package body ram_write_pkg;
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+package dual_port_ram_pkg is
+
+end package dual_port_ram_pkg;
+
+package body dual_port_ram_pkg is
+
+end package body dual_port_ram_pkg;
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+    use work.ram_read_pkg.all;
+
+entity dual_port_ram is
+    generic(init_program : ram_array);
+    port (
+        clk : in std_logic	
+    );
+end entity dual_port_ram;
+
+
+architecture rtl of dual_port_ram is
+
+
+begin
+
+
+end rtl;

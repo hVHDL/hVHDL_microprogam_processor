@@ -31,6 +31,19 @@ architecture vunit_simulation of branching_tb is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
+    function init_ram(program : program_array) return ram_array
+    is
+        variable retval : ram_array := (others => (others => '0'));
+    begin
+
+        for i in program'range loop
+            retval(i) := program(i);
+        end loop;
+
+        return retval;
+    end init_ram;
+
+    signal ram_contents : ram_array := init_ram(test_program);
     signal self : processor_with_ram_record := init_processor(test_program'high);
 
 begin
