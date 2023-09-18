@@ -302,7 +302,7 @@ package body microcode_processor_pkg is
         self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
 
         --stage 2
-        self.mpy_result     <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
+        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
         
         CASE decode(self.instruction_pipeline(2)) is
             WHEN add =>
@@ -318,6 +318,10 @@ package body microcode_processor_pkg is
                 self.registers(get_dest(self.instruction_pipeline(3))) <= self.mpy_result;
             WHEN others => -- do nothing
         end CASE;
+
+        --stage 4
+
+        --stage 5
     end create_processor_w_ram;
 ------------------------------------------------------------------------
 end package body microcode_processor_pkg;

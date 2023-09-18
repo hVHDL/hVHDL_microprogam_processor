@@ -65,12 +65,9 @@ package body test_programs_pkg is
             write_instruction(program_end)
         );
 
-        variable returned_code : program_array(0 to lpf'length-1);
     begin
 
-        returned_code := lpf;
-
-        return returned_code;
+        return lpf;
         
     end get_pipelined_low_pass_filter;
 ------------------------------------------------------------------------
