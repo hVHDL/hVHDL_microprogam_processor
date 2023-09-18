@@ -31,18 +31,6 @@ architecture vunit_simulation of branching_tb is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    function init_ram(program : program_array) return ram_array
-    is
-        variable retval : ram_array := (others => (others => '0'));
-    begin
-
-        for i in program'range loop
-            retval(i) := program(i);
-        end loop;
-
-        return retval;
-    end init_ram;
-
     signal ram_contents : ram_array := init_ram(test_program);
     signal self : processor_with_ram_record := init_processor(test_program'high);
 
@@ -92,36 +80,22 @@ begin
             end if;
             --------------------
 
-            if self.read_address > register_memory_start_address then
-                if self.read_address < ramsize then
-                    self.read_address <= self.read_address + 1;
-                    request_data_from_ram(self.ram_read_data_port, self.read_address);
-                end if;
-            end if;
-
-            if ram_read_is_ready(self.ram_read_data_port) then
-                self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
-                self.register_address <= self.register_address + 1;
-            end if;
-
-            if self.write_address =  register_memory_start_address then
-                self.read_address <= register_memory_start_address;
-                self.register_address <= 0;
-            end if;
-
-        --------------------------------------------------
             -- save registers to ram
-            if decode(self.instruction_pipeline(2)) = ready then
-                self.write_address <= register_memory_start_address;
-            end if;
-
-            if self.write_address < ramsize then
-                self.write_address <= self.write_address + 1;
+            if self.register_write_counter > 0 then
+                self.register_write_counter <= self.register_write_counter - 1;
+                self.write_address          <= self.write_address + 1;
+                self.registers              <= self.registers(1 to self.registers'length-1) & zero;
                 write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-                self.registers <= self.registers(0 to self.registers'length-2) & zero;
             end if;
+        --------------------------------------------------
 
 
+            CASE simulation_counter is
+                WHEN 10 => 
+                    self.register_write_counter <= self.registers'length;
+                    self.write_address <= 63-self.registers'length;
+                WHEN others => --do nothing
+            end CASE;
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------

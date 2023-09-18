@@ -20,7 +20,7 @@ package microcode_processor_pkg is
         ram_write_port2           : ram_write_port_record   ;
         write_address             : natural range 0 to 1023 ;
         read_address              : natural range 0 to 1023 ;
-        register_address          : natural range 0 to 1023 ;
+        register_write_counter          : natural range 0 to 1023 ;
         program_counter           : natural range 0 to 1023 ;
         registers                 : reg_array               ;
         instruction_pipeline      : instruction_array;
@@ -52,9 +52,23 @@ package microcode_processor_pkg is
         signal instruction_pipeline : inout instruction_array;
         signal reg                  : inout reg_array);
 
+    function init_ram(program : program_array) return ram_array;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
+------------------------------------------------------------------------
+    function init_ram(program : program_array) return ram_array
+    is
+        variable retval : ram_array := (others => (others => '0'));
+    begin
+
+        for i in program'range loop
+            retval(i) := program(i);
+        end loop;
+
+        return retval;
+    end init_ram;
 ------------------------------------------------------------------------
     function "+"
     (
@@ -213,12 +227,10 @@ package body microcode_processor_pkg is
 
         if ram_read_is_ready(self.ram_read_data_port) then
             self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
-            self.register_address <= self.register_address + 1;
         end if;
 
         if self.write_address =  register_memory_start_address then
             self.read_address <= register_memory_start_address;
-            self.register_address <= 0;
         end if;
 
     --------------------------------------------------
@@ -253,12 +265,10 @@ package body microcode_processor_pkg is
 
         if ram_read_is_ready(self.ram_read_data_port) then
             self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
-            self.register_address <= self.register_address + 1;
         end if;
 
         if self.write_address =  register_memory_start_address then
             self.read_address <= register_memory_start_address;
-            self.register_address <= 0;
         end if;
 
     --------------------------------------------------
