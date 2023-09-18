@@ -66,6 +66,30 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
+            create_ram_read_port(self.ram_read_instruction_port);
+            create_ram_read_port(self.ram_read_data_port);
+            create_ram_write_port(self.ram_write_port);
+            create_ram_write_port(self.ram_write_port2);
+            --------------------
+            if read_is_requested(self.ram_read_instruction_port) then
+                self.ram_read_instruction_port.data <= ram_contents(get_ram_address(self.ram_read_instruction_port));
+            end if;
+            --------------------
+            if read_is_requested(self.ram_read_data_port) then
+                self.ram_read_data_port.data <= ram_contents(get_ram_address(self.ram_read_data_port));
+            end if;
+            --------------------
+            if write_is_requested(self.ram_write_port) then
+                ram_contents(get_write_address(self.ram_write_port)) <= self.ram_write_port.write_buffer;
+            end if;
+            --------------------
+            if write_is_requested(self.ram_write_port2) then
+                ram_contents(get_write_address(self.ram_write_port2)) <= self.ram_write_port2.write_buffer;
+            end if;
+            --------------------
+
+            create_processor_w_ram(self, ram_contents'length);
+
 
         end if; -- rising_edge
     end process stimulus;	
