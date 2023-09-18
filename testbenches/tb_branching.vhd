@@ -61,6 +61,10 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
+        constant ramsize : natural := ram_contents'length;
+        variable ram_data : std_logic_vector(19 downto 0);
+        constant register_memory_start_address : integer := ramsize-self.registers'length;
+        constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
 
     begin
         if rising_edge(simulator_clock) then
@@ -88,7 +92,34 @@ begin
             end if;
             --------------------
 
-            create_processor_w_ram(self, ram_contents'length);
+            if self.read_address > register_memory_start_address then
+                if self.read_address < ramsize then
+                    self.read_address <= self.read_address + 1;
+                    request_data_from_ram(self.ram_read_data_port, self.read_address);
+                end if;
+            end if;
+
+            if ram_read_is_ready(self.ram_read_data_port) then
+                self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
+                self.register_address <= self.register_address + 1;
+            end if;
+
+            if self.write_address =  register_memory_start_address then
+                self.read_address <= register_memory_start_address;
+                self.register_address <= 0;
+            end if;
+
+        --------------------------------------------------
+            -- save registers to ram
+            if decode(self.instruction_pipeline(2)) = ready then
+                self.write_address <= register_memory_start_address;
+            end if;
+
+            if self.write_address < ramsize then
+                self.write_address <= self.write_address + 1;
+                write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
+                self.registers <= self.registers(0 to self.registers'length-2) & zero;
+            end if;
 
 
         end if; -- rising_edge
