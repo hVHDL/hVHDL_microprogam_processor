@@ -99,7 +99,7 @@ begin
 
             create_processor_w_ram(self, ram_contents'length);
 ------------------------------------------------------------------------
-            if simulation_counter mod 17 = 0 then
+            if simulation_counter mod 30 = 0 then
                 request_low_pass_filter;
                 self.registers(1) <= to_fixed(0.44252,self.registers(0)'length, self.registers(0)'length-1);
             end if;

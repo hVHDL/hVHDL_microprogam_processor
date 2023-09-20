@@ -20,7 +20,8 @@ package microcode_processor_pkg is
         ram_write_port2           : ram_write_port_record   ;
         write_address             : natural range 0 to 1023 ;
         read_address              : natural range 0 to 1023 ;
-        register_write_counter          : natural range 0 to 1023 ;
+        register_write_counter    : natural range 0 to 1023 ;
+        register_read_counter     : natural range 0 to 1023 ;
         program_counter           : natural range 0 to 1023 ;
         registers                 : reg_array               ;
         instruction_pipeline      : instruction_array;
@@ -195,6 +196,7 @@ package body microcode_processor_pkg is
         63                  ,
         63                  ,
         0                   ,
+        0                   ,
         program_start_point,
         to_fixed((0.0, 0.00, 0.2, 0.3, 0.4, 0.5, 0.6, 0.0104166, 0.0), 19),
         (others => (others => '0')),
@@ -264,7 +266,7 @@ package body microcode_processor_pkg is
         end if;
 
         if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
+            self.registers <= self.registers(1 to self.registers'length-1) & get_ram_data(self.ram_read_data_port);
         end if;
 
         if self.write_address =  register_memory_start_address then
@@ -280,7 +282,7 @@ package body microcode_processor_pkg is
         if self.write_address < ramsize then
             self.write_address <= self.write_address + 1;
             write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-            self.registers <= self.registers(0 to self.registers'length-2) & zero;
+            self.registers <= self.registers(1 to self.registers'length-1) & zero;
         end if;
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
