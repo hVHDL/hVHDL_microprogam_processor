@@ -55,6 +55,15 @@ package microcode_processor_pkg is
 
     function init_ram(program : program_array) return ram_array;
 
+    procedure save_old_and_load_new_registers (
+        signal self : inout processor_with_ram_record;
+        read_offset : in natural;
+        write_offset : in natural);
+
+    procedure load_registers (
+        signal self : inout processor_with_ram_record;
+        read_offset : in natural);
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -145,6 +154,32 @@ package body microcode_processor_pkg is
         return retval;
         
     end testi;
+------------------------------------------------------------------------
+        procedure load_registers
+        (
+            signal self : inout processor_with_ram_record;
+            read_offset : in natural
+        ) is
+        begin
+            self.register_read_counter  <= self.registers'length;
+            self.read_address           <= read_offset-self.registers'high;
+            self.register_write_counter <= 0;
+        end load_registers;
+    ------------------------------------------------------------------------
+        procedure save_old_and_load_new_registers
+        (
+            signal self : inout processor_with_ram_record;
+            read_offset : in natural;
+            write_offset : in natural
+        )
+        is
+
+        begin
+            load_registers(self, read_offset);
+            self.register_write_counter <= self.registers'length;
+            self.write_address          <= write_offset-self.registers'high;
+        end save_old_and_load_new_registers;
+    ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     procedure create_processor
     (
@@ -258,32 +293,27 @@ package body microcode_processor_pkg is
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
     begin
-        if self.read_address > register_memory_start_address then
-            if self.read_address < ramsize then
-                self.read_address <= self.read_address + 1;
-                request_data_from_ram(self.ram_read_data_port, self.read_address);
-            end if;
-        end if;
-
-        if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers <= self.registers(1 to self.registers'length-1) & get_ram_data(self.ram_read_data_port);
-        end if;
-
-        if self.write_address =  register_memory_start_address then
-            self.read_address <= register_memory_start_address;
-        end if;
-
     --------------------------------------------------
         -- save registers to ram
         if decode(self.instruction_pipeline(2)) = ready then
-            self.write_address <= register_memory_start_address;
+            save_old_and_load_new_registers(self, register_memory_start_address, register_memory_start_address);
         end if;
 
-        if self.write_address < ramsize then
-            self.write_address <= self.write_address + 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-            self.registers <= self.registers(1 to self.registers'length-1) & zero;
+        if self.register_read_counter > 0 then
+            self.register_read_counter <= self.register_read_counter - 1;
+            self.read_address          <= self.read_address + 1;
+            request_data_from_ram(self.ram_read_data_port, self.read_address);
         end if;
+
+        if ram_read_is_ready(self.ram_read_data_port) then
+            self.registers     <= self.registers(1 to self.registers'high) & get_ram_data(self.ram_read_data_port);
+            if self.register_write_counter > 0 then
+                self.write_address <= self.write_address + 1;
+                self.register_write_counter <= self.register_write_counter - 1;
+                write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
+            end if;
+        end if;
+    --------------------------------------------------
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);

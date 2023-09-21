@@ -73,31 +73,6 @@ begin
         constant offset1 : integer := 63;
     ------------------------------------------------------------------------
 
-        procedure load_registers
-        (
-            processor : processor_with_ram_record;
-            read_offset : in natural
-        ) is
-        begin
-            self.register_read_counter  <= self.registers'length;
-            self.read_address           <= read_offset-self.registers'high;
-            self.register_write_counter <= 0;
-        end load_registers;
-    ------------------------------------------------------------------------
-        procedure save_old_and_load_new_registers
-        (
-            signal processor : inout processor_with_ram_record;
-            read_offset : in natural;
-            write_offset : in natural
-        )
-        is
-
-        begin
-            load_registers(processor, read_offset);
-            processor.register_write_counter <= processor.registers'length;
-            processor.write_address          <= write_offset-self.registers'high;
-        end save_old_and_load_new_registers;
-    ------------------------------------------------------------------------
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -142,7 +117,6 @@ begin
         --------------------------------------------------
             CASE simulation_counter is
                 WHEN 10 => load_registers(self, 35);
-                -- WHEN 20 => load_registers(self, 35);
                 WHEN 30 => save_old_and_load_new_registers(self, 63, 63);
                 WHEN 45 => save_old_and_load_new_registers(self, 63, 63);
                 WHEN 60 => save_old_and_load_new_registers(self, 63, 63);
