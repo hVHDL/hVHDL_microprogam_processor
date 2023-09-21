@@ -42,11 +42,6 @@ package microcode_processor_pkg is
         signal self : inout processor_with_ram_record;
         ramsize : in natural);
 
-    procedure create_processor (
-        signal pgm_counter : inout natural;
-        instruction : in std_logic_vector;
-        signal reg  : inout reg_array);
-
     procedure create_pipelined_processor (
         signal pgm_counter          : inout natural;
         ram_data                    : in t_instruction;
@@ -63,6 +58,10 @@ package microcode_processor_pkg is
     procedure load_registers (
         signal self : inout processor_with_ram_record;
         read_offset : in natural);
+
+    procedure save_registers (
+        signal self : inout processor_with_ram_record;
+        write_offset : in natural);
 
 end package microcode_processor_pkg;
 
@@ -122,81 +121,40 @@ package body microcode_processor_pkg is
         return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
     end "*";
 ------------------------------------------------------------------------
-    function testi
+    procedure load_registers
     (
-        instruction : std_logic_vector;
-        reg : reg_array 
-    )
-    return reg_array
-    is
-        variable retval : reg_array := reg;
-
+        signal self : inout processor_with_ram_record;
+        read_offset : in natural
+    ) is
     begin
-
-        CASE decode(instruction) is
-            when add =>
-                retval(get_dest(instruction)) := reg(get_arg1(instruction)) + reg(get_arg2(instruction));
-            when sub =>
-                retval(get_dest(instruction)) := reg(get_arg1(instruction)) - reg(get_arg2(instruction));
-            when mpy =>
-                retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction));
-            when mpy_add =>
-                retval(get_dest(instruction)) := reg(get_arg1(instruction)) * reg(get_arg2(instruction)) + reg(get_arg3(instruction));
-            when div         =>
-            when jump        =>
-            when ret         =>
-            when program_end =>
-            when ready       => --do nothing
-            when nop         => --do nothing
-            when others      => --do nothing
-        end CASE;
-
-        return retval;
-        
-    end testi;
+        self.register_read_counter  <= self.registers'length;
+        self.read_address           <= read_offset-self.registers'high;
+    end load_registers;
 ------------------------------------------------------------------------
-        procedure load_registers
-        (
-            signal self : inout processor_with_ram_record;
-            read_offset : in natural
-        ) is
-        begin
-            self.register_read_counter  <= self.registers'length;
-            self.read_address           <= read_offset-self.registers'high;
-            self.register_write_counter <= 0;
-        end load_registers;
-    ------------------------------------------------------------------------
-        procedure save_old_and_load_new_registers
-        (
-            signal self : inout processor_with_ram_record;
-            read_offset : in natural;
-            write_offset : in natural
-        )
-        is
-
-        begin
-            load_registers(self, read_offset);
-            self.register_write_counter <= self.registers'length;
-            self.write_address          <= write_offset-self.registers'high;
-        end save_old_and_load_new_registers;
-    ------------------------------------------------------------------------
-------------------------------------------------------------------------
-    procedure create_processor
+    procedure save_registers
     (
-        signal pgm_counter : inout natural;
-        instruction        : in std_logic_vector;
-        signal reg         : inout reg_array
+        signal self : inout processor_with_ram_record;
+        write_offset : in natural
+    ) is
+    begin
+        self.register_write_counter <= self.registers'length;
+        self.write_address          <= write_offset-self.registers'high;
+        
+    end save_registers;
+------------------------------------------------------------------------
+    procedure save_old_and_load_new_registers
+    (
+        signal self : inout processor_with_ram_record;
+        read_offset : in natural;
+        write_offset : in natural
     )
     is
+
     begin
-
-        if decode(instruction) /= program_end then
-            pgm_counter <= pgm_counter + 1;
-        end if;
-
-        reg <= testi(instruction, reg);
-        
-    end create_processor;
+        load_registers(self, read_offset);
+        save_registers(self, write_offset);
+    end save_old_and_load_new_registers;
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     procedure create_pipelined_processor
     (
@@ -307,11 +265,12 @@ package body microcode_processor_pkg is
 
         if ram_read_is_ready(self.ram_read_data_port) then
             self.registers     <= self.registers(1 to self.registers'high) & get_ram_data(self.ram_read_data_port);
-            if self.register_write_counter > 0 then
-                self.write_address <= self.write_address + 1;
-                self.register_write_counter <= self.register_write_counter - 1;
-                write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-            end if;
+        end if;
+
+        if self.register_write_counter > 0 then
+            self.write_address <= self.write_address + 1;
+            self.register_write_counter <= self.register_write_counter - 1;
+            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
         end if;
     --------------------------------------------------
     ------------------------------------------------------------------------
