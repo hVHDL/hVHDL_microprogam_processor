@@ -37,6 +37,9 @@ package ram_read_pkg is
 ------------------------------------------------------------------------
     function ram_read_is_ready ( self : ram_read_port_record)
         return boolean;
+
+    function last_read_ready ( self : ram_read_port_record)
+        return boolean;
 ------------------------------------------------------------------------
     function get_ram_data ( ram_read_object : ram_read_port_record)
         return std_logic_vector;
@@ -126,6 +129,16 @@ package body ram_read_pkg is
     begin
         return self.read_address;
     end get_ram_address;
+------------------------------------------------------------------------
+    function last_read_ready
+    (
+        self : ram_read_port_record
+    )
+    return boolean
+    is
+    begin
+        return self.ready_pipeline(self.ready_pipeline'left downto self.ready_pipeline'left-1) = "10";
+    end last_read_ready;
 ------------------------------------------------------------------------
 end package body ram_read_pkg;
 ------------------------------------------------------------------------
