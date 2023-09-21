@@ -111,8 +111,8 @@ begin
                 WHEN 23 => save_registers(self, 63);
                            load_registers(self, 63);
                 WHEN 45 => save_old_and_load_new_registers(self, 63, 63);
-                -- WHEN 60 => save_old_and_load_new_registers(self, 63, 63);
-                -- WHEN 75 => save_old_and_load_new_registers(self, 63, 63);
+                WHEN 60 => load_registers(self, 15);
+                WHEN 75 => save_old_and_load_new_registers(self, 15, 15);
                 WHEN others => --do nothing
             end CASE;
         --------------------------------------------------
