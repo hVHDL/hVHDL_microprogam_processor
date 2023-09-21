@@ -6,7 +6,7 @@ library ieee;
 
 package microinstruction_pkg is
 
-    type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end);
+    type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end, load_external, load_registers, save_registers);
     type counter_array is array (integer range 0 to 1) of natural;
 
     constant number_of_registers : natural := 9;
@@ -85,7 +85,7 @@ package body microinstruction_pkg is
     )
     return std_logic_vector
     is
-        variable instruction : t_instruction;
+        variable instruction : t_instruction := (others=>'0');
     begin
 
         instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
@@ -107,7 +107,7 @@ package body microinstruction_pkg is
     )
     return std_logic_vector
     is
-        variable instruction : t_instruction;
+        variable instruction : t_instruction := (others=>'0');
     begin
 
         instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
@@ -126,7 +126,7 @@ package body microinstruction_pkg is
     )
     return std_logic_vector
     is
-        variable instruction : t_instruction;
+        variable instruction : t_instruction := (others=>'0');
     begin
 
         return write_instruction(command, 3,0,1);
