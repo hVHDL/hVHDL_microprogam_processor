@@ -90,6 +90,8 @@ package body test_programs_pkg is
             write_instruction(mpy_add , x1 , a1 , y   , x1) ,
             write_instruction(mpy_add , x2 , a2 , y   , x2) ,
             write_instruction(ready)  ,
+            write_instruction(program_end),
+            write_instruction(program_end),
             write_instruction(program_end)
         );
         variable returned_code : program_array(0 to sos_program'length-1);

@@ -44,7 +44,9 @@ architecture vunit_simulation of branching_tb is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    signal ram_contents : ram_array := init_ram;
+    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram, (others => (others => '1')), 35);
+
+    signal ram_contents : ram_array := ram_with_registers;
     signal self : processor_with_ram_record := init_processor(test_program'high);
 
 begin
@@ -55,7 +57,7 @@ begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
         -- if run("registers were same after swapping") then
-            check(ram_contents = init_ram);
+            check(ram_contents = ram_with_registers);
         -- end if;
         test_runner_cleanup(runner); -- Simulation ends here
         wait;

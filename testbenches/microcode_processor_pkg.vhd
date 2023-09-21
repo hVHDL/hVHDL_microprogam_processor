@@ -58,6 +58,12 @@ package microcode_processor_pkg is
         signal self : inout processor_with_ram_record;
         write_offset : in natural);
 
+    function write_register_values_to_ram (
+        ram_to_be_intialized : ram_array;
+        register_init_values : reg_array;
+        end_address : natural)
+    return ram_array;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -73,6 +79,25 @@ package body microcode_processor_pkg is
 
         return retval;
     end init_ram;
+------------------------------------------------------------------------
+    function write_register_values_to_ram
+    (
+        ram_to_be_intialized : ram_array;
+        register_init_values : reg_array;
+        end_address : natural
+    )
+    return ram_array
+    is
+        variable retval : ram_array := ram_to_be_intialized;
+    begin
+
+        for i in end_address-reg_array'high to end_address loop
+            retval(i) := register_init_values(i-(end_address-reg_array'high));
+        end loop;
+
+        return retval;
+        
+    end write_register_values_to_ram;
 ------------------------------------------------------------------------
     function "+"
     (
