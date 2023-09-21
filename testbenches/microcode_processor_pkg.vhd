@@ -254,7 +254,7 @@ package body microcode_processor_pkg is
     --------------------------------------------------
         -- save registers to ram
         if decode(self.instruction_pipeline(2)) = ready then
-            save_old_and_load_new_registers(self, register_memory_start_address, register_memory_start_address);
+            save_registers(self, register_memory_start_address);
         end if;
 
         if self.register_read_counter > 0 then
@@ -272,7 +272,6 @@ package body microcode_processor_pkg is
             self.register_write_counter <= self.register_write_counter - 1;
             write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
         end if;
-    --------------------------------------------------
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
         request_data_from_ram(self.ram_read_instruction_port, self.program_counter);
