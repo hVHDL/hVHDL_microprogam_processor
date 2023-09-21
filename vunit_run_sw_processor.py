@@ -38,6 +38,7 @@ testi.add_source_files(ROOT / "testbenches/" "test_programs_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/ram_read_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/processor_w_ram_v2_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_pipelined_operations.vhd")
+testi.add_source_files(ROOT / "testbenches/tb_swap_registers.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_branching.vhd")
 
 VU.main()

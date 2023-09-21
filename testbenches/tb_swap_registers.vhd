@@ -14,11 +14,11 @@ context vunit_lib.vunit_context;
     use work.microcode_processor_pkg.all;
     use work.multiplier_pkg.radix_multiply;
 
-entity branching_tb is
+entity tb_swap_registers is
   generic (runner_cfg : string);
 end;
 
-architecture vunit_simulation of branching_tb is
+architecture vunit_simulation of tb_swap_registers is
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 100;
@@ -28,11 +28,23 @@ architecture vunit_simulation of branching_tb is
     -----------------------------------
     -- simulation specific signals ----
 
+    function init_ram return ram_array
+    is
+        variable retval : ram_array;
+    begin
+
+        for i in ram_array'range loop
+            retval(i) := std_logic_vector(to_signed(i,retval(0)'length));
+        end loop;
+
+        return retval;
+    end init_ram;
+
     constant dummy           : program_array := get_dummy;
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram(test_program), (others => (others => '1')), 35);
+    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram, (others => (others => '1')), 35);
 
     signal ram_contents : ram_array := ram_with_registers;
     signal self : processor_with_ram_record := init_processor(test_program'high);
