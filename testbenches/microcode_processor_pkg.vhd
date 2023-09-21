@@ -18,10 +18,11 @@ package microcode_processor_pkg is
         ram_read_data_port        : ram_read_port_record    ;
         ram_write_port            : ram_write_port_record   ;
         ram_write_port2           : ram_write_port_record   ;
-        write_address             : natural range 0 to 1023 ;
         read_address              : natural range 0 to 1023 ;
+        write_address             : natural range 0 to 1023 ;
         register_write_counter    : natural range 0 to 1023 ;
         register_read_counter     : natural range 0 to 1023 ;
+        register_load_counter     : natural range 0 to 1023 ;
         program_counter           : natural range 0 to 1023 ;
         registers                 : reg_array               ;
         instruction_pipeline      : instruction_array;
@@ -41,12 +42,6 @@ package microcode_processor_pkg is
     procedure create_processor_w_ram (
         signal self : inout processor_with_ram_record;
         ramsize : in natural);
-
-    procedure create_pipelined_processor (
-        signal pgm_counter          : inout natural;
-        ram_data                    : in t_instruction;
-        signal instruction_pipeline : inout instruction_array;
-        signal reg                  : inout reg_array);
 
     function init_ram(program : program_array) return ram_array;
 
@@ -127,7 +122,8 @@ package body microcode_processor_pkg is
         read_offset : in natural
     ) is
     begin
-        self.register_read_counter  <= self.registers'length;
+        self.register_read_counter <= 0;
+        self.register_load_counter <= 0;
         self.read_address           <= read_offset-self.registers'high;
     end load_registers;
 ------------------------------------------------------------------------
@@ -137,7 +133,7 @@ package body microcode_processor_pkg is
         write_offset : in natural
     ) is
     begin
-        self.register_write_counter <= self.registers'length;
+        self.register_write_counter <= 0;
         self.write_address          <= write_offset-self.registers'high;
         
     end save_registers;
@@ -156,23 +152,6 @@ package body microcode_processor_pkg is
     end save_old_and_load_new_registers;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-    procedure create_pipelined_processor
-    (
-        signal pgm_counter          : inout natural;
-        ram_data                    : in t_instruction;
-        signal instruction_pipeline : inout instruction_array;
-        signal reg                  : inout reg_array
-    )
-    is
-    begin
-        instruction_pipeline <= ram_data & instruction_pipeline(1 to instruction_pipeline'high);
-        if decode(ram_data) /= program_end then
-            pgm_counter          <= pgm_counter + 1;
-        end if;
-
-        
-    end create_pipelined_processor;
-------------------------------------------------------------------------
     function init_processor 
     ( 
         program_start_point : natural
@@ -182,65 +161,30 @@ package body microcode_processor_pkg is
         variable retval : processor_with_ram_record;
     begin
         retval := (
-        init_ram_read_port  ,
-        init_ram_read_port  ,
-        init_ram_write_port ,
-        init_ram_write_port ,
-        63                  ,
-        63                  ,
-        0                   ,
-        0                   ,
-        program_start_point,
-        to_fixed((0.0, 0.00, 0.2, 0.3, 0.4, 0.5, 0.6, 0.0104166, 0.0), 19),
-        (others => (others => '0')),
-        (others => '0'),
-        (others => '0'),
-        (others => '0'),
-        (others => '0'),
-        (others => '0'),
-        (others => '0'),
-        (others => '0')
+            ram_read_instruction_port => init_ram_read_port          ,
+            ram_read_data_port        => init_ram_read_port          ,
+            ram_write_port            => init_ram_write_port         ,
+            ram_write_port2           => init_ram_write_port         ,
+            read_address              => 35                          ,
+            write_address             => 35                          ,
+            register_write_counter    => reg_array'length            ,
+            register_read_counter     => reg_array'length            ,
+            register_load_counter     => reg_array'length            ,
+            program_counter           => program_start_point         ,
+            registers                 => to_fixed((0.0               , 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) ,
+            instruction_pipeline      => (others => (others => '0')) ,
+            -- math unit                
+            add_a                     => (others => '0'),
+            add_b                     => (others => '0'),
+            add_result                => (others => '0'),
+
+            mpy_a                     => (others => '0'),
+            mpy_b                     => (others => '0'),
+            mpy_raw_result            => (others => '0')  ,
+            mpy_result                => (others => '0')
         );
-        
         return retval;
     end init_processor;
-------------------------------------------------------------------------
-    procedure create_memory_control
-    (
-        signal self : inout processor_with_ram_record;
-        ramsize : in natural
-    ) is
-        constant register_memory_start_address : integer := ramsize-self.registers'length;
-        constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
-    begin
-        if self.read_address > register_memory_start_address then
-            if self.read_address < ramsize then
-                self.read_address <= self.read_address + 1;
-                request_data_from_ram(self.ram_read_data_port, self.read_address);
-            end if;
-        end if;
-
-        if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers <= self.registers(0 to self.registers'length-2) & get_ram_data(self.ram_read_data_port);
-        end if;
-
-        if self.write_address =  register_memory_start_address then
-            self.read_address <= register_memory_start_address;
-        end if;
-
-    --------------------------------------------------
-        -- save registers to ram
-        if decode(self.instruction_pipeline(2)) = ready then
-            self.write_address <= register_memory_start_address;
-        end if;
-
-        if self.write_address < ramsize then
-            self.write_address <= self.write_address + 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-            self.registers <= self.registers(0 to self.registers'length-2) & zero;
-        end if;
-        
-    end create_memory_control;
 ------------------------------------------------------------------------
     procedure create_processor_w_ram
     (
@@ -257,20 +201,21 @@ package body microcode_processor_pkg is
             save_registers(self, register_memory_start_address);
         end if;
 
-        if self.register_read_counter > 0 then
-            self.register_read_counter <= self.register_read_counter - 1;
+        if self.register_read_counter < self.registers'length then
+            self.register_read_counter <= self.register_read_counter + 1;
             self.read_address          <= self.read_address + 1;
             request_data_from_ram(self.ram_read_data_port, self.read_address);
         end if;
 
         if ram_read_is_ready(self.ram_read_data_port) then
-            self.registers     <= self.registers(1 to self.registers'high) & get_ram_data(self.ram_read_data_port);
+            self.register_load_counter <= self.register_load_counter + 1;
+            self.registers(self.register_load_counter) <= get_ram_data(self.ram_read_data_port);
         end if;
 
-        if self.register_write_counter > 0 then
+        if self.register_write_counter < self.registers'length then
             self.write_address <= self.write_address + 1;
-            self.register_write_counter <= self.register_write_counter - 1;
-            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
+            self.register_write_counter <= self.register_write_counter + 1;
+            write_data_to_ram(self.ram_write_port, self.write_address, self.registers(self.register_write_counter));
         end if;
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------

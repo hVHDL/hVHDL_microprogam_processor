@@ -100,27 +100,17 @@ begin
             --------------------
 
         --------------------------------------------------
-            if self.register_read_counter > 0 then
-                self.register_read_counter <= self.register_read_counter - 1;
-                self.read_address          <= self.read_address + 1;
-                request_data_from_ram(self.ram_read_data_port, self.read_address);
-            end if;
+            create_processor_w_ram(self, ram_contents'length);
+            self.program_counter <= 0;
 
-            if ram_read_is_ready(self.ram_read_data_port) then
-                self.registers     <= self.registers(1 to self.registers'high) & get_ram_data(self.ram_read_data_port);
-                if self.register_write_counter > 0 then
-                    self.write_address <= self.write_address + 1;
-                    self.register_write_counter <= self.register_write_counter - 1;
-                    write_data_to_ram(self.ram_write_port, self.write_address, self.registers(0));
-                end if;
-            end if;
         --------------------------------------------------
             CASE simulation_counter is
                 WHEN 10 => load_registers(self, 35);
-                WHEN 30 => save_old_and_load_new_registers(self, 63, 63);
+                WHEN 23 => save_registers(self, 63);
+                           load_registers(self, 63);
                 WHEN 45 => save_old_and_load_new_registers(self, 63, 63);
-                WHEN 60 => save_old_and_load_new_registers(self, 63, 63);
-                WHEN 75 => save_old_and_load_new_registers(self, 63, 63);
+                -- WHEN 60 => save_old_and_load_new_registers(self, 63, 63);
+                -- WHEN 75 => save_old_and_load_new_registers(self, 63, 63);
                 WHEN others => --do nothing
             end CASE;
         --------------------------------------------------
