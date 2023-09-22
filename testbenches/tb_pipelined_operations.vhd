@@ -108,9 +108,9 @@ begin
 ------------------------------------------------------------------------
             test_counter <= test_counter + 1;
             CASE test_counter is
-                WHEN 0 => load_registers(self, 63-reg_array'length*2);
+                WHEN 0 => load_registers(self, 63-reg_array'length*0);
                 WHEN 15 => request_low_pass_filter;
-                WHEN 45 => save_registers(self, 63-reg_array'length*2);
+                WHEN 45 => save_registers(self, 63-reg_array'length*0);
                 WHEN 60 => load_registers(self, 15);
                 WHEN 75 => test_counter <= 0;
                 WHEN others => --do nothing
