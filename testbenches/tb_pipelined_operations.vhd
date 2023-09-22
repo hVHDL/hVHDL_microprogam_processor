@@ -21,7 +21,7 @@ end;
 architecture vunit_simulation of tb_pipelined_operations is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 15500;
+    constant simtime_in_clocks : integer := 30e3;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -45,10 +45,17 @@ architecture vunit_simulation of tb_pipelined_operations is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    signal ram_contents : ram_array := init_ram(test_program);
+    signal ram_contents : ram_array := 
+        write_register_values_to_ram(
+        write_register_values_to_ram(
+        write_register_values_to_ram(
+            init_ram(test_program), 
+            to_fixed((0.0, 0.44252 , 0.1 , 0.1 , 0.1 , 0.1 , 0.1 , 0.0104166 , 0.1) , 19),63-reg_array'length*0),
+            to_fixed((0.0, 0.44252 , 0.2 , 0.2 , 0.2 , 0.2 , 0.2 , 0.0804166 , 0.2) , 19),63-reg_array'length*1),
+            to_fixed((0.0, 0.44252 , 0.3 , 0.3 , 0.3 , 0.3 , 0.3 , 0.1804166 , 0.3) , 19),63-reg_array'length*2);
     signal self         : processor_with_ram_record := init_processor(test_program'high);
     signal result       : real := 0.0;
-
+    signal test_counter : natural := 0;
 begin
 
 ------------------------------------------------------------------------
@@ -99,10 +106,15 @@ begin
 
             create_processor_w_ram(self, ram_contents'length);
 ------------------------------------------------------------------------
-            if simulation_counter mod 30 = 0 then
-                request_low_pass_filter;
-                self.registers(1) <= to_fixed(0.44252,self.registers(0)'length, self.registers(0)'length-1);
-            end if;
+            test_counter <= test_counter + 1;
+            CASE test_counter is
+                WHEN 0 => load_registers(self, 63-reg_array'length);
+                WHEN 15 => request_low_pass_filter;
+                WHEN 45 => save_registers(self, 63-reg_array'length);
+                WHEN 60 => load_registers(self, 15);
+                WHEN 75 => test_counter <= 0;
+                WHEN others => --do nothing
+            end CASE;
 
             if decode(self.instruction_pipeline(1)) = ready then
                 result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);

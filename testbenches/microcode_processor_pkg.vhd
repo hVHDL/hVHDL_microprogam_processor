@@ -7,7 +7,6 @@ LIBRARY ieee  ;
     use work.test_programs_pkg.all;
     use work.ram_read_pkg.all;
     use work.ram_write_pkg.all;
-    use work.real_to_fixed_pkg.all;
     use work.multiplier_pkg.radix_multiply;
 
 package microcode_processor_pkg is
@@ -196,7 +195,7 @@ package body microcode_processor_pkg is
             register_read_counter     => reg_array'length            ,
             register_load_counter     => reg_array'length            ,
             program_counter           => program_start_point         ,
-            registers                 => to_fixed((0.0               , 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) ,
+            registers                 => to_fixed((0.0, 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) ,
             instruction_pipeline      => (others => (others => '0')) ,
             -- math unit                
             add_a                     => (others => '0'),

@@ -30,7 +30,7 @@ architecture vunit_simulation of processor_w_ram_v2_tb is
     ------------------------------------------------------------------------
     constant dummy           : program_array := get_dummy;
     constant low_pass_filter : program_array := get_low_pass_filter;
-    constant test_program    : program_array := get_dummy & get_low_pass_filter;
+    constant test_program    : program_array := get_dummy & get_low_pass_filter & get_dummy;
 
     signal ram_contents : ram_array := init_ram(test_program);
     signal self         : processor_with_ram_record := init_processor(test_program'high);

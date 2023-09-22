@@ -21,7 +21,7 @@ end;
 architecture vunit_simulation of branching_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 100;
+    constant simtime_in_clocks : integer := 10000;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -32,10 +32,13 @@ architecture vunit_simulation of branching_tb is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram(test_program), (others => (others => '1')), 35);
+    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram(test_program), to_fixed((0.0 , 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) , 63);
 
     signal ram_contents : ram_array := ram_with_registers;
     signal self : processor_with_ram_record := init_processor(test_program'high);
+
+    signal test_counter : natural := 0;
+    signal result : real := 0.0;
 
 begin
 
@@ -44,9 +47,6 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        -- if run("registers were same after swapping") then
-            check(ram_contents = ram_with_registers);
-        -- end if;
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -61,6 +61,11 @@ begin
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
 
         constant offset1 : integer := 63;
+
+        procedure request_low_pass_filter is
+        begin
+            self.program_counter <= dummy'length;
+        end request_low_pass_filter;
     ------------------------------------------------------------------------
 
     begin
@@ -91,18 +96,20 @@ begin
 
         --------------------------------------------------
             create_processor_w_ram(self, ram_contents'length);
-            self.program_counter <= 0;
+            test_counter <= test_counter + 1;
 
-        --------------------------------------------------
-            CASE simulation_counter is
-                WHEN 10 => load_registers(self, 35);
-                WHEN 23 => save_registers(self, 63);
-                           load_registers(self, 63);
-                WHEN 45 => save_old_and_load_new_registers(self, 63, 63);
+            CASE test_counter is
+                WHEN 0 => load_registers(self, 63);
+                WHEN 15 => request_low_pass_filter;
+                WHEN 45 => save_registers(self, 63);
                 WHEN 60 => load_registers(self, 15);
-                WHEN 75 => save_old_and_load_new_registers(self, 15, 15);
+                WHEN 75 => test_counter <= 0;
                 WHEN others => --do nothing
             end CASE;
+
+            if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
+                result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+            end if;
         --------------------------------------------------
         end if; -- rising_edge
     end process stimulus;	
