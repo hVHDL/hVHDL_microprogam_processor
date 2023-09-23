@@ -101,13 +101,13 @@ begin
             CASE test_counter is
                 WHEN 0 => load_registers(self, 63);
                 WHEN 15 => request_low_pass_filter;
-                WHEN 45 => save_registers(self, 63);
+                WHEN 48 => save_registers(self, 63);
                 WHEN 60 => load_registers(self, 15);
                 WHEN 75 => test_counter <= 0;
                 WHEN others => --do nothing
             end CASE;
 
-            if decode(get_ram_data(self.ram_read_instruction_port)) = ready then
+            if decode(self.instruction_pipeline(1)) = ready then
                 result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
             end if;
         --------------------------------------------------

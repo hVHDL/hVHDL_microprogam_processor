@@ -20,12 +20,12 @@ package microcode_processor_pkg is
         read_address              : natural range 0 to 1023 ;
         write_address             : natural range 0 to 1023 ;
         register_write_counter    : natural range 0 to 1023 ;
-        register_read_counter     : natural range 0 to 1023 ;
-        register_load_counter     : natural range 0 to 1023 ;
+        register_read_counter     : natural range 0 to 15 ;
+        register_load_counter     : natural range 0 to 15 ;
         program_counter           : natural range 0 to 1023 ;
         registers                 : reg_array               ;
         instruction_pipeline      : instruction_array;
-        -- math unit
+        -- math unit for testing, will be removed later
         add_a                     : std_logic_vector(19 downto 0);
         add_b                     : std_logic_vector(19 downto 0);
         add_result                : std_logic_vector(19 downto 0);
@@ -195,7 +195,8 @@ package body microcode_processor_pkg is
             register_read_counter     => reg_array'length            ,
             register_load_counter     => reg_array'length            ,
             program_counter           => program_start_point         ,
-            registers                 => to_fixed((0.0, 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) ,
+            registers                 => (others => (others => '0')),
+
             instruction_pipeline      => (others => (others => '0')) ,
             -- math unit                
             add_a                     => (others => '0'),
@@ -237,7 +238,7 @@ package body microcode_processor_pkg is
         end if;
 
         if self.register_write_counter < self.registers'length then
-            self.write_address <= self.write_address + 1;
+            self.write_address          <= self.write_address + 1;
             self.register_write_counter <= self.register_write_counter + 1;
             write_data_to_ram(self.ram_write_port, self.write_address, self.registers(self.register_write_counter));
         end if;
@@ -249,7 +250,7 @@ package body microcode_processor_pkg is
 
         self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
         if decode(ram_data) /= program_end then
-            self.program_counter          <= self.program_counter + 1;
+            self.program_counter <= self.program_counter + 1;
         end if;
 
         --stage 0
@@ -258,7 +259,7 @@ package body microcode_processor_pkg is
                 self.add_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
                 self.add_b <= self.registers(get_arg2(self.instruction_pipeline(0)));
             WHEN sub =>
-                self.add_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
+                self.add_a <=  self.registers(get_arg1(self.instruction_pipeline(0)));
                 self.add_b <= -self.registers(get_arg2(self.instruction_pipeline(0)));
             WHEN mpy =>
                 self.mpy_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
