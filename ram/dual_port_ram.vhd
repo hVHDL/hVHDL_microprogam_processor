@@ -2,29 +2,32 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-package dual_port_ram_pkg is
+package ram_port_pkg is
+
+    -- move these to separate package
+    subtype ramtype is std_logic_vector(19 downto 0);
+    subtype ram_address is std_logic_vector(5 downto 0);
 
     type ram_read_in_record is record
-        address : std_logic_vector(9 downto 0);
-        data    : std_logic_vector(31 downto 0);
-        read_is_requested : boolean;
+        address : ram_address;
+        read_is_requested : std_logic;
     end record;
 
     type ram_read_out_record is record
-        data : std_logic;
-        data_is_ready : boolean;
+        data          : std_logic_vector(ramtype'range);
+        data_is_ready : std_logic;
     end record;
 
     type ram_write_in_record is record
+        data : std_logic_vector(ramtype'range);
         write_requested : std_logic;
-        data : std_logic_vector(31 downto 0);
     end record;
 
-end package dual_port_ram_pkg;
+end package ram_port_pkg;
 
-package body dual_port_ram_pkg is
+package body ram_port_pkg is
 
-end package body dual_port_ram_pkg;
+end package body ram_port_pkg;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 library ieee;
@@ -33,7 +36,7 @@ library ieee;
 
     use work.ram_read_pkg.all;
     use work.ram_write_pkg.all;
-    use work.dual_port_ram_pkg.all;
+    use work.ram_port_pkg.all;
 
 entity dual_port_ram is
     generic(init_program : ram_array);
@@ -62,7 +65,6 @@ architecture rtl of dual_port_ram is
 begin
 
     create_ram : process(clock, ram_read_a_in, ram_read_b_in)
-        
     begin
         if rising_edge(clock) then
             create_ram_read_port(ram_read_port_a);
