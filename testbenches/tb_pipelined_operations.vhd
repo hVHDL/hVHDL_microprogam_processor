@@ -29,18 +29,6 @@ architecture vunit_simulation of tb_pipelined_operations is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
-    function init_ram(program : program_array) return ram_array
-    is
-        variable retval : ram_array := (others => (others => '0'));
-    begin
-
-        for i in program'range loop
-            retval(i) := program(i);
-        end loop;
-
-        return retval;
-    end init_ram;
-    ------------------------
     constant dummy           : program_array := get_dummy;
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
