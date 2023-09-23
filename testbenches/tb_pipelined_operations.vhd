@@ -49,6 +49,8 @@ architecture vunit_simulation of tb_pipelined_operations is
     signal result3      : real := 0.0;
     signal test_counter : natural := 0;
 
+    signal state_counter : natural := 0;
+
 begin
 
 ------------------------------------------------------------------------
@@ -99,19 +101,32 @@ begin
 
             create_processor_w_ram(self, ram_contents'length);
 ------------------------------------------------------------------------
-            test_counter <= test_counter + 1;
-            CASE test_counter is
-                WHEN 0 => load_registers(self, 53-reg_array'length*2);
-                WHEN 15 => request_low_pass_filter;
-                WHEN 45 => save_registers(self, 53-reg_array'length*2);
-                WHEN 60 => load_registers(self, 15);
-                WHEN 75 => test_counter <= 0;
-                WHEN others => --do nothing
+            CASE state_counter is
+                WHEN 0 => 
+                    state_counter <= state_counter+1;
+                    load_registers(self, 53-reg_array'length*2);
+                WHEN 1 => 
+                    if register_load_ready(self) then
+                        request_low_pass_filter;
+                        state_counter <= state_counter+1;
+                    end if;
+                WHEN 2 =>
+                    if decode(self.instruction_pipeline(1)) = ready then
+                        result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                        save_registers(self, 53-reg_array'length*2);
+                        state_counter <= state_counter+1;
+                    end if;
+                WHEN 3 =>
+                    if register_write_ready(self) then
+                        load_registers(self, 15);
+                        state_counter <= state_counter+1;
+                    end if;
+                WHEN 4 =>
+                    if register_load_ready(self) then
+                        state_counter <= 0;
+                    end if;
+                WHEN others => -- do nothing
             end CASE;
-
-            if decode(self.instruction_pipeline(1)) = ready then
-                result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-            end if;
 
         end if; -- rising_edge
     end process stimulus;	

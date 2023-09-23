@@ -63,6 +63,12 @@ package microcode_processor_pkg is
         end_address : natural)
     return ram_array;
 
+    function register_load_ready ( self : processor_with_ram_record)
+        return boolean;
+
+    function register_write_ready ( self : processor_with_ram_record)
+        return boolean;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -291,5 +297,28 @@ package body microcode_processor_pkg is
 
         --stage 5
     end create_processor_w_ram;
+------------------------------------------------------------------------
+    function register_load_ready
+    (
+        self : processor_with_ram_record
+    )
+    return boolean
+    is
+    begin
+        return self.register_load_counter = self.registers'length-1;
+        
+    end register_load_ready;
+------------------------------------------------------------------------
+    function register_write_ready
+    (
+        self : processor_with_ram_record
+    )
+    return boolean
+    is
+    begin
+
+        return self.register_write_counter = self.registers'length-1;
+       
+    end register_write_ready;
 ------------------------------------------------------------------------
 end package body microcode_processor_pkg;
