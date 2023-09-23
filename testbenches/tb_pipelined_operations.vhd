@@ -72,7 +72,6 @@ begin
             self.program_counter <= dummy'length;
         end request_low_pass_filter;
 
-        variable instruction : std_logic_vector(19 downto 0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
