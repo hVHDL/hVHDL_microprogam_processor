@@ -5,3 +5,7 @@ The main features are
 1. Assembler made with functions that allows writing programs in VHDL. 
 2. memory control module that controls the memory read and write
 3. example of a pipelined processor
+
+```
+pimpom = 65;
+```
