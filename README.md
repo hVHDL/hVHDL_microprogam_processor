@@ -13,7 +13,6 @@ an example of a low pass filter assembly program, which is tested with hardware
         constant u    : integer := 1;
         constant temp : integer := 2;
         constant g    : integer := 7;
-        -- alias "+" is "&" [program_array, t_instruction return program_array];
 
         constant lpf : program_array := (
             write_instruction(sub          , temp , u    , y)    ,
