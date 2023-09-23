@@ -6,7 +6,7 @@ library ieee;
 
 package microinstruction_pkg is
 
-    type t_command is (nop, add , sub , mpy , mpy_add , div , ready , jump , ret , program_end, load_external, load_registers, save_registers);
+    type t_command is (program_end, nop, add , sub , mpy , mpy_add , div , ready , jump , ret , load_external, load_registers, save_registers);
     type counter_array is array (integer range 0 to 1) of natural;
 
     constant number_of_registers : natural := 9;

@@ -275,9 +275,7 @@ package body microcode_processor_pkg is
         self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
         
         CASE decode(self.instruction_pipeline(2)) is
-            WHEN add =>
-                self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
-            WHEN sub =>
+            WHEN add | sub =>
                 self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
             WHEN others => -- do nothing
         end CASE;

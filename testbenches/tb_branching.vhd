@@ -32,7 +32,8 @@ architecture vunit_simulation of branching_tb is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    constant ram_with_registers : ram_array := write_register_values_to_ram(init_ram(test_program), to_fixed((0.0 , 0.00 , 0.2 , 0.3 , 0.4 , 0.5 , 0.6 , 0.0104166 , 0.0) , 19) , 63);
+    constant ram_with_registers : ram_array := 
+        write_register_values_to_ram(init_ram(test_program) , to_fixed((0.99 , 0.99 , 0.99 , 0.99 , 0.99 , 0.99 , 0.99 , 0.99, 0.99) , 19) , 21+8);
 
     signal ram_contents : ram_array := ram_with_registers;
     signal self : processor_with_ram_record := init_processor(test_program'high);
@@ -59,8 +60,6 @@ begin
         variable ram_data : std_logic_vector(19 downto 0);
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
-
-        constant offset1 : integer := 63;
 
         procedure request_low_pass_filter is
         begin
@@ -99,9 +98,9 @@ begin
             test_counter <= test_counter + 1;
 
             CASE test_counter is
-                WHEN 0 => load_registers(self, 63);
+                WHEN 0 => load_registers(self, 21+8);
                 WHEN 15 => request_low_pass_filter;
-                WHEN 48 => save_registers(self, 63);
+                WHEN 48 => save_registers(self, 21+8);
                 WHEN 60 => load_registers(self, 15);
                 WHEN 75 => test_counter <= 0;
                 WHEN others => --do nothing

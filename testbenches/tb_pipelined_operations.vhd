@@ -45,16 +45,15 @@ architecture vunit_simulation of tb_pipelined_operations is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    constant registers_end_address : natural := 50-8;
-
     signal ram_contents : ram_array := 
-        -- write_register_values_to_ram(
-        -- write_register_values_to_ram(
+        write_register_values_to_ram(
+        write_register_values_to_ram(
         write_register_values_to_ram(
             init_ram(test_program), 
-            -- to_fixed((0.0, 0.44252 , 0.1 , 0.1 , 0.1 , 0.1 , 0.1 , 0.0104166 , 0.1) , 19),63-reg_array'length*0),
-            -- to_fixed((0.0, 0.44252 , 0.2 , 0.2 , 0.2 , 0.2 , 0.2 , 0.0804166 , 0.2) , 19),63-reg_array'length*1),
-            to_fixed((0.0, 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19),registers_end_address);
+            to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19) , 53-reg_array'length*0)  ,
+            to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19) , 53-reg_array'length*1)  ,
+            to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19) , 53-reg_array'length*2);
+
     signal self         : processor_with_ram_record := init_processor(test_program'high);
 
     signal result       : real := 0.0;
@@ -114,9 +113,9 @@ begin
 ------------------------------------------------------------------------
             test_counter <= test_counter + 1;
             CASE test_counter is
-                WHEN 0 => load_registers(self, registers_end_address);
+                WHEN 0 => load_registers(self, 53-reg_array'length*2);
                 WHEN 15 => request_low_pass_filter;
-                WHEN 45 => save_registers(self, registers_end_address);
+                WHEN 45 => save_registers(self, 53-reg_array'length*2);
                 WHEN 60 => load_registers(self, 15);
                 WHEN 75 => test_counter <= 0;
                 WHEN others => --do nothing
