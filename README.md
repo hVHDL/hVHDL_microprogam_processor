@@ -1,4 +1,7 @@
 # vhdl microprogram processor
-VHDL module for running operations from memory with the software also written in vhdl. 
+VHDL module for running instructions from memory with processor. Processor does not have a fixed structure but there are functions for reading and writing program and data ram hence the repository has functions that simplify processor creation. 
 
-Idea is to create functions to fill up a ram with commands that are then run sequeentially in a pipeline in a microcode processor design with processor and code written from vhdl source.
+The main features are
+1. Assembler made with functions that allows writing programs in VHDL. 
+2. memory control module that controls the memory read and write
+3. example of a pipelined processor
