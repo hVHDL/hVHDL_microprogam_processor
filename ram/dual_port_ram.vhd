@@ -2,11 +2,13 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+    use work.ram_configuration_pkg.all;
+
 package ram_port_pkg is
 
     -- move these to separate package
-    subtype ramtype is std_logic_vector(19 downto 0);
-    subtype ram_address is std_logic_vector(5 downto 0);
+    subtype ramtype is std_logic_vector(ram_bit_width-1 downto 0);
+    subtype ram_address is natural range 0 to ram_depth-1;
 
     type ram_read_in_record is record
         address : ram_address;
@@ -19,11 +21,11 @@ package ram_port_pkg is
     end record;
 
     type ram_write_in_record is record
-        data : std_logic_vector(ramtype'range);
+        address         : ram_address;
+        data            : std_logic_vector(ramtype'range);
         write_requested : std_logic;
     end record;
         -- clka  : in std_logic;                                       -- Clock
-        -- addra : in std_logic_vector((logb2(RAM_DEPTH)-1) downto 0); -- Port A Address
         -- ena   : in std_logic;                                       -- Port A RAM Enable
         -- wea   : in std_logic;                                       -- Port A Write enable
         -- dina  : in std_logic_vector(RAM_WIDTH-1 downto 0);          -- Port A RAM input data
@@ -73,13 +75,6 @@ end entity dual_port_ram;
 
 architecture rtl of dual_port_ram is
 
-    signal ram_read_port_a  : ram_read_port_record   := init_ram_read_port  ;
-    signal ram_write_port_a : ram_write_port_record  := init_ram_write_port ;
-
-    signal ram_read_port_b  : ram_read_port_record   := init_ram_read_port  ;
-    signal ram_write_port_b : ram_write_port_record  := init_ram_write_port ;
-
-    signal ram_contents : ram_array := init_program;
 ------------------------------------------------------------------------
     alias ram_data_array is ram_array;
 
@@ -149,30 +144,28 @@ architecture rtl of dual_port_ram is
 
 begin
 
-    create_ram : process(clock, ram_read_a_in, ram_read_b_in)
+    create_ram_a_port : process(clock)
     begin
-        if rising_edge(clock) then
-            create_ram_read_port(ram_read_port_a);
-            create_ram_read_port(ram_read_port_b);
-            create_ram_write_port(ram_write_port_b);
-            create_ram_write_port(ram_write_port_b);
-            --------------------
-            if read_is_requested(ram_read_port_a) then
-                ram_read_port_a.data <= ram_contents(get_ram_address(ram_read_port_a));
+        if(rising_edge(clock)) then
+            if (ram_read_a_in.read_is_requested = '1') or (ram_write_a_in.write_requested = '1') then
+                ram_read_a_out.data <= dual_port_ram_array.read_data(ram_read_a_in.address);
+                if ram_write_a_in.write_requested = '1' then
+                    dual_port_ram_array.write_ram(ram_write_a_in.address, ram_write_a_in.data);
+                end if;
             end if;
-            --------------------
-            if read_is_requested(ram_read_port_b) then
-                ram_read_port_b.data <= ram_contents(get_ram_address(ram_read_port_b));
+        end if;
+    end process;
+
+    create_ram_b_port : process(clock)
+    begin
+        if(rising_edge(clock)) then
+            if (ram_read_b_in.read_is_requested = '1') or (ram_write_b_in.write_requested = '1') then
+                ram_read_b_out.data <= dual_port_ram_array.read_data(ram_read_b_in.address);
+                if ram_write_b_in.write_requested = '1' then
+                    dual_port_ram_array.write_ram(ram_write_b_in.address, ram_write_b_in.data);
+                end if;
             end if;
-            --------------------
-            if write_is_requested(ram_write_port_a) then
-                ram_contents(get_write_address(ram_write_port_a)) <= ram_write_port_a.write_buffer;
-            end if;
-            --------------------
-            if write_is_requested(ram_write_port_b) then
-                ram_contents(get_write_address(ram_write_port_b)) <= ram_write_port_b.write_buffer;
-            end if;
-        end if; --rising_edge
-    end process create_ram;	
+        end if;
+    end process;
 
 end rtl;
