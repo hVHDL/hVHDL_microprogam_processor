@@ -22,10 +22,29 @@ package ram_port_pkg is
         data : std_logic_vector(ramtype'range);
         write_requested : std_logic;
     end record;
+        -- clka  : in std_logic;                                       -- Clock
+        -- addra : in std_logic_vector((logb2(RAM_DEPTH)-1) downto 0); -- Port A Address
+        -- ena   : in std_logic;                                       -- Port A RAM Enable
+        -- wea   : in std_logic;                                       -- Port A Write enable
+        -- dina  : in std_logic_vector(RAM_WIDTH-1 downto 0);          -- Port A RAM input data
+        -- rsta  : in std_logic;                                       -- Port A Output reset
+        -- regcea: in std_logic;                                       -- Port A Output register enable
+        -- douta : out std_logic_vector(RAM_WIDTH-1 downto 0);         -- Port A RAM output data
+
+        -- addrb : in std_logic_vector((logb2(RAM_DEPTH)-1) downto 0);     -- Port B Address
+        -- dinb  : in std_logic_vector(RAM_WIDTH-1 downto 0);		-- Port B RAM input data
+        -- web   : in std_logic;                       			-- Port B Write enable
+        -- enb   : in std_logic;                       			-- Port B RAM Enable
+        -- rstb  : in std_logic;                       			-- Port B Output reset 
+        -- regceb: in std_logic;                       			-- Port B Output register enable
+        -- doutb : out std_logic_vector(RAM_WIDTH-1 downto 0)   		-- Port B RAM output data
+
+
 
 end package ram_port_pkg;
 
 package body ram_port_pkg is
+
 
 end package body ram_port_pkg;
 ------------------------------------------------------------------------
@@ -61,6 +80,50 @@ architecture rtl of dual_port_ram is
     signal ram_write_port_b : ram_write_port_record  := init_ram_write_port ;
 
     signal ram_contents : ram_array := init_program;
+------------------------------------------------------------------------
+    alias ram_data_array is ram_array;
+
+------------------------------------------------------------------------
+    type dp_ram is protected
+
+    ------------------------------
+        procedure write_ram(
+            address : in natural;
+            data :    in std_logic_vector);
+    ------------------------------
+        impure function read_data(address : natural)
+            return std_logic_vector;
+    ------------------------------
+
+    end protected dp_ram;
+
+------------------------------------------------------------------------
+    type dp_ram is protected body
+    ------------------------------
+        variable ram_contents : ram_data_array := (others => (others => '0'));
+
+    ------------------------------
+        impure function read_data
+        (
+            address : natural
+        )
+        return std_logic_vector 
+        is
+        begin
+            return ram_contents(address);
+        end read_data;
+    ------------------------------
+        procedure write_ram
+        (
+            address : in natural;
+            data    : in std_logic_vector
+        ) is
+        begin
+            ram_contents(address) := data;
+        end write_ram;
+
+    end protected body;
+------------------------------------------------------------------------
 
 begin
 
