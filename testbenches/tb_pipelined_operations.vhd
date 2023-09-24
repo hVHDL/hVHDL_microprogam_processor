@@ -42,7 +42,11 @@ architecture vunit_simulation of tb_pipelined_operations is
             to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19) , 53-reg_array'length*1)  ,
             to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19) , 53-reg_array'length*2);
 
-    signal self         : processor_with_ram_record := init_processor(test_program'high);
+    signal self                      : processor_with_ram_record := init_processor(test_program'high);
+    signal ram_read_instruction_port : ram_read_port_record    := init_ram_read_port ;
+    signal ram_read_data_port        : ram_read_port_record    := init_ram_read_port ;
+    signal ram_write_port            : ram_write_port_record   := init_ram_write_port;
+    signal ram_write_port2           : ram_write_port_record   := init_ram_write_port;
 
     signal result       : real := 0.0;
     signal result2      : real := 0.0;
@@ -76,29 +80,36 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
-            create_ram_read_port(self.ram_read_instruction_port);
-            create_ram_read_port(self.ram_read_data_port);
-            create_ram_write_port(self.ram_write_port);
-            create_ram_write_port(self.ram_write_port2);
+            create_ram_read_port(ram_read_instruction_port);
+            create_ram_read_port(ram_read_data_port);
+            create_ram_write_port(ram_write_port);
+            create_ram_write_port(ram_write_port2);
             --------------------
-            if read_is_requested(self.ram_read_instruction_port) then
-                self.ram_read_instruction_port.data <= ram_contents(get_ram_address(self.ram_read_instruction_port));
+            if read_is_requested(ram_read_instruction_port) then
+                ram_read_instruction_port.data <= ram_contents(get_ram_address(ram_read_instruction_port));
             end if;
             --------------------
-            if read_is_requested(self.ram_read_data_port) then
-                self.ram_read_data_port.data <= ram_contents(get_ram_address(self.ram_read_data_port));
+            if read_is_requested(ram_read_data_port) then
+                ram_read_data_port.data <= ram_contents(get_ram_address(ram_read_data_port));
             end if;
             --------------------
-            if write_is_requested(self.ram_write_port) then
-                ram_contents(get_write_address(self.ram_write_port)) <= self.ram_write_port.write_buffer;
+            if write_is_requested(ram_write_port) then
+                ram_contents(get_write_address(ram_write_port)) <= ram_write_port.write_buffer;
             end if;
             --------------------
-            if write_is_requested(self.ram_write_port2) then
-                ram_contents(get_write_address(self.ram_write_port2)) <= self.ram_write_port2.write_buffer;
+            if write_is_requested(ram_write_port2) then
+                ram_contents(get_write_address(ram_write_port2)) <= ram_write_port2.write_buffer;
             end if;
             --------------------
 
-            create_processor_w_ram(self, ram_contents'length);
+            create_processor_w_ram(
+                self                      ,
+                ram_read_instruction_port ,
+                ram_read_data_port        ,
+                ram_write_port            ,
+                ram_write_port2           ,
+                ram_array'length);
+
 ------------------------------------------------------------------------
             CASE state_counter is
                 WHEN 0 => 
