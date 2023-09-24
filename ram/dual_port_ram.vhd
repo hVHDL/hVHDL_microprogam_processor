@@ -173,9 +173,6 @@ end entity dual_port_ram;
 architecture rtl of dual_port_ram is
 
 ------------------------------------------------------------------------
-    alias ram_data_array is ram_array;
-
-------------------------------------------------------------------------
     type dp_ram is protected
 
     ------------------------------
@@ -196,9 +193,9 @@ architecture rtl of dual_port_ram is
         (
             ram_init_values : ram_array
         )
-        return ram_data_array
+        return ram_array
         is
-            variable retval : ram_data_array := (others => (others => '0'));
+            variable retval : ram_array := (others => (others => '0'));
         begin
 
             for i in ram_init_values'range loop
@@ -209,7 +206,7 @@ architecture rtl of dual_port_ram is
             
         end init_ram;
 
-        variable ram_contents : ram_data_array := init_ram(init_program);
+        variable ram_contents : ram_array := init_ram(init_program);
 
     ------------------------------
         impure function read_data
