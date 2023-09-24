@@ -100,7 +100,24 @@ architecture rtl of dual_port_ram is
 ------------------------------------------------------------------------
     type dp_ram is protected body
     ------------------------------
-        variable ram_contents : ram_data_array := (others => (others => '0'));
+        impure function init_ram
+        (
+            ram_init_values : ram_array
+        )
+        return ram_data_array
+        is
+            variable retval : ram_data_array := (others => (others => '0'));
+        begin
+
+            for i in ram_init_values'range loop
+                retval(i) := ram_init_values(i);
+            end loop;
+
+            return retval;
+            
+        end init_ram;
+
+        variable ram_contents : ram_data_array := init_ram(init_program);
 
     ------------------------------
         impure function read_data
@@ -112,6 +129,7 @@ architecture rtl of dual_port_ram is
         begin
             return ram_contents(address);
         end read_data;
+
     ------------------------------
         procedure write_ram
         (
@@ -122,8 +140,12 @@ architecture rtl of dual_port_ram is
             ram_contents(address) := data;
         end write_ram;
 
+
+    ------------------------------
     end protected body;
 ------------------------------------------------------------------------
+
+    shared variable dual_port_ram_array : dp_ram;
 
 begin
 
