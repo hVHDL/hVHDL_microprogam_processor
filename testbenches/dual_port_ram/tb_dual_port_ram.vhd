@@ -69,7 +69,7 @@ begin
                 write_data_to_ram(ram_write_b_in, simulation_counter*2+1, std_logic_vector(to_unsigned(simulation_counter*2+1, ram_write_a_in.data'length)));
             end if;
 
-            if simulation_counter = ram_array'length/2 then
+            if simulation_counter = 2 then
                 read_counter <= 0;
             end if;
 
@@ -80,12 +80,13 @@ begin
             end if;
 
             if ram_read_is_ready(ram_read_a_out) then
-                ready_counter     <= ready_counter + 1;
-                test_output       <= get_ram_data(ram_read_a_out);
-                output_is_correct <= (get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
-                check(get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
-                check(get_ram_data(ram_read_b_out) = std_logic_vector(to_unsigned(ready_counter*2+1, ram_read_b_out.data'length)));
+                ready_counter           <= ready_counter + 1;
+                test_output             <= get_ram_data(ram_read_a_out);
+                output_is_correct       <= (get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
                 last_ram_index_was_read <= to_integer(unsigned(get_ram_data(ram_read_b_out))) = ram_array'high;
+
+                check(get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2   , ram_read_a_out.data'length)));
+                check(get_ram_data(ram_read_b_out) = std_logic_vector(to_unsigned(ready_counter*2+1 , ram_read_b_out.data'length)));
             end if;
             ram_was_read <= ram_was_read or ram_read_is_ready(ram_read_a_out);
 
