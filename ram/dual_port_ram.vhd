@@ -9,6 +9,7 @@ package ram_port_pkg is
     -- move these to separate package
     subtype ramtype is std_logic_vector(ram_bit_width-1 downto 0);
     subtype ram_address is natural range 0 to ram_depth-1;
+    subtype ram_array is work.ram_read_pkg.ram_array;
 
     type ram_read_in_record is record
         address : ram_address;
@@ -143,8 +144,6 @@ package body ram_port_pkg is
         self_write_in.write_requested <= '1';
     end write_data_to_ram;
 ------------------------------------------------------------------------
-
-
 end package body ram_port_pkg;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
@@ -152,14 +151,12 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-    use work.ram_read_pkg.all;
-    use work.ram_write_pkg.all;
     use work.ram_port_pkg.all;
 
 entity dual_port_ram is
-    generic(init_program : ram_array);
+    generic(init_program : ram_array := (others => (others => '1')));
     port (
-        clock : in std_logic;
+        clock          : in std_logic;
         ram_read_a_in  : in ram_read_in_record;
         ram_read_a_out : out ram_read_out_record;
         ram_write_a_in : in ram_write_in_record;
@@ -236,13 +233,22 @@ architecture rtl of dual_port_ram is
 
     shared variable dual_port_ram_array : dp_ram;
 
+    signal read_a_pipeline : std_logic_vector(1 downto 0) := (others => '0');
+    signal output_a_buffer : std_logic_vector(ram_read_a_out.data'range);
+
+    signal read_b_pipeline : std_logic_vector(1 downto 0) := (others => '0');
+    signal output_b_buffer : std_logic_vector(ram_read_a_out.data'range);
+
 begin
+    ram_read_a_out.data_is_ready <= read_a_pipeline(read_a_pipeline'left);
 
     create_ram_a_port : process(clock)
     begin
         if(rising_edge(clock)) then
+            read_a_pipeline <= read_a_pipeline(read_a_pipeline'left-1 downto 0) & ram_read_a_in.read_is_requested;
+            ram_read_a_out.data <= output_a_buffer;
             if (ram_read_a_in.read_is_requested = '1') or (ram_write_a_in.write_requested = '1') then
-                ram_read_a_out.data <= dual_port_ram_array.read_data(ram_read_a_in.address);
+                output_a_buffer <= dual_port_ram_array.read_data(ram_read_a_in.address);
                 if ram_write_a_in.write_requested = '1' then
                     dual_port_ram_array.write_ram(ram_write_a_in.address, ram_write_a_in.data);
                 end if;
@@ -253,6 +259,8 @@ begin
     create_ram_b_port : process(clock)
     begin
         if(rising_edge(clock)) then
+            read_b_pipeline <= read_b_pipeline(read_b_pipeline'left-1 downto 0) & ram_read_b_in.read_is_requested;
+            ram_read_b_out.data <= output_b_buffer;
             if (ram_read_b_in.read_is_requested = '1') or (ram_write_b_in.write_requested = '1') then
                 ram_read_b_out.data <= dual_port_ram_array.read_data(ram_read_b_in.address);
                 if ram_write_b_in.write_requested = '1' then

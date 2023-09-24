@@ -30,6 +30,8 @@ testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_pk
 testi.add_source_files(ROOT / "ram/ram_configuration_pkg.vhd")
 testi.add_source_files(ROOT / "ram/ram_read_base_pkg.vhd")
 
+testi.add_source_files(ROOT / "ram/dual_port_ram.vhd")
+
 testi.add_source_files(ROOT / "testbenches/" "microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "microcode_processor_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "test_programs_pkg.vhd")
@@ -40,5 +42,8 @@ testi.add_source_files(ROOT / "testbenches/processor_w_ram_v2_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_pipelined_operations.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_swap_registers.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_branching.vhd")
+
+
+testi.add_source_files(ROOT / "testbenches/dual_port_ram/tb_dual_port_ram.vhd")
 
 VU.main()
