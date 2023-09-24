@@ -237,7 +237,7 @@ architecture rtl of dual_port_ram is
     signal output_a_buffer : std_logic_vector(ram_read_a_out.data'range);
 
     signal read_b_pipeline : std_logic_vector(1 downto 0) := (others => '0');
-    signal output_b_buffer : std_logic_vector(ram_read_a_out.data'range);
+    signal output_b_buffer : std_logic_vector(ram_read_b_out.data'range);
 
 begin
     ram_read_a_out.data_is_ready <= read_a_pipeline(read_a_pipeline'left);
@@ -262,7 +262,7 @@ begin
             read_b_pipeline <= read_b_pipeline(read_b_pipeline'left-1 downto 0) & ram_read_b_in.read_is_requested;
             ram_read_b_out.data <= output_b_buffer;
             if (ram_read_b_in.read_is_requested = '1') or (ram_write_b_in.write_requested = '1') then
-                ram_read_b_out.data <= dual_port_ram_array.read_data(ram_read_b_in.address);
+                output_b_buffer <= dual_port_ram_array.read_data(ram_read_b_in.address);
                 if ram_write_b_in.write_requested = '1' then
                     dual_port_ram_array.write_ram(ram_write_b_in.address, ram_write_b_in.data);
                 end if;

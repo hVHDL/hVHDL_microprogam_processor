@@ -55,17 +55,6 @@ begin
 
 ------------------------------------------------------------------------
 
-    u_dpram : entity work.dual_port_ram
-    port map(
-    simulator_clock ,
-    ram_read_a_in   ,
-    ram_read_a_out  ,
-    ram_write_a_in  ,
-    --------------
-    ram_read_b_in  ,
-    ram_read_b_out ,
-    ram_write_b_in);
-
     stimulus : process(simulator_clock)
     begin
         if rising_edge(simulator_clock) then
@@ -93,10 +82,22 @@ begin
                 test_output <= get_ram_data(ram_read_a_out);
                 output_is_correct <= (get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
                 check(get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
+                check(get_ram_data(ram_read_b_out) = std_logic_vector(to_unsigned(ready_counter*2+1, ram_read_b_out.data'length)));
             end if;
             ram_was_read <= ram_was_read or ram_read_is_ready(ram_read_a_out);
 
         end if; -- rising_edge
     end process stimulus;	
+------------------------------------------------------------------------
+    u_dpram : entity work.dual_port_ram
+    port map(
+    simulator_clock ,
+    ram_read_a_in   ,
+    ram_read_a_out  ,
+    ram_write_a_in  ,
+    --------------
+    ram_read_b_in  ,
+    ram_read_b_out ,
+    ram_write_b_in);
 ------------------------------------------------------------------------
 end vunit_simulation;
