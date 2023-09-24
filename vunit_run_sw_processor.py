@@ -31,6 +31,7 @@ testi.add_source_files(ROOT / "ram/ram_configuration_pkg.vhd")
 testi.add_source_files(ROOT / "ram/ram_read_base_pkg.vhd")
 
 testi.add_source_files(ROOT / "ram/dual_port_ram.vhd")
+testi.add_source_files(ROOT / "ram/arch_sim_dual_port_ram.vhd")
 
 testi.add_source_files(ROOT / "testbenches/" "microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/" "microcode_processor_pkg.vhd")

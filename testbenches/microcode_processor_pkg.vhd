@@ -5,9 +5,8 @@ LIBRARY ieee  ;
 
     use work.microinstruction_pkg.all;
     use work.test_programs_pkg.all;
-    use work.ram_read_pkg.all;
-    use work.ram_write_pkg.all;
     use work.multiplier_pkg.radix_multiply;
+    use work.ram_port_pkg.all;
 
 package microcode_processor_pkg is
 
@@ -35,12 +34,14 @@ package microcode_processor_pkg is
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
 
     procedure create_processor_w_ram (
-        signal self                      : inout processor_with_ram_record;
-        signal ram_read_instruction_port : inout ram_read_port_record    ;
-        signal ram_read_data_port        : inout ram_read_port_record    ;
-        signal ram_write_port            : inout ram_write_port_record   ;
-        signal ram_write_port2           : inout ram_write_port_record   ;
-        ramsize                          : in natural);
+        signal self                    : inout processor_with_ram_record;
+        signal ram_read_instruction_in : out ram_read_in_record    ;
+        ram_read_instruction_out       : in ram_read_out_record    ;
+        signal ram_read_data_in        : out ram_read_in_record    ;
+        ram_read_data_out              : in ram_read_out_record    ;
+        signal ram_write_port          : out ram_write_in_record   ;
+        signal ram_write_port2         : out ram_write_in_record   ;
+        ramsize                        : in natural);
 
     function init_ram(program : program_array) return ram_array;
 
@@ -215,17 +216,21 @@ package body microcode_processor_pkg is
 ------------------------------------------------------------------------
     procedure create_processor_w_ram
     (
-        signal self                      : inout processor_with_ram_record;
-        signal ram_read_instruction_port : inout ram_read_port_record    ;
-        signal ram_read_data_port        : inout ram_read_port_record    ;
-        signal ram_write_port            : inout ram_write_port_record   ;
-        signal ram_write_port2           : inout ram_write_port_record   ;
-        ramsize                          : in natural
+        signal self                    : inout processor_with_ram_record;
+        signal ram_read_instruction_in : out ram_read_in_record    ;
+        ram_read_instruction_out       : in ram_read_out_record    ;
+        signal ram_read_data_in        : out ram_read_in_record    ;
+        ram_read_data_out              : in ram_read_out_record    ;
+        signal ram_write_port          : out ram_write_in_record   ;
+        signal ram_write_port2         : out ram_write_in_record   ;
+        ramsize                        : in natural
     ) is
         variable ram_data : std_logic_vector(19 downto 0);
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
     begin
+        init_ram(ram_read_instruction_in, ram_write_port);
+        init_ram(ram_read_data_in, ram_write_port2);
     --------------------------------------------------
         -- save registers to ram
         if decode(self.instruction_pipeline(2)) = ready then
@@ -235,12 +240,12 @@ package body microcode_processor_pkg is
         if self.register_read_counter < self.registers'length then
             self.register_read_counter <= self.register_read_counter + 1;
             self.read_address          <= self.read_address + 1;
-            request_data_from_ram(ram_read_data_port, self.read_address);
+            request_data_from_ram(ram_read_data_in, self.read_address);
         end if;
 
-        if ram_read_is_ready(ram_read_data_port) then
+        if ram_read_is_ready(ram_read_data_out) then
             self.register_load_counter <= self.register_load_counter + 1;
-            self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_port);
+            self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_out);
         end if;
 
         if self.register_write_counter < self.registers'length then
@@ -250,9 +255,9 @@ package body microcode_processor_pkg is
         end if;
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
-        request_data_from_ram(ram_read_instruction_port, self.program_counter);
+        request_data_from_ram(ram_read_instruction_in, self.program_counter);
 
-        ram_data := get_ram_data(ram_read_instruction_port);
+        ram_data := get_ram_data(ram_read_instruction_out);
 
         self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
         if decode(ram_data) /= program_end then
