@@ -38,6 +38,7 @@ architecture vunit_simulation of dual_port_ram_tb is
     signal test_output : std_logic_vector(ram_read_a_out.data'range) := (others => '0');
 
     signal output_is_correct : boolean := false;
+    signal last_ram_index_was_read : boolean := false;
 
 begin
 
@@ -47,6 +48,7 @@ begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
         check(ram_was_read);
+        check(last_ram_index_was_read, "last index was not read");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -78,11 +80,12 @@ begin
             end if;
 
             if ram_read_is_ready(ram_read_a_out) then
-                ready_counter <= ready_counter + 1;
-                test_output <= get_ram_data(ram_read_a_out);
+                ready_counter     <= ready_counter + 1;
+                test_output       <= get_ram_data(ram_read_a_out);
                 output_is_correct <= (get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
                 check(get_ram_data(ram_read_a_out) = std_logic_vector(to_unsigned(ready_counter*2, ram_read_a_out.data'length)));
                 check(get_ram_data(ram_read_b_out) = std_logic_vector(to_unsigned(ready_counter*2+1, ram_read_b_out.data'length)));
+                last_ram_index_was_read <= to_integer(unsigned(get_ram_data(ram_read_b_out))) = ram_array'high;
             end if;
             ram_was_read <= ram_was_read or ram_read_is_ready(ram_read_a_out);
 
