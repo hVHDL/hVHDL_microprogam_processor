@@ -3,24 +3,6 @@ architecture rtl of dual_port_ram is
 
 ------------------------------------------------------------------------
     ------------------------------
-    impure function init_ram
-    (
-        ram_init_values : ram_array
-    )
-    return ram_array
-    is
-        variable retval : ram_array := (others => (others => '0'));
-    begin
-
-        for i in ram_init_values'range loop
-            retval(i) := ram_init_values(i);
-        end loop;
-
-        return retval;
-        
-    end init_ram;
-
-------------------------------------------------------------------------
 
     signal read_a_pipeline : std_logic_vector(1 downto 0) := (others => '0');
     signal output_a_buffer : std_logic_vector(ram_read_a_out.data'range);
@@ -28,7 +10,7 @@ architecture rtl of dual_port_ram is
     signal read_b_pipeline : std_logic_vector(1 downto 0) := (others => '0');
     signal output_b_buffer : std_logic_vector(ram_read_b_out.data'range);
 
-    shared variable ram_contents : ram_array := init_ram(init_program);
+    shared variable ram_contents : ram_array := init_program;
 
 begin
     ram_read_a_out.data_is_ready <= read_a_pipeline(read_a_pipeline'left);

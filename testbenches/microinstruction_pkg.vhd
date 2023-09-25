@@ -40,13 +40,18 @@ package microinstruction_pkg is
         argument1   : in natural range 0 to number_of_registers-1;
         argument2   : in natural range 0 to number_of_registers-1)
     return std_logic_vector;
-------------------------------------------------------------------------
+----------------
     function write_instruction (
         command     : in t_command;
         destination : in natural range 0 to number_of_registers-1;
         argument1   : in natural range 0 to number_of_registers-1;
         argument2   : in natural range 0 to number_of_registers-1;
         argument3   : in natural range 0 to number_of_registers-1)
+    return std_logic_vector;
+----------------
+    function write_instruction (
+        command     : in t_command;
+        long_argument : in natural)
     return std_logic_vector;
 ------------------------------------------------------------------------
     function get_instruction ( input_register : std_logic_vector )
@@ -114,6 +119,24 @@ package body microinstruction_pkg is
         instruction(dest'range) := std_logic_vector(to_unsigned(destination            , register_bits));
         instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , register_bits));
         instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , register_bits));
+
+        return instruction;
+        
+    end write_instruction;
+------------------------------------------------------------------------
+    function write_instruction
+    (
+        command     : in t_command;
+        long_argument : in natural
+    )
+    return std_logic_vector
+    is
+        variable instruction : t_instruction := (others=>'0');
+        constant get_long_argument_range : std_logic_vector(comm'right-1 downto 0) := (others => '0');
+    begin
+
+        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
+        instruction(get_long_argument_range'range) := std_logic_vector(to_unsigned(long_argument, get_long_argument_range'length));
 
         return instruction;
         
