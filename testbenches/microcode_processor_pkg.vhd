@@ -69,6 +69,9 @@ package microcode_processor_pkg is
     function register_write_ready ( self : processor_with_ram_record)
         return boolean;
 
+    function program_is_ready ( self : processor_with_ram_record)
+        return boolean;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -227,6 +230,7 @@ package body microcode_processor_pkg is
         variable ram_data : std_logic_vector(19 downto 0);
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
+        variable used_instruction : std_logic_vector(self.instruction_pipeline(0)'range);
     begin
         init_ram(ram_read_instruction_in, ram_write_port);
         init_ram(ram_read_data_in, ram_write_port2);
@@ -255,57 +259,62 @@ package body microcode_processor_pkg is
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
         request_data_from_ram(ram_read_instruction_in, self.program_counter);
-
         ram_data := get_ram_data(ram_read_instruction_out);
 
-        self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
-        if decode(ram_data) /= program_end then
-            self.program_counter <= self.program_counter + 1;
+        if ram_read_is_ready(ram_read_instruction_out) then
+            self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+            if decode(ram_data) /= program_end then
+                self.program_counter <= self.program_counter + 1;
+            end if;
         end if;
 
     ------------------------------------------------------------------------
         --stage 0
-        CASE decode(self.instruction_pipeline(0)) is
+    ------------------------------------------------------------------------
+        --stage 1
+        used_instruction := self.instruction_pipeline(1);
+        CASE decode(used_instruction) is
             WHEN add =>
-                self.add_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
-                self.add_b <= self.registers(get_arg2(self.instruction_pipeline(0)));
+                self.add_a <= self.registers(get_arg1(used_instruction));
+                self.add_b <= self.registers(get_arg2(used_instruction));
             WHEN sub =>
-                self.add_a <=  self.registers(get_arg1(self.instruction_pipeline(0)));
-                self.add_b <= -self.registers(get_arg2(self.instruction_pipeline(0)));
+                self.add_a <=  self.registers(get_arg1(used_instruction));
+                self.add_b <= -self.registers(get_arg2(used_instruction));
             WHEN mpy =>
-                self.mpy_a <= self.registers(get_arg1(self.instruction_pipeline(0)));
-                self.mpy_b <= self.registers(get_arg2(self.instruction_pipeline(0)));
+                self.mpy_a <= self.registers(get_arg1(used_instruction));
+                self.mpy_b <= self.registers(get_arg2(used_instruction));
             WHEN others => -- do nothing
         end CASE;
 
     ------------------------------------------------------------------------
-        --stage 1
+        --stage 2
         self.add_result     <= self.add_a + self.add_b;
         self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
 
     ------------------------------------------------------------------------
-        --stage 2
+        --stage 3
+        used_instruction := self.instruction_pipeline(3);
         self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
         
-        CASE decode(self.instruction_pipeline(2)) is
+        CASE decode(used_instruction) is
             WHEN add | sub =>
-                self.registers(get_dest(self.instruction_pipeline(2))) <= self.add_result;
-            WHEN others => -- do nothing
-        end CASE;
-
-    ------------------------------------------------------------------------
-        --stage 3
-        CASE decode(self.instruction_pipeline(3)) is
-            WHEN mpy =>
-                self.registers(get_dest(self.instruction_pipeline(3))) <= self.mpy_result;
+                self.registers(get_dest(used_instruction)) <= self.add_result;
             WHEN others => -- do nothing
         end CASE;
 
     ------------------------------------------------------------------------
         --stage 4
+        used_instruction := self.instruction_pipeline(4);
+        CASE decode(used_instruction) is
+            WHEN mpy =>
+                self.registers(get_dest(used_instruction)) <= self.mpy_result;
+            WHEN others => -- do nothing
+        end CASE;
 
     ------------------------------------------------------------------------
         --stage 5
+
+    ------------------------------------------------------------------------
     end create_processor_w_ram;
 ------------------------------------------------------------------------
     function register_load_ready
@@ -330,5 +339,16 @@ package body microcode_processor_pkg is
         return self.register_write_counter = self.registers'length-1;
        
     end register_write_ready;
+------------------------------------------------------------------------
+    function program_is_ready
+    (
+        self : processor_with_ram_record
+    )
+    return boolean
+    is
+    begin
+        return decode(self.instruction_pipeline(2)) = ready;
+        
+    end program_is_ready;
 ------------------------------------------------------------------------
 end package body microcode_processor_pkg;

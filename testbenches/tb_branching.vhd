@@ -125,7 +125,7 @@ begin
                         state_counter <= state_counter+1;
                     end if;
                 WHEN 2 =>
-                    if decode(self.instruction_pipeline(1)) = ready then
+                    if program_is_ready(self) then
                         result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
                         save_registers(self, 53-reg_array'length*2);
                         state_counter <= state_counter+1;
