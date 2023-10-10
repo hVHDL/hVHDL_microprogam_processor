@@ -269,10 +269,13 @@ package body microcode_processor_pkg is
         end if;
 
     ------------------------------------------------------------------------
+    ------------------------------------------------------------------------
         --stage 0
+        used_instruction := self.instruction_pipeline(0);
     ------------------------------------------------------------------------
         --stage 1
         used_instruction := self.instruction_pipeline(1);
+
         CASE decode(used_instruction) is
             WHEN add =>
                 self.add_a <= self.registers(get_arg1(used_instruction));
@@ -285,15 +288,17 @@ package body microcode_processor_pkg is
                 self.mpy_b <= self.registers(get_arg2(used_instruction));
             WHEN others => -- do nothing
         end CASE;
-
     ------------------------------------------------------------------------
         --stage 2
+        used_instruction := self.instruction_pipeline(2);
+
         self.add_result     <= self.add_a + self.add_b;
         self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
 
     ------------------------------------------------------------------------
         --stage 3
         used_instruction := self.instruction_pipeline(3);
+        
         self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
         
         CASE decode(used_instruction) is
@@ -305,11 +310,16 @@ package body microcode_processor_pkg is
     ------------------------------------------------------------------------
         --stage 4
         used_instruction := self.instruction_pipeline(4);
+
         CASE decode(used_instruction) is
             WHEN mpy =>
                 self.registers(get_dest(used_instruction)) <= self.mpy_result;
             WHEN others => -- do nothing
         end CASE;
+
+    ------------------------------------------------------------------------
+        --stage 5
+        used_instruction := self.instruction_pipeline(5);
 
     ------------------------------------------------------------------------
         --stage 5
@@ -347,7 +357,7 @@ package body microcode_processor_pkg is
     return boolean
     is
     begin
-        return decode(self.instruction_pipeline(2)) = ready;
+        return decode(self.instruction_pipeline(4)) = ready;
         
     end program_is_ready;
 ------------------------------------------------------------------------

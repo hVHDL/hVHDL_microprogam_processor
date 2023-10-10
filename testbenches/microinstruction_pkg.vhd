@@ -22,7 +22,7 @@ package microinstruction_pkg is
     subtype arg3 is std_logic_vector(3 downto 0);
 
     subtype t_instruction is std_logic_vector(comm'high downto 0);
-    type instruction_array is array (integer range 0 to 4) of t_instruction;
+    type instruction_array is array (integer range 0 to 5) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
 
     function to_fixed (
