@@ -35,7 +35,7 @@ architecture sim of dual_port_ram is
             
         end init_ram;
 
-        variable ram_contents : ram_array := init_ram(init_program);
+        variable ram_contents : ram_array := init_ram(initial_values);
 
     ------------------------------
         impure function read_data

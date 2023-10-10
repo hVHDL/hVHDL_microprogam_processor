@@ -12,23 +12,22 @@ package microcode_processor_pkg is
 
 
     type processor_with_ram_record is record
-        read_address              : natural range 0 to 1023 ;
-        write_address             : natural range 0 to 1023 ;
-        register_write_counter    : natural range 0 to 1023 ;
-        register_read_counter     : natural range 0 to 15 ;
-        register_load_counter     : natural range 0 to 15 ;
-        program_counter           : natural range 0 to 1023 ;
-        registers                 : reg_array               ;
-        instruction_pipeline      : instruction_array;
+        read_address           : natural range 0 to 1023 ;
+        write_address          : natural range 0 to 1023 ;
+        register_write_counter : natural range 0 to 1023 ;
+        register_read_counter  : natural range 0 to 15 ;
+        register_load_counter  : natural range 0 to 15 ;
+        program_counter        : natural range 0 to 1023 ;
+        registers              : reg_array               ;
+        instruction_pipeline   : instruction_array;
         -- math unit for testing, will be removed later
-        add_a                     : std_logic_vector(19 downto 0);
-        add_b                     : std_logic_vector(19 downto 0);
-        add_result                : std_logic_vector(19 downto 0);
-
-        mpy_a                     : std_logic_vector(19 downto 0);
-        mpy_b                     : std_logic_vector(19 downto 0);
-        mpy_raw_result            : signed(39 downto 0);
-        mpy_result                : std_logic_vector(19 downto 0);
+        add_a          : std_logic_vector(19 downto 0);
+        add_b          : std_logic_vector(19 downto 0);
+        add_result     : std_logic_vector(19 downto 0);
+        mpy_a          : std_logic_vector(19 downto 0);
+        mpy_b          : std_logic_vector(19 downto 0);
+        mpy_raw_result : signed(39 downto 0);
+        mpy_result     : std_logic_vector(19 downto 0);
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;

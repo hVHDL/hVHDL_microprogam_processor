@@ -154,7 +154,7 @@ library ieee;
     use work.ram_port_pkg.all;
 
 entity dual_port_ram is
-    generic(init_program : ram_array := (others => (others => '1')));
+    generic(initial_values : ram_array := (others => (others => '1')));
     port (
         clock          : in std_logic;
         ram_read_a_in  : in ram_read_in_record;

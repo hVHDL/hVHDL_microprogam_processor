@@ -10,7 +10,7 @@ architecture rtl of dual_port_ram is
     signal read_b_pipeline : std_logic_vector(1 downto 0) := (others => '0');
     signal output_b_buffer : std_logic_vector(ram_read_b_out.data'range);
 
-    shared variable ram_contents : ram_array := init_program;
+    shared variable ram_contents : ram_array := initial_values;
 
 begin
     ram_read_a_out.data_is_ready <= read_a_pipeline(read_a_pipeline'left);
