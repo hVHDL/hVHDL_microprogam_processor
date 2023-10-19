@@ -10,7 +10,6 @@ LIBRARY ieee  ;
 
 package microcode_processor_pkg is
 
-
     type processor_with_ram_record is record
         read_address           : natural range 0 to 1023 ;
         write_address          : natural range 0 to 1023 ;
@@ -204,17 +203,18 @@ package body microcode_processor_pkg is
 
             instruction_pipeline      => (others => (others => '0')) ,
             -- math unit                
-            add_a                     => (others => '0'),
-            add_b                     => (others => '0'),
-            add_result                => (others => '0'),
+            add_a                     => (others => '0') ,
+            add_b                     => (others => '0') ,
+            add_result                => (others => '0') ,
 
-            mpy_a                     => (others => '0'),
-            mpy_b                     => (others => '0'),
-            mpy_raw_result            => (others => '0')  ,
+            mpy_a                     => (others => '0') ,
+            mpy_b                     => (others => '0') ,
+            mpy_raw_result            => (others => '0') ,
             mpy_result                => (others => '0')
         );
         return retval;
     end init_processor;
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     procedure create_processor_w_ram
     (
@@ -247,7 +247,7 @@ package body microcode_processor_pkg is
         end if;
 
         if ram_read_is_ready(ram_read_data_out) then
-            self.register_load_counter <= self.register_load_counter + 1;
+            self.register_load_counter                 <= self.register_load_counter + 1;
             self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_out);
         end if;
 
@@ -322,7 +322,7 @@ package body microcode_processor_pkg is
         used_instruction := self.instruction_pipeline(5);
 
     ------------------------------------------------------------------------
-        --stage 5
+        --stage 6
 
     ------------------------------------------------------------------------
     end create_processor_w_ram;
