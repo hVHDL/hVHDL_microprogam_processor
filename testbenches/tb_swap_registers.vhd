@@ -47,12 +47,10 @@ architecture vunit_simulation of tb_swap_registers is
 
     signal ram_contents : ram_array := ram_with_registers ;
     signal self                      : processor_with_ram_record := init_processor(test_program'high);
-    signal ram_read_instruction_in  : ram_read_in_record  ;
-    signal ram_read_instruction_out : ram_read_out_record ;
-    signal ram_read_data_in         : ram_read_in_record  ;
-    signal ram_read_data_out        : ram_read_out_record ;
-    signal ram_write_port           : ram_write_in_record ;
-    signal ram_write_port2          : ram_write_in_record ;
+    signal ram_instruction_in  : ram_in_record  ;
+    signal ram_instruction_out : ram_out_record ;
+    signal ram_data_in         : ram_in_record  ;
+    signal ram_data_out        : ram_out_record ;
 
 begin
 
@@ -85,13 +83,11 @@ begin
             simulation_counter <= simulation_counter + 1;
 
             create_processor_w_ram(
-                self                     ,
-                ram_read_instruction_in  ,
-                ram_read_instruction_out ,
-                ram_read_data_in         ,
-                ram_read_data_out        ,
-                ram_write_port           ,
-                ram_write_port2          ,
+                self                ,
+                ram_instruction_in  ,
+                ram_instruction_out ,
+                ram_data_in         ,
+                ram_data_out        ,
                 ram_array'length);
             self.program_counter <= 0;
         --------------------------------------------------
@@ -111,12 +107,10 @@ begin
     u_dpram : entity work.dual_port_ram
     generic map(ram_contents)
     port map(
-    simulator_clock          ,
-    ram_read_instruction_in  ,
-    ram_read_instruction_out ,
-    ram_write_port           ,
-    ram_read_data_in         ,
-    ram_read_data_out        ,
-    ram_write_port2);
+    simulator_clock     ,
+    ram_instruction_in  ,
+    ram_instruction_out ,
+    ram_data_in         ,
+    ram_data_out);
 ------------------------------------------------------------------------
 end vunit_simulation;

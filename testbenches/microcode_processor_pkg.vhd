@@ -14,7 +14,7 @@ package microcode_processor_pkg is
         read_address           : natural range 0 to 1023 ;
         write_address          : natural range 0 to 1023 ;
         register_write_counter : natural range 0 to 1023 ;
-        register_read_counter  : natural range 0 to 15 ;
+        register_counter  : natural range 0 to 15 ;
         register_load_counter  : natural range 0 to 15 ;
         program_counter        : natural range 0 to 1023 ;
         registers              : reg_array               ;
@@ -32,14 +32,12 @@ package microcode_processor_pkg is
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
 
     procedure create_processor_w_ram (
-        signal self                    : inout processor_with_ram_record;
-        signal ram_read_instruction_in : out ram_read_in_record    ;
-        ram_read_instruction_out       : in ram_read_out_record    ;
-        signal ram_read_data_in        : out ram_read_in_record    ;
-        ram_read_data_out              : in ram_read_out_record    ;
-        signal ram_write_port          : out ram_write_in_record   ;
-        signal ram_write_port2         : out ram_write_in_record   ;
-        ramsize                        : in natural);
+        signal self               : inout processor_with_ram_record ;
+        signal ram_instruction_in : out ram_in_record               ;
+        ram_instruction_out       : in ram_out_record               ;
+        signal ram_data_in        : out ram_in_record               ;
+        ram_data_out              : in ram_out_record               ;
+        ramsize                   : in natural)                     ;
 
     function init_ram(program : program_array) return ram_array;
 
@@ -154,7 +152,7 @@ package body microcode_processor_pkg is
         read_offset : in natural
     ) is
     begin
-        self.register_read_counter <= 0;
+        self.register_counter <= 0;
         self.register_load_counter <= 0;
         self.read_address           <= read_offset-self.registers'high;
     end load_registers;
@@ -196,7 +194,7 @@ package body microcode_processor_pkg is
             read_address              => 35                          ,
             write_address             => 35                          ,
             register_write_counter    => reg_array'length            ,
-            register_read_counter     => reg_array'length            ,
+            register_counter     => reg_array'length            ,
             register_load_counter     => reg_array'length            ,
             program_counter           => program_start_point         ,
             registers                 => (others => (others => '0')),
@@ -218,50 +216,48 @@ package body microcode_processor_pkg is
 ------------------------------------------------------------------------
     procedure create_processor_w_ram
     (
-        signal self                    : inout processor_with_ram_record;
-        signal ram_read_instruction_in : out ram_read_in_record    ;
-        ram_read_instruction_out       : in ram_read_out_record    ;
-        signal ram_read_data_in        : out ram_read_in_record    ;
-        ram_read_data_out              : in ram_read_out_record    ;
-        signal ram_write_port          : out ram_write_in_record   ;
-        signal ram_write_port2         : out ram_write_in_record   ;
-        ramsize                        : in natural
+        signal self               : inout processor_with_ram_record;
+        signal ram_instruction_in : out ram_in_record    ;
+        ram_instruction_out       : in ram_out_record    ;
+        signal ram_data_in        : out ram_in_record    ;
+        ram_data_out              : in ram_out_record    ;
+        ramsize                   : in natural
     ) is
         variable ram_data : std_logic_vector(19 downto 0);
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
         variable used_instruction : std_logic_vector(self.instruction_pipeline(0)'range);
     begin
-        init_ram(ram_read_instruction_in, ram_write_port);
-        init_ram(ram_read_data_in, ram_write_port2);
+        init_ram(ram_instruction_in);
+        init_ram(ram_data_in);
     --------------------------------------------------
         -- save registers to ram
         if decode(self.instruction_pipeline(2)) = ready then
             save_registers(self, register_memory_start_address);
         end if;
 
-        if self.register_read_counter < self.registers'length then
-            self.register_read_counter <= self.register_read_counter + 1;
+        if self.register_counter < self.registers'length then
+            self.register_counter <= self.register_counter + 1;
             self.read_address          <= self.read_address + 1;
-            request_data_from_ram(ram_read_data_in, self.read_address);
+            request_data_from_ram(ram_data_in, self.read_address);
         end if;
 
-        if ram_read_is_ready(ram_read_data_out) then
+        if ram_read_is_ready(ram_data_out) then
             self.register_load_counter                 <= self.register_load_counter + 1;
-            self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_out);
+            self.registers(self.register_load_counter) <= get_ram_data(ram_data_out);
         end if;
 
         if self.register_write_counter < self.registers'length then
             self.write_address          <= self.write_address + 1;
             self.register_write_counter <= self.register_write_counter + 1;
-            write_data_to_ram(ram_write_port, self.write_address, self.registers(self.register_write_counter));
+            write_data_to_ram(ram_data_in, self.write_address, self.registers(self.register_write_counter));
         end if;
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
-        request_data_from_ram(ram_read_instruction_in, self.program_counter);
-        ram_data := get_ram_data(ram_read_instruction_out);
+        request_data_from_ram(ram_instruction_in, self.program_counter);
+        ram_data := get_ram_data(ram_instruction_out);
 
-        if ram_read_is_ready(ram_read_instruction_out) then
+        if ram_read_is_ready(ram_instruction_out) then
             self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
             if decode(ram_data) /= program_end then
                 self.program_counter <= self.program_counter + 1;

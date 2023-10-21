@@ -78,7 +78,6 @@ begin
                 testi <= std_logic_vector(to_unsigned(simulation_counter, 20) - 3);
             end if;
 
-
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------

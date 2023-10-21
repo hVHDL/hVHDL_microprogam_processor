@@ -48,12 +48,10 @@ architecture vunit_simulation of tb_stall_pipeline is
 
     constant ram_contents : ram_array := init_ram_array_w_indices;
 
-    signal ram_read_instruction_in  : ram_read_in_record  ;
-    signal ram_read_instruction_out : ram_read_out_record ;
-    signal ram_read_data_in         : ram_read_in_record  ;
-    signal ram_read_data_out        : ram_read_out_record ;
-    signal ram_write_port           : ram_write_in_record ;
-    signal ram_write_port2          : ram_write_in_record ;
+    signal ram_instruction_in  : ram_in_record  ;
+    signal ram_instruction_out : ram_out_record ;
+    signal ram_data_in         : ram_in_record  ;
+    signal ram_data_out        : ram_out_record ;
 
     signal result       : real := 0.0;
     signal result2      : real := 0.0;
@@ -87,8 +85,8 @@ begin
             simulation_counter <= simulation_counter + 1;
             --------------------
 
-            stall_pipeline := ram_read_is_ready(ram_read_instruction_out) AND
-                             (get_uint_ram_data(ram_read_instruction_out) mod 3 = 0);
+            stall_pipeline := ram_read_is_ready(ram_instruction_out) AND
+                             (get_uint_ram_data(ram_instruction_out) mod 3 = 0);
 
             if ram_address < ram_array'length-1 then
                 ram_address <= ram_address + 1;
@@ -96,14 +94,13 @@ begin
                 ram_address <= 0;
             end if;
 
-            if ram_read_is_ready(ram_read_instruction_out) then
-                ram_data <= get_uint_ram_data(ram_read_instruction_out);
+            if ram_read_is_ready(ram_instruction_out) then
+                ram_data <= get_uint_ram_data(ram_instruction_out);
             end if;
 
             if not stall_pipeline then
-                request_data_from_ram(ram_read_instruction_in, ram_address);
+                request_data_from_ram(ram_instruction_in, ram_address);
             end if;
-
 
         end if; -- rising_edge
     end process stimulus;	
@@ -112,11 +109,9 @@ begin
     generic map(ram_contents)
     port map(
     simulator_clock          ,
-    ram_read_instruction_in  ,
-    ram_read_instruction_out ,
-    ram_write_port           ,
-    ram_read_data_in         ,
-    ram_read_data_out        ,
-    ram_write_port2);
+    ram_instruction_in  ,
+    ram_instruction_out ,
+    ram_data_in         ,
+    ram_data_out        );
 ------------------------------------------------------------------------
 end vunit_simulation;
