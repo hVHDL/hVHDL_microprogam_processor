@@ -11,7 +11,7 @@ context vunit_lib.vunit_context;
     use work.real_to_fixed_pkg.all;
     use work.microcode_processor_pkg.all;
     use work.multiplier_pkg.radix_multiply;
-    use work.ram_port_pkg.all;
+    use work.multi_port_ram_pkg.all;
 
 entity tb_branching is
   generic (runner_cfg : string);
@@ -65,10 +65,12 @@ architecture vunit_simulation of tb_branching is
     end test_function_calls;
 
     signal self                     : processor_with_ram_record := init_processor(test_program'high);
-    signal ram_instruction_in  : ram_in_record  ;
-    signal ram_instruction_out : ram_out_record ;
-    signal ram_data_in         : ram_in_record  ;
-    signal ram_data_out        : ram_out_record ;
+    signal ram_read_instruction_in  : ram_read_in_record  ;
+    signal ram_read_instruction_out : ram_read_out_record ;
+    signal ram_read_data_in         : ram_read_in_record  ;
+    signal ram_read_data_out        : ram_read_out_record ;
+    signal ram_write_port           : ram_write_in_record ;
+    signal ram_write_port2          : ram_write_in_record ;
 
     signal result       : real := 0.0;
     signal result2      : real := 0.0;
@@ -104,10 +106,11 @@ begin
             --------------------
             create_processor_w_ram(
                 self                     ,
-                ram_instruction_in  ,
-                ram_instruction_out ,
-                ram_data_in         ,
-                ram_data_out        ,
+                ram_read_instruction_in  ,
+                ram_read_instruction_out ,
+                ram_read_data_in         ,
+                ram_read_data_out        ,
+                ram_write_port           ,
                 ram_array'length);
 
 ------------------------------------------------------------------------
@@ -141,13 +144,14 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    u_dpram : entity work.dual_port_ram
+    u_dpram : entity work.ram_read_x2_write_x1
     generic map(ram_contents)
     port map(
-    simulator_clock     ,
-    ram_instruction_in  ,
-    ram_instruction_out ,
-    ram_data_in         ,
-    ram_data_out        );
+    simulator_clock          ,
+    ram_read_instruction_in  ,
+    ram_read_instruction_out ,
+    ram_read_data_in         ,
+    ram_read_data_out        ,
+    ram_write_port);
 ------------------------------------------------------------------------
 end vunit_simulation;

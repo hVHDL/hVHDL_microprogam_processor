@@ -28,15 +28,14 @@ testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_ba
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_pkg.vhd")
 
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/ram_configuration_pkg.vhd")
-testi.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/ram_read_base_pkg.vhd")
-testi.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/dual_port_ram.vhd")
-testi.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/arch_sim_dual_port_ram.vhd")
+testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_port_ram_pkg.vhd")
+testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
+testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
 testi.add_source_files(ROOT / "testbenches/microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/microcode_processor_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/test_programs_pkg.vhd")
 
-testi.add_source_files(ROOT / "testbenches/ram_read_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/processor_w_ram_v2_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_pipelined_operations.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_swap_registers.vhd")
