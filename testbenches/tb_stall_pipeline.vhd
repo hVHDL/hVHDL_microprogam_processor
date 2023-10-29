@@ -20,18 +20,12 @@ end;
 architecture vunit_simulation of tb_stall_pipeline is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 30e3;
+    constant simtime_in_clocks : integer := 150;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-
-    ------------------------------------------------------------------------
-    constant dummy           : program_array := get_dummy;
-    constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
-    constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
-
     function init_ram_array_w_indices
     return ram_array
     is
@@ -55,15 +49,9 @@ architecture vunit_simulation of tb_stall_pipeline is
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
-    signal result       : real := 0.0;
-    signal result2      : real := 0.0;
-    signal result3      : real := 0.0;
-    signal test_counter : natural := 0;
-
-    signal state_counter : natural := 0;
     signal ram_address : natural range 0 to ram_array'length := 0;
-
     signal ram_data : natural := ram_array'length + 11;
+    signal flush_counter : natural := 0;
 
 begin
 
@@ -82,13 +70,17 @@ begin
     stimulus : process(simulator_clock)
 ------------------------------------------------------------------------
         variable stall_pipeline : boolean := false;
+        procedure stall(stall_to : in natural) is
+        begin
+            ram_address <= stall_to;
+            flush_counter <= 3;
+            
+        end stall;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
-
-            stall_pipeline := ram_read_is_ready(ram_read_instruction_out) AND
-                             (get_uint_ram_data(ram_read_instruction_out) mod 3 = 0);
+            init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
 
             if ram_address < ram_array'length-1 then
                 ram_address <= ram_address + 1;
@@ -100,9 +92,21 @@ begin
                 ram_data <= get_uint_ram_data(ram_read_instruction_out);
             end if;
 
-            if not stall_pipeline then
+            if flush_counter > 0 then
+                flush_counter <= flush_counter - 1;
+                ram_address   <= ram_address;
+                ram_data      <= ram_data;
+            end if;
+
+            if flush_counter = 0 then
                 request_data_from_ram(ram_read_instruction_in, ram_address);
             end if;
+
+            CASE simulation_counter is
+                WHEN 26 => stall(ram_address-3);
+                WHEN 45 => stall(ram_address-3);
+                WHEN others => --do nothing
+            end CASE;
 
         end if; -- rising_edge
     end process stimulus;	
