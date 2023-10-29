@@ -8,8 +8,10 @@ package ram_read_module_pkg is
 
     type ram_read_module_record is record
         ram_data      : natural;
+        ram_data1     : natural;
         ram_address   : natural;
         flush_counter : natural;
+        has_stalled : boolean;
     end record;
 ------------------------------------------------------------------------
     function init_ram_read_module (
@@ -40,7 +42,7 @@ package body ram_read_module_pkg is
     is
         variable retval : ram_read_module_record;
     begin
-        retval := (init1, init2, init3);
+        retval := (init1, init1, init2, init3, false);
 
         return retval;
         
@@ -55,6 +57,7 @@ package body ram_read_module_pkg is
         ----------------
         if ram_read_is_ready(ram_read_out) then
             self.ram_data <= get_uint_ram_data(ram_read_out);
+            self.ram_data1 <= self.ram_data;
         end if;
 
         ----------------
@@ -64,12 +67,15 @@ package body ram_read_module_pkg is
             self.ram_address <= 0;
         end if;
         ----------------
+
+        if self.flush_counter = 0 and ram_read_is_ready(ram_read_out) then
+            self.has_stalled   <= false;
+        end if;
         if self.flush_counter > 0 then
             self.flush_counter <= self.flush_counter - 1;
             self.ram_address   <= self.ram_address;
             self.ram_data      <= self.ram_data;
         end if;
-        
     end create_ram_read_module;
 
 ------------------------------------------------------------------------
@@ -78,8 +84,12 @@ package body ram_read_module_pkg is
         number_of_wait_cycles : in natural range 3 to 27)
     is
     begin
-        self.ram_address   <= self.ram_address-3;
-        self.flush_counter <= number_of_wait_cycles;
+        if not self.has_stalled then
+            self.ram_address   <= self.ram_address-3;
+            self.flush_counter <= number_of_wait_cycles;
+            self.has_stalled <= true;
+            self.ram_data    <= self.ram_data;
+        end if;
     end stall;
 ------------------------------------------------------------------------
 
@@ -175,6 +185,8 @@ begin
             CASE self.ram_data is
                 WHEN 15 => stall(self, 5);
                 WHEN 27 => stall(self, 8);
+                WHEN 31 => stall(self, 3);
+                WHEN 32 => stall(self, 3);
                 WHEN others => --do nothing
             end CASE;
     ------------------------------------------------------------------------
