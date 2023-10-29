@@ -8,7 +8,7 @@ package ram_read_control_module_pkg is
 
     constant number_of_ram_pipeline_cyles : natural := 3;
 
-    type ram_read_module_record is record
+    type ram_read_contorl_module_record is record
         ram_data      : work.multi_port_ram_pkg.ramtype;
         ram_address   : natural;
         flush_counter : natural;
@@ -17,16 +17,16 @@ package ram_read_control_module_pkg is
 ------------------------------------------------------------------------
     function init_ram_read_module (
         init1, init2, init3 : natural)
-    return ram_read_module_record;
+    return ram_read_contorl_module_record;
 
 ------------------------------------------------------------------------
     procedure create_ram_read_module (
-        signal self : inout ram_read_module_record;
+        signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record);
 
 ------------------------------------------------------------------------
     procedure stall(
-        signal self : inout ram_read_module_record; 
+        signal self : inout ram_read_contorl_module_record; 
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27);
 
 ------------------------------------------------------------------------
@@ -39,9 +39,9 @@ package body ram_read_control_module_pkg is
     (
         init1, init2, init3 : natural
     )
-    return ram_read_module_record
+    return ram_read_contorl_module_record
     is
-        variable retval : ram_read_module_record;
+        variable retval : ram_read_contorl_module_record;
     begin
         retval := (std_logic_vector(to_unsigned(init1,ramtype'length)), init2, init3, false);
 
@@ -51,7 +51,7 @@ package body ram_read_control_module_pkg is
 ------------------------------------------------------------------------
     procedure create_ram_read_module
     (
-        signal self : inout ram_read_module_record;
+        signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record
     ) is
     begin
@@ -80,7 +80,7 @@ package body ram_read_control_module_pkg is
 
 ------------------------------------------------------------------------
     procedure stall(
-        signal self : inout ram_read_module_record; 
+        signal self : inout ram_read_contorl_module_record; 
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27)
     is
     begin
@@ -149,7 +149,7 @@ architecture vunit_simulation of tb_stall_pipeline is
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
-    signal self : ram_read_module_record := init_ram_read_module(ram_array'high, 0,0);
+    signal self : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
     signal ram_data      : natural := ram_array'high;
     signal ram_address   : natural := 0;
     signal flush_counter : natural := 0;
