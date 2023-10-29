@@ -11,19 +11,22 @@ package ram_read_module_pkg is
         ram_address   : natural;
         flush_counter : natural;
     end record;
-
+------------------------------------------------------------------------
     function init_ram_read_module (
         init1, init2, init3 : natural)
     return ram_read_module_record;
 
+------------------------------------------------------------------------
     procedure create_ram_read_module (
         signal self : inout ram_read_module_record;
         ram_read_out : in ram_read_out_record);
 
+------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_module_record; 
         number_of_wait_cycles : in natural range 3 to 27);
 
+------------------------------------------------------------------------
 end package ram_read_module_pkg;
 
 package body ram_read_module_pkg is
@@ -158,8 +161,6 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-------------------------------------------------------------------------
-        variable stall_pipeline : boolean := false;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -178,17 +179,19 @@ begin
             end CASE;
     ------------------------------------------------------------------------
     ----------- test -------------------------------------------------------
-            ram_data_delayed <= self.ram_data;
 
+            -- test for correct sequence
+            ram_data_delayed <= self.ram_data;
             if self.ram_data /= ram_data_delayed then
                 if self.ram_data /= 0 then
                     check(self.ram_data - ram_data_delayed = 1);
                 end if;
             end if;
 
-            ram_data     <= self.ram_data;
-            ram_address  <= self.ram_address;
-            flush_counter<= self.flush_counter;
+            -- log for gtkwave
+            ram_data      <= self.ram_data;
+            ram_address   <= self.ram_address;
+            flush_counter <= self.flush_counter;
 
         end if; -- rising_edge
     end process stimulus;	
