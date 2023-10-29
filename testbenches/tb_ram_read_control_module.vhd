@@ -16,11 +16,11 @@ context vunit_lib.vunit_context;
 
     use work.ram_read_control_module_pkg.all;
 
-entity tb_stall_pipeline is
+entity tb_ram_read_control_module is
   generic (runner_cfg : string);
 end;
 
-architecture vunit_simulation of tb_stall_pipeline is
+architecture vunit_simulation of tb_ram_read_control_module is
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 150;

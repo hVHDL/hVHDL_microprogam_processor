@@ -32,6 +32,10 @@ testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
+testi.add_source_files(ROOT / "ram_control/ram_read_control_module_pkg.vhd")
+
+
+
 testi.add_source_files(ROOT / "testbenches/microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/microcode_processor_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/test_programs_pkg.vhd")
