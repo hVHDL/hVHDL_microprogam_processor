@@ -50,8 +50,10 @@ architecture vunit_simulation of tb_stall_pipeline is
     signal ram_write_port2          : ram_write_in_record ;
 
     signal ram_address : natural range 0 to ram_array'length := 0;
-    signal ram_data : natural := ram_array'length + 11;
+    signal ram_data : natural := ram_array'high;
     signal flush_counter : natural := 0;
+
+    signal ram_data_delayed : natural := ram_array'high;
 
 begin
 
@@ -107,6 +109,14 @@ begin
                 WHEN 45 => stall(ram_address-3);
                 WHEN others => --do nothing
             end CASE;
+
+            ram_data_delayed <= ram_data;
+
+            if ram_data /= ram_data_delayed then
+                if ram_data /= 0 then
+                    check(ram_data - ram_data_delayed = 1);
+                end if;
+            end if;
 
         end if; -- rising_edge
     end process stimulus;	
