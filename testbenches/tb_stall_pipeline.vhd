@@ -2,11 +2,23 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+    use work.multi_port_ram_pkg.all;
+
 package ram_read_module_pkg is
 
     type ram_read_module_record is record
-        data : std_logic;
+        ram_data      : natural;
+        ram_address   : natural;
+        flush_counter : natural;
     end record;
+
+    function init_ram_read_module (
+        init1, init2, init3 : natural)
+    return ram_read_module_record;
+
+    procedure create_ram_read_module (
+        signal self : inout ram_read_module_record;
+        ram_read_out : in ram_read_out_record);
 
     procedure stall(
         signal flush_counter : inout natural; 
@@ -17,6 +29,48 @@ end package ram_read_module_pkg;
 
 package body ram_read_module_pkg is
 
+------------------------------------------------------------------------
+    function init_ram_read_module
+    (
+        init1, init2, init3 : natural
+    )
+    return ram_read_module_record
+    is
+        variable retval : ram_read_module_record;
+    begin
+        retval := (init1, init2, init3);
+
+        return retval;
+        
+    end init_ram_read_module;
+------------------------------------------------------------------------
+    procedure create_ram_read_module
+    (
+        signal self : inout ram_read_module_record;
+        ram_read_out : in ram_read_out_record
+    ) is
+    begin
+        ----------------
+        if ram_read_is_ready(ram_read_out) then
+            self.ram_data <= get_uint_ram_data(ram_read_out);
+        end if;
+
+        ----------------
+        if self.ram_address < ram_array'length-1 then
+            self.ram_address <= self.ram_address + 1;
+        else
+            self.ram_address <= 0;
+        end if;
+        ----------------
+        if self.flush_counter > 0 then
+            self.flush_counter <= self.flush_counter - 1;
+            self.ram_address   <= self.ram_address;
+            self.ram_data      <= self.ram_data;
+        end if;
+        
+    end create_ram_read_module;
+
+------------------------------------------------------------------------
     procedure stall(
         signal flush_counter : inout natural; 
         signal used_ram_address : inout natural; 
@@ -26,6 +80,7 @@ package body ram_read_module_pkg is
         used_ram_address <= used_ram_address-3;
         flush_counter    <= number_of_wait_cycles;
     end stall;
+------------------------------------------------------------------------
 
 end package body ram_read_module_pkg;
 
@@ -83,8 +138,9 @@ architecture vunit_simulation of tb_stall_pipeline is
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
-    signal ram_address : natural range 0 to ram_array'length := 0;
-    signal ram_data : natural := ram_array'high;
+    signal self : ram_read_module_record := init_ram_read_module(ram_array'high, 0,0);
+    signal ram_data      : natural := ram_array'high;
+    signal ram_address   : natural := 0;
     signal flush_counter : natural := 0;
 
     signal ram_data_delayed : natural := ram_array'high;
@@ -111,41 +167,30 @@ begin
             simulation_counter <= simulation_counter + 1;
             --------------------
             init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
+            create_ram_read_module(self, ram_read_instruction_out);
 
-            if ram_address < ram_array'length-1 then
-                ram_address <= ram_address + 1;
-            else
-                ram_address <= 0;
+            if self.flush_counter = 0 then
+                request_data_from_ram(ram_read_instruction_in, self.ram_address);
             end if;
 
-            if ram_read_is_ready(ram_read_instruction_out) then
-                ram_data <= get_uint_ram_data(ram_read_instruction_out);
-            end if;
-
-            CASE ram_data is
-                WHEN 15 => stall(flush_counter, ram_address, 5);
-                WHEN 27 => stall(flush_counter, ram_address, 8);
+            CASE self.ram_data is
+                WHEN 15 => stall(self.flush_counter, self.ram_address, 5);
+                WHEN 27 => stall(self.flush_counter, self.ram_address, 8);
                 WHEN others => --do nothing
             end CASE;
+    ------------------------------------------------------------------------
+    ----------- test -------------------------------------------------------
+            ram_data_delayed <= self.ram_data;
 
-            if flush_counter > 0 then
-                flush_counter <= flush_counter - 1;
-                ram_address   <= ram_address;
-                ram_data      <= ram_data;
-            end if;
-
-            if flush_counter = 0 then
-                request_data_from_ram(ram_read_instruction_in, ram_address);
-            end if;
-
-
-            ram_data_delayed <= ram_data;
-
-            if ram_data /= ram_data_delayed then
-                if ram_data /= 0 then
-                    check(ram_data - ram_data_delayed = 1);
+            if self.ram_data /= ram_data_delayed then
+                if self.ram_data /= 0 then
+                    check(self.ram_data - ram_data_delayed = 1);
                 end if;
             end if;
+
+            ram_data     <= self.ram_data;
+            ram_address  <= self.ram_address;
+            flush_counter<= self.flush_counter;
 
         end if; -- rising_edge
     end process stimulus;	
