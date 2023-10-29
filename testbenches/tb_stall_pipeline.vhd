@@ -1,3 +1,35 @@
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+package ram_read_module_pkg is
+
+    type ram_read_module_record is record
+        data : std_logic;
+    end record;
+
+    procedure stall(
+        signal flush_counter : inout natural; 
+        signal used_ram_address : inout natural; 
+        number_of_wait_cycles : in natural range 3 to 27);
+
+end package ram_read_module_pkg;
+
+package body ram_read_module_pkg is
+
+    procedure stall(
+        signal flush_counter : inout natural; 
+        signal used_ram_address : inout natural; 
+        number_of_wait_cycles : in natural range 3 to 27)
+    is
+    begin
+        used_ram_address <= used_ram_address-3;
+        flush_counter    <= number_of_wait_cycles;
+    end stall;
+
+end package body ram_read_module_pkg;
+
+------------------------------------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -12,6 +44,8 @@ context vunit_lib.vunit_context;
     use work.microcode_processor_pkg.all;
     use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
+
+    use work.ram_read_module_pkg.all;
 
 entity tb_stall_pipeline is
   generic (runner_cfg : string);
@@ -72,12 +106,6 @@ begin
     stimulus : process(simulator_clock)
 ------------------------------------------------------------------------
         variable stall_pipeline : boolean := false;
-        procedure stall(stall_to : in natural) is
-        begin
-            ram_address <= stall_to;
-            flush_counter <= 3;
-            
-        end stall;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -94,6 +122,12 @@ begin
                 ram_data <= get_uint_ram_data(ram_read_instruction_out);
             end if;
 
+            CASE ram_data is
+                WHEN 15 => stall(flush_counter, ram_address, 5);
+                WHEN 27 => stall(flush_counter, ram_address, 8);
+                WHEN others => --do nothing
+            end CASE;
+
             if flush_counter > 0 then
                 flush_counter <= flush_counter - 1;
                 ram_address   <= ram_address;
@@ -104,11 +138,6 @@ begin
                 request_data_from_ram(ram_read_instruction_in, ram_address);
             end if;
 
-            CASE simulation_counter is
-                WHEN 26 => stall(ram_address-3);
-                WHEN 45 => stall(ram_address-3);
-                WHEN others => --do nothing
-            end CASE;
 
             ram_data_delayed <= ram_data;
 
