@@ -21,8 +21,7 @@ package ram_read_module_pkg is
         ram_read_out : in ram_read_out_record);
 
     procedure stall(
-        signal flush_counter : inout natural; 
-        signal used_ram_address : inout natural; 
+        signal self : inout ram_read_module_record; 
         number_of_wait_cycles : in natural range 3 to 27);
 
 end package ram_read_module_pkg;
@@ -72,13 +71,12 @@ package body ram_read_module_pkg is
 
 ------------------------------------------------------------------------
     procedure stall(
-        signal flush_counter : inout natural; 
-        signal used_ram_address : inout natural; 
+        signal self : inout ram_read_module_record; 
         number_of_wait_cycles : in natural range 3 to 27)
     is
     begin
-        used_ram_address <= used_ram_address-3;
-        flush_counter    <= number_of_wait_cycles;
+        self.ram_address   <= self.ram_address-3;
+        self.flush_counter <= number_of_wait_cycles;
     end stall;
 ------------------------------------------------------------------------
 
@@ -174,8 +172,8 @@ begin
             end if;
 
             CASE self.ram_data is
-                WHEN 15 => stall(self.flush_counter, self.ram_address, 5);
-                WHEN 27 => stall(self.flush_counter, self.ram_address, 8);
+                WHEN 15 => stall(self, 5);
+                WHEN 27 => stall(self, 8);
                 WHEN others => --do nothing
             end CASE;
     ------------------------------------------------------------------------
