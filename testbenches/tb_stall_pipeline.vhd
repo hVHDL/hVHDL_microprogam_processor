@@ -4,11 +4,12 @@ library ieee;
 
     use work.multi_port_ram_pkg.all;
 
-package ram_read_module_pkg is
+package ram_read_control_module_pkg is
+
+    constant number_of_ram_pipeline_cyles : natural := 3;
 
     type ram_read_module_record is record
-        ram_data      : natural;
-        ram_data1     : natural;
+        ram_data      : work.multi_port_ram_pkg.ramtype;
         ram_address   : natural;
         flush_counter : natural;
         has_stalled : boolean;
@@ -26,12 +27,12 @@ package ram_read_module_pkg is
 ------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_module_record; 
-        number_of_wait_cycles : in natural range 3 to 27);
+        number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27);
 
 ------------------------------------------------------------------------
-end package ram_read_module_pkg;
+end package ram_read_control_module_pkg;
 
-package body ram_read_module_pkg is
+package body ram_read_control_module_pkg is
 
 ------------------------------------------------------------------------
     function init_ram_read_module
@@ -42,7 +43,7 @@ package body ram_read_module_pkg is
     is
         variable retval : ram_read_module_record;
     begin
-        retval := (init1, init1, init2, init3, false);
+        retval := (std_logic_vector(to_unsigned(init1,ramtype'length)), init2, init3, false);
 
         return retval;
         
@@ -56,8 +57,7 @@ package body ram_read_module_pkg is
     begin
         ----------------
         if ram_read_is_ready(ram_read_out) then
-            self.ram_data <= get_uint_ram_data(ram_read_out);
-            self.ram_data1 <= self.ram_data;
+            self.ram_data <= get_ram_data(ram_read_out);
         end if;
 
         ----------------
@@ -81,19 +81,19 @@ package body ram_read_module_pkg is
 ------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_module_record; 
-        number_of_wait_cycles : in natural range 3 to 27)
+        number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27)
     is
     begin
         if not self.has_stalled then
-            self.ram_address   <= self.ram_address-3;
+            self.ram_address   <= self.ram_address-number_of_ram_pipeline_cyles;
             self.flush_counter <= number_of_wait_cycles;
-            self.has_stalled <= true;
-            self.ram_data    <= self.ram_data;
+            self.has_stalled   <= true;
+            self.ram_data      <= self.ram_data;
         end if;
     end stall;
 ------------------------------------------------------------------------
 
-end package body ram_read_module_pkg;
+end package body ram_read_control_module_pkg;
 
 ------------------------------------------------------------------------
 LIBRARY ieee  ; 
@@ -111,7 +111,7 @@ context vunit_lib.vunit_context;
     use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
 
-    use work.ram_read_module_pkg.all;
+    use work.ram_read_control_module_pkg.all;
 
 entity tb_stall_pipeline is
   generic (runner_cfg : string);
@@ -171,6 +171,15 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
+        function to_integer
+        (
+            data : ramtype
+        )
+        return integer
+        is
+        begin
+            return to_integer(unsigned(data));
+        end to_integer;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -182,26 +191,30 @@ begin
                 request_data_from_ram(ram_read_instruction_in, self.ram_address);
             end if;
 
-            CASE self.ram_data is
+            CASE to_integer(self.ram_data) is
                 WHEN 15 => stall(self, 5);
                 WHEN 27 => stall(self, 8);
-                WHEN 31 => stall(self, 3);
-                WHEN 32 => stall(self, 3);
+                WHEN 31 => stall(self, number_of_ram_pipeline_cyles);
+                WHEN 32 => stall(self, number_of_ram_pipeline_cyles);
+                WHEN 33 => stall(self, 8);
+                WHEN 34 => stall(self, 15);
+                WHEN 35 => stall(self, number_of_ram_pipeline_cyles);
+                WHEN 44 => stall(self, number_of_ram_pipeline_cyles);
                 WHEN others => --do nothing
             end CASE;
     ------------------------------------------------------------------------
     ----------- test -------------------------------------------------------
 
             -- test for correct sequence
-            ram_data_delayed <= self.ram_data;
-            if self.ram_data /= ram_data_delayed then
-                if self.ram_data /= 0 then
-                    check(self.ram_data - ram_data_delayed = 1);
+            ram_data_delayed <= to_integer(self.ram_data);
+            if to_integer(self.ram_data) /= ram_data_delayed then
+                if to_integer(self.ram_data) /= 0 then
+                    check(to_integer(self.ram_data) - ram_data_delayed = 1);
                 end if;
             end if;
 
             -- log for gtkwave
-            ram_data      <= self.ram_data;
+            ram_data      <= to_integer(self.ram_data);
             ram_address   <= self.ram_address;
             flush_counter <= self.flush_counter;
 
