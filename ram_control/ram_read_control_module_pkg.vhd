@@ -10,8 +10,8 @@ package ram_read_control_module_pkg is
 
     type ram_read_contorl_module_record is record
         ram_data      : work.multi_port_ram_pkg.ramtype;
-        ram_address   : natural;
-        flush_counter : natural;
+        ram_address   : natural range ram_array'range;
+        flush_counter : natural range 0 to 127; -- this is arbitrary
         has_stalled   : boolean;
     end record;
 ------------------------------------------------------------------------
@@ -26,10 +26,20 @@ package ram_read_control_module_pkg is
         signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record);
 
+------------------------------------------------------------------------
     function ram_data_is_ready (
         self : ram_read_contorl_module_record;
         ram_read_out : ram_read_out_record)
     return boolean;
+----------------
+    function ram_data_is_ready (
+        self : ram_read_contorl_module_record;
+        ram_read_out : ram_read_out_record)
+    return std_logic;
+
+------------------------------------------------------------------------
+    function get_ram_data ( self : ram_read_contorl_module_record)
+        return std_logic_vector;
 
 ------------------------------------------------------------------------
     procedure stall(
@@ -152,6 +162,35 @@ package body ram_read_control_module_pkg is
     begin
         return (not self.has_stalled) and ram_read_is_ready(ram_read_out);
     end ram_data_is_ready;
+
+    function ram_data_is_ready
+    (
+        self : ram_read_contorl_module_record;
+        ram_read_out : ram_read_out_record
+    )
+    return std_logic
+    is
+        variable retval : std_logic;
+    begin
+        if ram_data_is_ready(self, ram_read_out) then
+            retval := '1';
+        else
+            retval := '0';
+        end if;
+        return retval;
+    end ram_data_is_ready;
+
 ------------------------------------------------------------------------
+    function get_ram_data
+    (
+        self : ram_read_contorl_module_record
+    )
+    return std_logic_vector
+    is
+    begin
+        return self.ram_data;
+    end get_ram_data;
+------------------------------------------------------------------------
+
 
 end package body ram_read_control_module_pkg;

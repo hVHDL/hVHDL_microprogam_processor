@@ -50,8 +50,6 @@ architecture vunit_simulation of tb_ram_control_ready is
     signal ram_address   : natural := 0;
     signal flush_counter : natural := 0;
 
-    signal ram_data_delayed : natural := ram_array'high;
-
     signal ram_is_ready : boolean := false;
 
 begin
@@ -109,8 +107,6 @@ begin
                 ram_data <= to_integer(self.ram_data);
                 check(ram_data /= to_integer(self.ram_data));
             end if;
-            ram_address   <= self.ram_address;
-            flush_counter <= self.flush_counter;
             ram_is_ready  <= ram_data_is_ready(self, ram_read_instruction_out);
 
         end if; -- rising_edge

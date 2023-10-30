@@ -111,9 +111,7 @@ begin
             end if;
 
             -- log for gtkwave
-            ram_data      <= to_integer(self.ram_data);
-            ram_address   <= self.ram_address;
-            flush_counter <= self.flush_counter;
+            ram_data <= to_integer(self.ram_data);
 
         end if; -- rising_edge
     end process stimulus;	
