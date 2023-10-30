@@ -12,7 +12,7 @@ package ram_read_control_module_pkg is
         ram_data      : work.multi_port_ram_pkg.ramtype;
         ram_address   : natural;
         flush_counter : natural;
-        has_stalled : boolean;
+        has_stalled   : boolean;
     end record;
 ------------------------------------------------------------------------
     function init_ram_read_module return ram_read_contorl_module_record;
@@ -26,10 +26,19 @@ package ram_read_control_module_pkg is
         signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record);
 
+    function ram_data_is_ready (
+        self : ram_read_contorl_module_record;
+        ram_read_out : ram_read_out_record)
+    return boolean;
+
 ------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_contorl_module_record; 
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27);
+
+    procedure jump_to (
+        signal self : inout ram_read_contorl_module_record;
+        address : natural);
 
 ------------------------------------------------------------------------
 end package ram_read_control_module_pkg;
@@ -42,10 +51,10 @@ package body ram_read_control_module_pkg is
     is
         variable retval : ram_read_contorl_module_record;
     begin
-        retval := (std_logic_vector(to_unsigned(ram_array'high,ramtype'length)), 0,0, false);
+        retval := ((others => '0'), 0,0, false);
         return retval;
     end init_ram_read_module;
-
+------------------------------------------------------------------------
     function init_ram_read_module
     (
         init1, init2, init3 : natural
@@ -102,6 +111,30 @@ package body ram_read_control_module_pkg is
             self.ram_data      <= self.ram_data;
         end if;
     end stall;
+------------------------------------------------------------------------
+    procedure jump_to
+    (
+        signal self : inout ram_read_contorl_module_record;
+        address : natural
+    ) is
+    begin
+        stall(self, 3);
+        if not self.has_stalled then
+            self.ram_address <= address;
+        end if;
+        
+    end jump_to;
+------------------------------------------------------------------------
+    function ram_data_is_ready
+    (
+        self : ram_read_contorl_module_record;
+        ram_read_out : ram_read_out_record
+    )
+    return boolean
+    is
+    begin
+        return (not self.has_stalled) and ram_read_is_ready(ram_read_out);
+    end ram_data_is_ready;
 ------------------------------------------------------------------------
 
 end package body ram_read_control_module_pkg;

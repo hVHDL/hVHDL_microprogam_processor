@@ -33,8 +33,8 @@ testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_re
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
 testi.add_source_files(ROOT / "ram_control/ram_read_control_module_pkg.vhd")
-
-
+testi.add_source_files(ROOT / "testbenches/ram/tb_ram_read_control_module.vhd")
+testi.add_source_files(ROOT / "testbenches/ram/tb_ram_control_ready.vhd")
 
 testi.add_source_files(ROOT / "testbenches/microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "testbenches/microcode_processor_pkg.vhd")
@@ -46,5 +46,6 @@ testi.add_source_files(ROOT / "testbenches/tb_swap_registers.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_branching.vhd")
 
 testi.add_source_files(ROOT / "testbenches/tb_stall_pipeline.vhd")
+testi.add_source_files(ROOT / "testbenches/function_call_tb.vhd")
 
 VU.main()
