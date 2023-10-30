@@ -7,13 +7,7 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.microinstruction_pkg.all;
-    use work.test_programs_pkg.all;
-    use work.real_to_fixed_pkg.all;
-    use work.microcode_processor_pkg.all;
-    use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
-
     use work.ram_read_control_module_pkg.all;
 
 entity tb_ram_read_control_module is

@@ -40,6 +40,11 @@ package ram_read_control_module_pkg is
         signal self : inout ram_read_contorl_module_record;
         address : natural);
 
+    procedure jump_to (
+        signal self : inout ram_read_contorl_module_record;
+        number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27;
+        address : natural);
+
 ------------------------------------------------------------------------
 end package ram_read_control_module_pkg;
 
@@ -115,15 +120,27 @@ package body ram_read_control_module_pkg is
     procedure jump_to
     (
         signal self : inout ram_read_contorl_module_record;
+        number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27;
         address : natural
     ) is
     begin
-        stall(self, 3);
+        stall(self, number_of_wait_cycles);
         if not self.has_stalled then
             self.ram_address <= address;
         end if;
+
+    end jump_to;
+------------------------------
+    procedure jump_to
+    (
+        signal self : inout ram_read_contorl_module_record;
+        address : natural
+    ) is
+    begin
+        jump_to(self, 3, address);
         
     end jump_to;
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function ram_data_is_ready
     (
@@ -138,4 +155,3 @@ package body ram_read_control_module_pkg is
 ------------------------------------------------------------------------
 
 end package body ram_read_control_module_pkg;
-

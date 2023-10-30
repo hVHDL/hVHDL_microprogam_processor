@@ -6,11 +6,6 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.microinstruction_pkg.all;
-    use work.test_programs_pkg.all;
-    use work.real_to_fixed_pkg.all;
-    use work.microcode_processor_pkg.all;
-    use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
     use work.ram_read_control_module_pkg.all;
 
@@ -27,8 +22,8 @@ architecture vunit_simulation of tb_ram_control_ready is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    function init_ram_array_w_indices
-    return ram_array
+
+    function init_ram_array_w_indices return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
     begin
@@ -97,8 +92,8 @@ begin
             CASE to_integer(self.ram_data) is
                 WHEN 15 => 
                     jump_to(self, 27);
-                WHEN 27 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 31 => stall(self, number_of_ram_pipeline_cyles);
+                WHEN 27 => jump_to(self, 8, 31);
+                WHEN 31 => jump_to(self, 8, 32);
                 WHEN 32 => stall(self, number_of_ram_pipeline_cyles);
                 WHEN 33 => stall(self, 8);
                 WHEN 34 => stall(self, 15);
