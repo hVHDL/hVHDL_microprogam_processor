@@ -24,6 +24,13 @@ package ram_read_control_module_pkg is
 ------------------------------------------------------------------------
     procedure create_ram_read_module (
         signal self : inout ram_read_contorl_module_record;
+        ram_read_out : in ram_read_out_record;
+        increment : boolean);
+
+-------
+
+    procedure create_ram_read_module (
+        signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record);
 
 ------------------------------------------------------------------------
@@ -83,34 +90,47 @@ package body ram_read_control_module_pkg is
         return retval;
         
     end init_ram_read_module;
+
 ------------------------------------------------------------------------
+    procedure create_ram_read_module
+    (
+        signal self : inout ram_read_contorl_module_record;
+        ram_read_out : in ram_read_out_record;
+        increment : boolean
+    ) is
+    begin
+        ----------------
+        if increment then
+            if self.ram_address < ram_array'length-1 then
+                self.ram_address <= self.ram_address + 1;
+            else
+                self.ram_address <= 0;
+            end if;
+        end if;
+        ----------------
+
+        if ram_read_is_ready(ram_read_out) then
+            self.ram_data <= get_ram_data(ram_read_out);
+        end if;
+
+        if self.flush_counter = 0 and ram_read_is_ready(ram_read_out) then
+            self.has_stalled   <= false;
+        end if;
+
+        if self.flush_counter > 0 then
+            self.flush_counter <= self.flush_counter - 1;
+            self.ram_address   <= self.ram_address;
+            self.ram_data      <= self.ram_data;
+        end if;
+    end create_ram_read_module;
+------------------------------
     procedure create_ram_read_module
     (
         signal self : inout ram_read_contorl_module_record;
         ram_read_out : in ram_read_out_record
     ) is
     begin
-        ----------------
-        if ram_read_is_ready(ram_read_out) then
-            self.ram_data <= get_ram_data(ram_read_out);
-        end if;
-
-        ----------------
-        if self.ram_address < ram_array'length-1 then
-            self.ram_address <= self.ram_address + 1;
-        else
-            self.ram_address <= 0;
-        end if;
-        ----------------
-
-        if self.flush_counter = 0 and ram_read_is_ready(ram_read_out) then
-            self.has_stalled   <= false;
-        end if;
-        if self.flush_counter > 0 then
-            self.flush_counter <= self.flush_counter - 1;
-            self.ram_address   <= self.ram_address;
-            self.ram_data      <= self.ram_data;
-        end if;
+        create_ram_read_module(self, ram_read_out, true);
     end create_ram_read_module;
 
 ------------------------------------------------------------------------

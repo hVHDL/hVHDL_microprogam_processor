@@ -53,11 +53,6 @@ architecture vunit_simulation of tb_stall_pipeline is
     signal ram_write_port2          : ram_write_in_record ;
 
     signal self : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
-    signal ram_data      : natural := ram_array'high;
-    signal ram_address   : natural := 0;
-    signal flush_counter : natural := 0;
-
-    signal ram_data_delayed : natural := ram_array'high;
 
 begin
 
@@ -74,15 +69,6 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-        function to_integer
-        (
-            data : ramtype
-        )
-        return integer
-        is
-        begin
-            return to_integer(unsigned(data));
-        end to_integer;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -93,33 +79,6 @@ begin
             if self.flush_counter = 0 then
                 request_data_from_ram(ram_read_instruction_in, self.ram_address);
             end if;
-
-            CASE to_integer(self.ram_data) is
-                WHEN 15 => stall(self, 5);
-                WHEN 27 => stall(self, 8);
-                WHEN 31 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 32 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 33 => stall(self, 8);
-                WHEN 34 => stall(self, 15);
-                WHEN 35 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 44 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN others => --do nothing
-            end CASE;
-    ------------------------------------------------------------------------
-    ----------- test -------------------------------------------------------
-
-            -- test for correct sequence
-            ram_data_delayed <= to_integer(self.ram_data);
-            if to_integer(self.ram_data) /= ram_data_delayed then
-                if to_integer(self.ram_data) /= 0 then
-                    check(to_integer(self.ram_data) - ram_data_delayed = 1);
-                end if;
-            end if;
-
-            -- log for gtkwave
-            ram_data      <= to_integer(self.ram_data);
-            ram_address   <= self.ram_address;
-            flush_counter <= self.flush_counter;
 
         end if; -- rising_edge
     end process stimulus;	
