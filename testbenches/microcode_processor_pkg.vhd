@@ -233,7 +233,7 @@ package body microcode_processor_pkg is
         init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
     --------------------------------------------------
         -- save registers to ram
-        if decode(self.instruction_pipeline(2)) = ready then
+        if decode(self.instruction_pipeline(0)) = ready then
             save_registers(self, register_memory_start_address);
         end if;
 

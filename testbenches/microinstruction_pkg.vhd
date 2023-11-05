@@ -10,10 +10,8 @@ package microinstruction_pkg is
     type counter_array is array (integer range 0 to 1) of natural;
 
     constant number_of_registers : natural := 9;
-    constant register_bits : natural := 4;
-    type stdarray is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
+    type reg_array is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
     type realarray is array (integer range 0 to 8) of real;
-    alias reg_array is stdarray;
 
     subtype comm is std_logic_vector(19 downto 16);
     subtype dest is std_logic_vector(15 downto 12);
@@ -93,11 +91,11 @@ package body microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
-        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , register_bits));
-        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , register_bits));
-        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , register_bits));
-        instruction(arg3'range) := std_logic_vector(to_unsigned(argument3              , register_bits));
+        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , dest'length));
+        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , arg1'length));
+        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , arg2'length));
+        instruction(arg3'range) := std_logic_vector(to_unsigned(argument3              , arg3'length));
 
         return instruction;
         
@@ -115,10 +113,10 @@ package body microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
-        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , register_bits));
-        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , register_bits));
-        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , register_bits));
+        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(dest'range) := std_logic_vector(to_unsigned(destination            , dest'length));
+        instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , arg1'length));
+        instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , arg2'length));
 
         return instruction;
         
@@ -135,7 +133,7 @@ package body microinstruction_pkg is
         constant get_long_argument_range : std_logic_vector(comm'right-1 downto 0) := (others => '0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , 4));
+        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
         instruction(get_long_argument_range'range) := std_logic_vector(to_unsigned(long_argument, get_long_argument_range'length));
 
         return instruction;
