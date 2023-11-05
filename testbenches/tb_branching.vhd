@@ -12,6 +12,7 @@ context vunit_lib.vunit_context;
     use work.microcode_processor_pkg.all;
     use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
+    use work.ram_read_control_module_pkg.all;
 
 entity tb_branching is
   generic (runner_cfg : string);
@@ -78,6 +79,7 @@ architecture vunit_simulation of tb_branching is
     signal test_counter : natural := 0;
 
     signal state_counter : natural := 0;
+    signal ram_read_control : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
 
 begin
 

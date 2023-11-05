@@ -81,22 +81,22 @@ begin
             simulation_counter <= simulation_counter + 1;
             --------------------
             init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
-            create_ram_read_module(self, ram_read_instruction_out);
+            create_ram_read_module(self,ram_address, ram_read_instruction_out);
 
             if self.flush_counter = 0 then
-                request_data_from_ram(ram_read_instruction_in, self.ram_address);
+                request_data_from_ram(ram_read_instruction_in, ram_address);
             end if;
 
             CASE to_integer(self.ram_data) is
                 WHEN 15 => 
-                    jump_to(self, 27);
-                WHEN 27 => jump_to(self, 8, 31);
-                WHEN 31 => jump_to(self, 8, 32);
-                WHEN 32 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 33 => stall(self, 8);
-                WHEN 34 => stall(self, 15);
-                WHEN 35 => stall(self, number_of_ram_pipeline_cyles);
-                WHEN 44 => stall(self, number_of_ram_pipeline_cyles);
+                    jump_to(self,ram_address, 27);
+                WHEN 27 => jump_to(self,ram_address, 8, 31);
+                WHEN 31 => jump_to(self,ram_address, 8, 32);
+                WHEN 32 => stall(self,ram_address, number_of_ram_pipeline_cyles);
+                WHEN 33 => stall(self,ram_address, 8);
+                WHEN 34 => stall(self,ram_address, 15);
+                WHEN 35 => stall(self,ram_address, number_of_ram_pipeline_cyles);
+                WHEN 44 => stall(self,ram_address, number_of_ram_pipeline_cyles);
                 WHEN others => --do nothing
             end CASE;
     ------------------------------------------------------------------------

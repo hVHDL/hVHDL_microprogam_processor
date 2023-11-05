@@ -10,7 +10,6 @@ package ram_read_control_module_pkg is
 
     type ram_read_contorl_module_record is record
         ram_data      : work.multi_port_ram_pkg.ramtype;
-        ram_address   : natural range ram_array'range;
         flush_counter : natural range 0 to 127; -- this is arbitrary
         has_stalled   : boolean;
     end record;
@@ -24,6 +23,7 @@ package ram_read_control_module_pkg is
 ------------------------------------------------------------------------
     procedure create_ram_read_module (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         ram_read_out : in ram_read_out_record;
         increment : boolean);
 
@@ -31,6 +31,7 @@ package ram_read_control_module_pkg is
 
     procedure create_ram_read_module (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         ram_read_out : in ram_read_out_record);
 
 ------------------------------------------------------------------------
@@ -51,14 +52,17 @@ package ram_read_control_module_pkg is
 ------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_contorl_module_record; 
+        signal ram_address   : inout natural range ram_array'range;
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27);
 
     procedure jump_to (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         address : natural);
 
     procedure jump_to (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27;
         address : natural);
 
@@ -73,7 +77,7 @@ package body ram_read_control_module_pkg is
     is
         variable retval : ram_read_contorl_module_record;
     begin
-        retval := ((others => '0'), 0,0, false);
+        retval := ((others => '0'), 0, false);
         return retval;
     end init_ram_read_module;
 ------------------------------------------------------------------------
@@ -85,7 +89,7 @@ package body ram_read_control_module_pkg is
     is
         variable retval : ram_read_contorl_module_record;
     begin
-        retval := (std_logic_vector(to_unsigned(init1,ramtype'length)), init2, init3, false);
+        retval := (std_logic_vector(to_unsigned(init1,ramtype'length)), init2, false);
 
         return retval;
         
@@ -95,16 +99,17 @@ package body ram_read_control_module_pkg is
     procedure create_ram_read_module
     (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         ram_read_out : in ram_read_out_record;
         increment : boolean
     ) is
     begin
         ----------------
         if increment then
-            if self.ram_address < ram_array'length-1 then
-                self.ram_address <= self.ram_address + 1;
+            if ram_address < ram_array'length-1 then
+                ram_address <= ram_address + 1;
             else
-                self.ram_address <= 0;
+                ram_address <= 0;
             end if;
         end if;
         ----------------
@@ -119,7 +124,7 @@ package body ram_read_control_module_pkg is
 
         if self.flush_counter > 0 then
             self.flush_counter <= self.flush_counter - 1;
-            self.ram_address   <= self.ram_address;
+            ram_address   <= ram_address;
             self.ram_data      <= self.ram_data;
         end if;
     end create_ram_read_module;
@@ -127,20 +132,22 @@ package body ram_read_control_module_pkg is
     procedure create_ram_read_module
     (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         ram_read_out : in ram_read_out_record
     ) is
     begin
-        create_ram_read_module(self, ram_read_out, true);
+        create_ram_read_module(self, ram_address, ram_read_out, true);
     end create_ram_read_module;
 
 ------------------------------------------------------------------------
     procedure stall(
         signal self : inout ram_read_contorl_module_record; 
+        signal ram_address   : inout natural range ram_array'range;
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27)
     is
     begin
         if not self.has_stalled then
-            self.ram_address   <= self.ram_address-number_of_ram_pipeline_cyles;
+            ram_address   <= ram_address-number_of_ram_pipeline_cyles;
             self.flush_counter <= number_of_wait_cycles;
             self.has_stalled   <= true;
             self.ram_data      <= self.ram_data;
@@ -150,13 +157,14 @@ package body ram_read_control_module_pkg is
     procedure jump_to
     (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         number_of_wait_cycles : in natural range number_of_ram_pipeline_cyles to 27;
         address : natural
     ) is
     begin
-        stall(self, number_of_wait_cycles);
+        stall(self, ram_address, number_of_wait_cycles);
         if not self.has_stalled then
-            self.ram_address <= address;
+            ram_address <= address;
         end if;
 
     end jump_to;
@@ -164,10 +172,11 @@ package body ram_read_control_module_pkg is
     procedure jump_to
     (
         signal self : inout ram_read_contorl_module_record;
+        signal ram_address   : inout natural range ram_array'range;
         address : natural
     ) is
     begin
-        jump_to(self, 3, address);
+        jump_to(self, ram_address, 3, address);
         
     end jump_to;
 ------------------------------------------------------------------------

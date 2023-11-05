@@ -53,6 +53,7 @@ architecture vunit_simulation of tb_stall_pipeline is
 
     signal instruction_pipeline : instruction_array := (others => (others => '0'));
     signal increment : boolean := true;
+    signal ram_address : natural := 0;
 
 begin
 
@@ -77,6 +78,7 @@ begin
             init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
             create_ram_read_module(
                 self         => self                     ,
+                ram_address  => ram_address ,
                 ram_read_out => ram_read_instruction_out ,
                 increment    => true);
 
