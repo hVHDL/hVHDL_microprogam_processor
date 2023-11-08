@@ -7,7 +7,7 @@ The main features are
 3. example of a pipelined processor
 
 an example of a low pass filter assembly program, which is tested with hardware
-```
+```vhdl
     function get_pipelined_low_pass_filter return program_array is
         constant y    : integer := 0;
         constant u    : integer := 1;
@@ -36,4 +36,20 @@ an example of a low pass filter assembly program, which is tested with hardware
         return lpf;
         
     end get_pipelined_low_pass_filter;
+```
+```mermaid
+requirementDiagram
+
+    requirement test_req {
+    id: 1
+    text: the test text.
+    risk: high
+    verifymethod: test
+    }
+
+    element test_entity {
+    type: simulation
+    }
+
+    test_entity - satisfies -> test_req
 ```
