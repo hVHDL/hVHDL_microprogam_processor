@@ -20,6 +20,8 @@ package microcode_processor_pkg is
         program_counter        : natural range 0 to 1023 ;
         registers              : reg_array               ;
         instruction_pipeline   : instruction_array;
+        processor_has_stalled  : boolean;
+        stall_counter          : natural range 0 to 31;
         -- math unit for testing, will be removed later
         add_a          : std_logic_vector(19 downto 0);
         add_b          : std_logic_vector(19 downto 0);
@@ -193,15 +195,18 @@ package body microcode_processor_pkg is
         variable retval : processor_with_ram_record;
     begin
         retval := (
-            read_address              => 35                          ,
-            write_address             => 35                          ,
-            register_write_counter    => reg_array'length            ,
-            register_read_counter     => reg_array'length            ,
-            register_load_counter     => reg_array'length            ,
-            program_counter           => program_start_point         ,
-            registers                 => (others => (others => '0')),
+            read_address           => 35                  ,
+            write_address          => 35                  ,
+            register_write_counter => reg_array'length    ,
+            register_read_counter  => reg_array'length    ,
+            register_load_counter  => reg_array'length    ,
+            program_counter        => program_start_point ,
 
-            instruction_pipeline      => (others => (others => '0')) ,
+            registers            => (others => (others => '0')) ,
+            instruction_pipeline => (others => (others => '0')) ,
+
+            processor_has_stalled  => false ,
+            stall_counter => 0,
             -- math unit                
             add_a                     => (others => '0'),
             add_b                     => (others => '0'),
@@ -259,10 +264,31 @@ package body microcode_processor_pkg is
         ram_data := get_ram_data(ram_read_instruction_out);
 
         if ram_read_is_ready(ram_read_instruction_out) then
-            self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
             if decode(ram_data) /= program_end then
                 self.program_counter <= self.program_counter + 1;
             end if;
+        end if;
+
+        if (decode(ram_data) = save_registers) then
+            if self.processor_has_stalled = false then
+                self.processor_has_stalled <= true;
+                self.stall_counter <= 10;
+            end if;
+        end if;
+
+        if self.stall_counter > 0 then
+            self.stall_counter   <= self.stall_counter - 1;
+            self.program_counter <= self.program_counter;
+            ram_data     := write_instruction(program_end);
+        end if;
+
+        if self.stall_counter = 1 then
+            self.processor_has_stalled <= false;
+        end if;
+        
+        self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+        if (decode(get_ram_data(ram_read_instruction_out)) = program_end) then
+            self.instruction_pipeline <= write_instruction(program_end) & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
         end if;
 
     ------------------------------------------------------------------------

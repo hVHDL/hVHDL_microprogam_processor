@@ -79,7 +79,6 @@ begin
             self.program_counter <= dummy'length;
         end request_low_pass_filter;
 
-        variable ram_data : std_logic_vector(19 downto 0);
         constant register_memory_start_address : integer := ram_array'length-self.registers'length;
         constant zero : std_logic_vector(self.registers(0)'range) := (others => '0');
         variable used_instruction : std_logic_vector(self.instruction_pipeline(0)'range);
@@ -125,15 +124,18 @@ begin
         ------------------------------------------------------------------------
         ------------------------------------------------------------------------
             request_data_from_ram(ram_read_instruction_in, self.program_counter);
-            ram_data := get_ram_data(ram_read_instruction_out);
 
             if ram_read_is_ready(ram_read_instruction_out) then
-                self.instruction_pipeline <= ram_data & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
-                if decode(ram_data) /= program_end then
+                if decode(get_ram_data(ram_read_instruction_out)) /= program_end then
                     self.program_counter <= self.program_counter + 1;
                 end if;
             end if;
 
+            if (decode(get_ram_data(ram_read_instruction_out)) = program_end) then
+                self.instruction_pipeline <= write_instruction(program_end) & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+            else
+                self.instruction_pipeline <= get_ram_data(ram_read_instruction_out) & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+            end if;
         ------------------------------------------------------------------------
             --stage 0
             used_instruction := self.instruction_pipeline(0);

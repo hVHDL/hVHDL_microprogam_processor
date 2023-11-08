@@ -124,7 +124,7 @@ package body ram_read_control_module_pkg is
 
         if self.flush_counter > 0 then
             self.flush_counter <= self.flush_counter - 1;
-            ram_address   <= ram_address;
+            ram_address        <= ram_address;
             self.ram_data      <= self.ram_data;
         end if;
     end create_ram_read_module;
