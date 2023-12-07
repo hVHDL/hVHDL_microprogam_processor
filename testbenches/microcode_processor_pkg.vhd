@@ -214,12 +214,12 @@ package body microcode_processor_pkg is
             add_b           => (others => '0') ,
             add_result      => (others => '0') ,
 
-            mpy_a           => (others => '0') ,
-            mpy_b           => (others => '0') ,
-            mpy_a1           => (others => '0') ,
-            mpy_b1           => (others => '0') ,
-            mpy_raw_result  => (others => '0') ,
-            mpy_result      => (others => '0')
+            mpy_a          => (others => '0') ,
+            mpy_b          => (others => '0') ,
+            mpy_a1         => (others => '0') ,
+            mpy_b1         => (others => '0') ,
+            mpy_raw_result => (others => '0') ,
+            mpy_result     => (others => '0')
         );
         return retval;
     end init_processor;
