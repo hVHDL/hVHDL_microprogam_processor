@@ -28,6 +28,8 @@ package microcode_processor_pkg is
         add_result     : std_logic_vector(19 downto 0);
         mpy_a          : std_logic_vector(19 downto 0);
         mpy_b          : std_logic_vector(19 downto 0);
+        mpy_a1          : std_logic_vector(19 downto 0);
+        mpy_b1          : std_logic_vector(19 downto 0);
         mpy_raw_result : signed(39 downto 0);
         mpy_result     : std_logic_vector(19 downto 0);
     end record;
@@ -208,14 +210,16 @@ package body microcode_processor_pkg is
             processor_has_stalled  => false ,
             stall_counter => 0,
             -- math unit                
-            add_a                     => (others => '0'),
-            add_b                     => (others => '0'),
-            add_result                => (others => '0'),
+            add_a           => (others => '0') ,
+            add_b           => (others => '0') ,
+            add_result      => (others => '0') ,
 
-            mpy_a                     => (others => '0'),
-            mpy_b                     => (others => '0'),
-            mpy_raw_result            => (others => '0')  ,
-            mpy_result                => (others => '0')
+            mpy_a           => (others => '0') ,
+            mpy_b           => (others => '0') ,
+            mpy_a1           => (others => '0') ,
+            mpy_b1           => (others => '0') ,
+            mpy_raw_result  => (others => '0') ,
+            mpy_result      => (others => '0')
         );
         return retval;
     end init_processor;
@@ -315,13 +319,14 @@ package body microcode_processor_pkg is
         used_instruction := self.instruction_pipeline(2);
 
         self.add_result     <= self.add_a + self.add_b;
-        self.mpy_raw_result <= signed(self.mpy_a) * signed(self.mpy_b);
+        self.mpy_a1 <= self.mpy_a;
+        self.mpy_b1 <= self.mpy_b;
 
     ------------------------------------------------------------------------
         --stage 3
         used_instruction := self.instruction_pipeline(3);
         
-        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
+        self.mpy_raw_result <= signed(self.mpy_a1) * signed(self.mpy_b1);
         
         CASE decode(used_instruction) is
             WHEN add | sub =>
@@ -332,7 +337,12 @@ package body microcode_processor_pkg is
     ------------------------------------------------------------------------
         --stage 4
         used_instruction := self.instruction_pipeline(4);
+        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
 
+
+    ------------------------------------------------------------------------
+        --stage 5
+        used_instruction := self.instruction_pipeline(5);
         CASE decode(used_instruction) is
             WHEN mpy =>
                 self.registers(get_dest(used_instruction)) <= self.mpy_result;
@@ -340,11 +350,7 @@ package body microcode_processor_pkg is
         end CASE;
 
     ------------------------------------------------------------------------
-        --stage 5
-        used_instruction := self.instruction_pipeline(5);
-
-    ------------------------------------------------------------------------
-        --stage 5
+        --stage 6
 
     ------------------------------------------------------------------------
     end create_processor_w_ram;

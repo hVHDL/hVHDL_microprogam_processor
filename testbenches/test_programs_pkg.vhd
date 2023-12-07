@@ -58,6 +58,7 @@ package body test_programs_pkg is
             write_instruction(nop)            ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
+            write_instruction(nop)            ,
             write_instruction(add             , y    , y    , temp) ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,

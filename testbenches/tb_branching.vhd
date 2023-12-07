@@ -29,24 +29,15 @@ architecture vunit_simulation of tb_branching is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
-    constant dummy           : program_array := get_dummy;
-    constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
-    constant test_program    : program_array := get_dummy & get_pipelined_low_pass_filter;
 
-    constant ram_contents : ram_array := 
-        write_register_values_to_ram(
-        write_register_values_to_ram(
-        write_register_values_to_ram(
-            init_ram(test_program), 
-            to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19) , 53-reg_array'length*0)  ,
-            to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19) , 53-reg_array'length*1)  ,
-            to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19) , 53-reg_array'length*2);
+    constant dummy           : program_array := get_dummy;
+    constant reg_offset : natural := ram_array'high;
 
     function test_function_calls
     return program_array
     is
         constant program : program_array := (
-            write_instruction(load_registers, 53-reg_array'length*0),
+            write_instruction(load_registers, reg_offset-reg_array'length*0),
             write_instruction(nop),
             write_instruction(nop),
             write_instruction(nop),
@@ -64,6 +55,19 @@ architecture vunit_simulation of tb_branching is
         return program;
         
     end test_function_calls;
+    constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
+    constant function_calls  : program_array := test_function_calls;
+    constant test_program    : program_array := function_calls & get_dummy & write_instruction(load_registers, reg_offset-reg_array'length*0) & get_pipelined_low_pass_filter;
+
+
+    constant ram_contents : ram_array := 
+        write_register_values_to_ram(
+        write_register_values_to_ram(
+        write_register_values_to_ram(
+            init_ram(test_program), 
+            to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19) , reg_offset-reg_array'length*0)  ,
+            to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19) , reg_offset-reg_array'length*1)  ,
+            to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19) , reg_offset-reg_array'length*2);
 
     signal self                     : processor_with_ram_record := init_processor(test_program'high);
     signal ram_read_instruction_in  : ram_read_in_record  ;
@@ -99,7 +103,7 @@ begin
 ------------------------------------------------------------------------
         procedure request_low_pass_filter is
         begin
-            self.program_counter <= dummy'length;
+            self.program_counter <= function_calls'length + dummy'length + 1;
         end request_low_pass_filter;
 
     begin
@@ -119,7 +123,7 @@ begin
             CASE state_counter is
                 WHEN 0 => 
                     state_counter <= state_counter+1;
-                    load_registers(self, 53-reg_array'length*2);
+                    load_registers(self, reg_offset-reg_array'length*2);
                 WHEN 1 => 
                     if register_load_ready(self) then
                         request_low_pass_filter;
@@ -128,7 +132,7 @@ begin
                 WHEN 2 =>
                     if program_is_ready(self) then
                         result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-                        save_registers(self, 53-reg_array'length*2);
+                        save_registers(self, reg_offset-reg_array'length*2);
                         state_counter <= state_counter+1;
                     end if;
                 WHEN 3 =>
