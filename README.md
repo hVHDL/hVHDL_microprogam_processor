@@ -1,4 +1,4 @@
-# hHVDL microprogram processor
+# hVHDL microprogram processor
 is a module for writing software instructions and processor design modules to process software directly in VHDL. Processor does not have a fixed structure but a desired processor can be designed using memory control and program flow control modules hence the repository has functions that simplify processor creation. 
 
 The main features are
