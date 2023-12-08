@@ -1,5 +1,5 @@
-# vhdl microprogram processor
-VHDL module for running instructions from memory with processor. Processor does not have a fixed structure but there are functions for reading and writing program and data ram hence the repository has functions that simplify processor creation. 
+# hHVDL microprogram processor
+is a module for writing software instructions and processor design modules to process software directly in VHDL. Processor does not have a fixed structure but a desired processor can be designed using memory control and program flow control modules hence the repository has functions that simplify processor creation. 
 
 The main features are
 1. Assembler made with functions that allows writing programs in VHDL. 
@@ -37,6 +37,9 @@ an example of a low pass filter assembly program, which is tested with hardware
         
     end get_pipelined_low_pass_filter;
 ```
+
+the repository source structure will be documented here as soon as I figure out how to use mermaid :) 
+
 ```mermaid
 requirementDiagram
 
