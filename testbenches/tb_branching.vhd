@@ -58,7 +58,7 @@ architecture vunit_simulation of tb_branching is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
     constant test_program    : program_array := function_calls & get_dummy & write_instruction(load_registers, reg_offset-reg_array'length*0) & get_pipelined_low_pass_filter;
-
+------------------------------------------------------------------------
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
@@ -74,6 +74,7 @@ architecture vunit_simulation of tb_branching is
         return retval;
         
     end build_sw;
+------------------------------------------------------------------------
 
     constant ram_contents : ram_array := build_sw;
 

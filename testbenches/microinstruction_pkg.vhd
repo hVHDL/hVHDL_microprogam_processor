@@ -6,6 +6,7 @@ library ieee;
 
 package microinstruction_pkg is
 
+    -- TODO some tests rely on program end being encoded into "0000"
     type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_external, save_external, load_registers, save_registers);
     type counter_array is array (integer range 0 to 1) of natural;
 
