@@ -250,7 +250,7 @@ package body microcode_processor_pkg is
             request_data_from_ram(ram_read_data_in, self.read_address);
         end if;
 
-        if ram_read_is_ready(ram_read_data_out) then
+        if ram_read_is_ready(ram_read_data_out) and self.register_load_counter < 9 then
             self.register_load_counter <= self.register_load_counter + 1;
             self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_out);
         end if;

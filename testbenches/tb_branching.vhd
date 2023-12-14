@@ -21,7 +21,7 @@ end;
 architecture vunit_simulation of tb_branching is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 30e3;
+    constant simtime_in_clocks : integer := 5e3;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -30,7 +30,7 @@ architecture vunit_simulation of tb_branching is
 
     ------------------------------------------------------------------------
 
-    constant dummy           : program_array := get_dummy;
+    constant dummy      : program_array := get_dummy;
     constant reg_offset : natural := ram_array'high;
 
     function test_function_calls
@@ -50,14 +50,17 @@ architecture vunit_simulation of tb_branching is
             write_instruction(nop),
             write_instruction(nop),
             write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
             write_instruction(jump, dummy'length));
     begin
         return program;
         
     end test_function_calls;
+
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
-    constant test_program    : program_array := function_calls & get_dummy & write_instruction(load_registers, reg_offset-reg_array'length*0) & get_pipelined_low_pass_filter;
+    constant test_program    : program_array := get_dummy & function_calls & get_pipelined_low_pass_filter;
 ------------------------------------------------------------------------
     function build_sw return ram_array
     is
@@ -79,9 +82,9 @@ architecture vunit_simulation of tb_branching is
     constant ram_contents : ram_array := build_sw;
 
     signal self                     : processor_with_ram_record := init_processor(test_program'high);
-    signal ram_read_instruction_in  : ram_read_in_record  ;
+    signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
     signal ram_read_instruction_out : ram_read_out_record ;
-    signal ram_read_data_in         : ram_read_in_record  ;
+    signal ram_read_data_in         : ram_read_in_record  := (0, '0');
     signal ram_read_data_out        : ram_read_out_record ;
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
@@ -94,6 +97,9 @@ architecture vunit_simulation of tb_branching is
     signal state_counter : natural := 0;
     signal ram_read_control : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
 
+
+    signal register_load_command_was_hit : boolean := false;
+
 begin
 
 ------------------------------------------------------------------------
@@ -101,6 +107,7 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
+        check(register_load_command_was_hit);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -112,13 +119,17 @@ begin
 ------------------------------------------------------------------------
         procedure request_low_pass_filter is
         begin
-            self.program_counter <= function_calls'length + dummy'length + 1;
+            self.program_counter <= dummy'length;
         end request_low_pass_filter;
 
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
+            if decode(self.instruction_pipeline(0)) = load_registers then
+                register_load_command_was_hit <= true;
+                load_registers(self, reg_offset-reg_array'length*2);
+            end if;
             create_processor_w_ram(
                 self                     ,
                 ram_read_instruction_in  ,
@@ -128,28 +139,24 @@ begin
                 ram_write_port           ,
                 ram_array'length);
 
+
 ------------------------------------------------------------------------
             CASE state_counter is
                 WHEN 0 => 
                     state_counter <= state_counter+1;
-                    load_registers(self, reg_offset-reg_array'length*2);
-                WHEN 1 => 
-                    if register_load_ready(self) then
-                        request_low_pass_filter;
-                        state_counter <= state_counter+1;
-                    end if;
-                WHEN 2 =>
+                    request_low_pass_filter;
+                WHEN 1 =>
                     if program_is_ready(self) then
                         result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
                         save_registers(self, reg_offset-reg_array'length*2);
                         state_counter <= state_counter+1;
                     end if;
-                WHEN 3 =>
+                WHEN 2 =>
                     if register_write_ready(self) then
                         load_registers(self, 15);
                         state_counter <= state_counter+1;
                     end if;
-                WHEN 4 =>
+                WHEN 3 =>
                     if register_load_ready(self) then
                         state_counter <= 0;
                     end if;
