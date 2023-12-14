@@ -12,7 +12,7 @@ package microcode_processor_pkg is
 
 
     type processor_with_ram_record is record
-        processor_enabled : boolean;
+        processor_enabled      : boolean;
         read_address           : natural range 0 to 1023 ;
         write_address          : natural range 0 to 1023 ;
         register_write_counter : natural range 0 to 1023 ;
@@ -29,8 +29,8 @@ package microcode_processor_pkg is
         add_result     : std_logic_vector(19 downto 0);
         mpy_a          : std_logic_vector(19 downto 0);
         mpy_b          : std_logic_vector(19 downto 0);
-        mpy_a1          : std_logic_vector(19 downto 0);
-        mpy_b1          : std_logic_vector(19 downto 0);
+        mpy_a1         : std_logic_vector(19 downto 0);
+        mpy_b1         : std_logic_vector(19 downto 0);
         mpy_raw_result : signed(39 downto 0);
         mpy_result     : std_logic_vector(19 downto 0);
     end record;
@@ -386,7 +386,7 @@ package body microcode_processor_pkg is
     return boolean
     is
     begin
-        return decode(self.instruction_pipeline(4)) = ready;
+        return decode(self.instruction_pipeline(self.instruction_pipeline'high)) = ready;
         
     end program_is_ready;
 ------------------------------------------------------------------------

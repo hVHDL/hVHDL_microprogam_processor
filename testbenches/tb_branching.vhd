@@ -59,15 +59,23 @@ architecture vunit_simulation of tb_branching is
     constant function_calls  : program_array := test_function_calls;
     constant test_program    : program_array := function_calls & get_dummy & write_instruction(load_registers, reg_offset-reg_array'length*0) & get_pipelined_low_pass_filter;
 
+    function build_sw return ram_array
+    is
+        variable retval : ram_array := (others => (others => '0'));
+        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19);
+        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19);
+        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19);
+    begin
 
-    constant ram_contents : ram_array := 
-        write_register_values_to_ram(
-        write_register_values_to_ram(
-        write_register_values_to_ram(
-            init_ram(test_program), 
-            to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19) , reg_offset-reg_array'length*0)  ,
-            to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19) , reg_offset-reg_array'length*1)  ,
-            to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19) , reg_offset-reg_array'length*2);
+        retval := write_register_values_to_ram(init_ram(test_program) , reg_values1 , reg_offset-reg_array'length*2);
+        retval := write_register_values_to_ram(retval                 , reg_values2 , reg_offset-reg_array'length*1);
+        retval := write_register_values_to_ram(retval                 , reg_values3 , reg_offset-reg_array'length*0);
+            
+        return retval;
+        
+    end build_sw;
+
+    constant ram_contents : ram_array := build_sw;
 
     signal self                     : processor_with_ram_record := init_processor(test_program'high);
     signal ram_read_instruction_in  : ram_read_in_record  ;
