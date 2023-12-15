@@ -29,8 +29,6 @@ architecture vunit_simulation of tb_branching is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
-    signal test1 : natural;
-    signal test2 : natural;
 
     constant dummy      : program_array := get_dummy;
     constant reg_offset : natural := ram_array'high;
@@ -125,8 +123,6 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
-                test1 <= 0;
-                test2 <= 0;
             if decode(self.instruction_pipeline(0)) = load_registers then
                 register_load_command_was_hit <= true;
                 load_registers(self, get_long_argument(self.instruction_pipeline(0)));
