@@ -76,6 +76,9 @@ package microcode_processor_pkg is
     function program_is_ready ( self : processor_with_ram_record)
         return boolean;
 
+    procedure stall_processor (
+        signal self : inout processor_with_ram_record);
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -161,7 +164,7 @@ package body microcode_processor_pkg is
     begin
         self.register_read_counter <= 0;
         self.register_load_counter <= 0;
-        self.read_address           <= read_offset-self.registers'high;
+        self.read_address          <= read_offset-self.registers'high;
     end load_registers;
 ------------------------------------------------------------------------
     procedure save_registers
@@ -389,5 +392,13 @@ package body microcode_processor_pkg is
         return decode(self.instruction_pipeline(self.instruction_pipeline'high)) = ready;
         
     end program_is_ready;
+------------------------------------------------------------------------
+    procedure stall_processor
+    (
+        signal self : inout processor_with_ram_record
+    ) is
+    begin
+        
+    end stall_processor;
 ------------------------------------------------------------------------
 end package body microcode_processor_pkg;

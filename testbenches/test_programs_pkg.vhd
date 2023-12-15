@@ -49,7 +49,6 @@ package body test_programs_pkg is
         -- alias "+" is "&" [program_array, t_instruction return program_array];
 
         constant lpf : program_array := (
-            write_instruction(load_registers) ,
             write_instruction(sub             , temp , u    , y)    ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,

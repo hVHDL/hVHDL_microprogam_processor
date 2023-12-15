@@ -74,6 +74,8 @@ package microinstruction_pkg is
     function get_arg3 ( input_register : std_logic_vector )
         return natural;
 ------------------------------------------------------------------------
+    function get_long_argument ( input_register : std_logic_vector )
+        return natural;
 
 end package microinstruction_pkg;
 
@@ -194,6 +196,17 @@ package body microinstruction_pkg is
     begin
         return to_integer(unsigned(input_register(arg3'range)));
     end get_arg3;
+------------------------------------------------------------------------
+    function get_long_argument
+    (
+        input_register : std_logic_vector 
+    )
+    return natural
+    is
+    begin
+        return to_integer(unsigned(input_register(comm'low-1 downto 0)));
+        
+    end get_long_argument;
 ------------------------------------------------------------------------
     function get_instruction
     (
