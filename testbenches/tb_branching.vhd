@@ -33,8 +33,7 @@ architecture vunit_simulation of tb_branching is
     constant dummy      : program_array := get_dummy;
     constant reg_offset : natural := ram_array'high;
 
-    function test_function_calls
-    return program_array
+    function test_function_calls return program_array
     is
         constant program : program_array := (
             write_instruction(load_registers, reg_offset-reg_array'length*2),
@@ -47,7 +46,7 @@ architecture vunit_simulation of tb_branching is
             write_instruction(nop),
             write_instruction(nop),
             write_instruction(nop),
-            write_instruction(jump, dummy'length));
+            write_instruction(jump, 0));
     begin
         return program;
         
@@ -55,14 +54,14 @@ architecture vunit_simulation of tb_branching is
 
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
-    constant test_program    : program_array := get_dummy & function_calls & get_pipelined_low_pass_filter;
+    constant test_program    : program_array := get_pipelined_low_pass_filter & get_dummy & function_calls;
 ------------------------------------------------------------------------
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
-        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , -0.99 , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19);
-        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.2   , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19);
-        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.1   , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19);
+        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , 0.1804166  , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19);
+        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.0804166  , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19);
+        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.0104166  , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19);
     begin
 
         retval := write_register_values_to_ram(init_ram(test_program) , reg_values1 , reg_offset-reg_array'length*2);
@@ -115,8 +114,9 @@ begin
     stimulus : process(simulator_clock)
 ------------------------------------------------------------------------
         procedure request_low_pass_filter is
+            constant temp : program_array := (get_pipelined_low_pass_filter & get_dummy);
         begin
-            self.program_counter <= dummy'length;
+            self.program_counter <= temp'length;
         end request_low_pass_filter;
 
     begin
@@ -129,7 +129,8 @@ begin
             end if;
 
             if decode(self.instruction_pipeline(0)) = jump then
-                jump_was_hit <= true;
+                jump_was_hit         <= true;
+                self.program_counter <= 0;
             end if;
 
             create_processor_w_ram(
@@ -140,7 +141,6 @@ begin
                 ram_read_data_out        ,
                 ram_write_port           ,
                 ram_array'length);
-
 
 ------------------------------------------------------------------------
             CASE state_counter is

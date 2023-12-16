@@ -6,7 +6,6 @@ library ieee;
 
 package test_programs_pkg is
 
-    function get_low_pass_filter return program_array;
     function get_sos_filter return program_array;
     function get_dummy return program_array;
     function get_pipelined_low_pass_filter return program_array;
@@ -15,37 +14,12 @@ end package test_programs_pkg;
 
 package body test_programs_pkg is
 
-    function get_low_pass_filter return program_array
-    is
-        constant y    : integer := 0;
-        constant u    : integer := 1;
-        constant temp : integer := 2;
-        constant g    : integer := 7;
-
-        constant lpf : program_array := (
-            write_instruction(sub    , temp , u    , y)    ,
-            write_instruction(mpy    , temp , temp , g)    ,
-            write_instruction(add    , y    , y    , temp) ,
-            write_instruction(ready) ,
-            write_instruction(program_end),
-            write_instruction(program_end),
-            write_instruction(program_end)
-        );
-
-        variable returned_code : program_array(0 to lpf'length-1);
-    begin
-
-        returned_code := lpf;
-
-        return returned_code;
-        
-    end get_low_pass_filter;
 ------------------------------------------------------------------------
     function get_pipelined_low_pass_filter return program_array is
         constant y    : integer := 0;
         constant u    : integer := 1;
         constant temp : integer := 2;
-        constant g    : integer := 7;
+        constant g    : integer := 3;
         -- alias "+" is "&" [program_array, t_instruction return program_array];
 
         constant lpf : program_array := (
