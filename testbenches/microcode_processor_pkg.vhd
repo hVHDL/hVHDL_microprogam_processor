@@ -16,8 +16,8 @@ package microcode_processor_pkg is
         read_address           : natural range 0 to 1023 ;
         write_address          : natural range 0 to 1023 ;
         register_write_counter : natural range 0 to 1023 ;
-        register_read_counter  : natural range 0 to 15 ;
-        register_load_counter  : natural range 0 to 15 ;
+        register_read_counter  : natural range 0 to number_of_registers +1 ;
+        register_load_counter  : natural range 0 to number_of_registers +1 ;
         program_counter        : natural range 0 to 1023 ;
         registers              : reg_array               ;
         instruction_pipeline   : instruction_array;
@@ -239,7 +239,7 @@ package body microcode_processor_pkg is
         signal ram_write_port          : out ram_write_in_record   ;
         ramsize                        : in natural
     ) is
-        variable active_instruction          : std_logic_vector(19 downto 0);
+        variable active_instruction            : t_instruction;
         constant register_memory_start_address : integer := ramsize-self.registers'length;
         constant zero                          : std_logic_vector(self.registers(0)'range) := (others => '0');
         variable used_instruction              : std_logic_vector(self.instruction_pipeline(0)'range);
@@ -253,7 +253,7 @@ package body microcode_processor_pkg is
             request_data_from_ram(ram_read_data_in, self.read_address);
         end if;
 
-        if ram_read_is_ready(ram_read_data_out) and self.register_load_counter < 9 then
+        if ram_read_is_ready(ram_read_data_out) and self.register_load_counter < self.registers'length then
             self.register_load_counter <= self.register_load_counter + 1;
             self.registers(self.register_load_counter) <= get_ram_data(ram_read_data_out);
         end if;

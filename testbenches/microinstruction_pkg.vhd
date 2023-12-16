@@ -5,14 +5,17 @@ library ieee;
     use work.real_to_fixed_pkg.all;
 
 package microinstruction_pkg is
+    -- TODO, move to configuration
+    constant number_of_registers : natural := 9;
+    constant number_of_pipeline_stages : natural := 6;
 
     -- TODO some tests rely on program end being encoded into "0000"
     type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_external, save_external, load_registers, save_registers);
     type counter_array is array (integer range 0 to 1) of natural;
 
-    constant number_of_registers : natural := 9;
-    type reg_array is array (integer range 0 to 8) of std_logic_vector(19 downto 0);
-    type realarray is array (integer range 0 to 8) of real;
+
+    type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);
+    type realarray is array (natural range <>) of real;
 
     subtype comm is std_logic_vector(19 downto 16);
     subtype dest is std_logic_vector(15 downto 12);
@@ -21,8 +24,9 @@ package microinstruction_pkg is
     subtype arg3 is std_logic_vector(3 downto 0);
 
     subtype t_instruction is std_logic_vector(comm'high downto 0);
-    type instruction_array is array (integer range 0 to 5) of t_instruction;
+    type instruction_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
+
 
     function to_fixed (
         array_of_reals : realarray;
@@ -246,11 +250,18 @@ package body microinstruction_pkg is
     return reg_array
     is
         variable retval : reg_array;
+        
     begin
 
-        for i in array_of_reals'range loop
-            retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
-        end loop;
+        if array_of_reals'length >= retval'length then
+            for i in retval'range loop
+                retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
+            end loop;
+        else
+            for i in array_of_reals'range loop
+                retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
+            end loop;
+        end if;
 
         return retval;
         
