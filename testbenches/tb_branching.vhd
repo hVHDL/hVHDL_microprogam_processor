@@ -150,17 +150,15 @@ begin
             end CASE;
         ------------------------------------------------------------------------
         -- test signals
-            if decode(self.instruction_pipeline(0)) = load_registers then
-                register_load_command_was_hit <= true;
-            end if;
-
-            if decode(self.instruction_pipeline(0)) = jump then
-                jump_was_hit <= true;
-            end if;
-
-            if decode(self.instruction_pipeline(0)) = stall then
-                stall_was_hit <= true;
-            end if;
+            CASE decode(get_ram_data(ram_read_instruction_out)) is
+                WHEN load_registers => 
+                    register_load_command_was_hit <= true;
+                WHEN jump => 
+                    jump_was_hit <= true;
+                WHEN stall => 
+                    stall_was_hit <= true;
+                WHEN others => --do nothing
+            end CASE;
         ------------------------------------------------------------------------
 
         end if; -- rising_edge
