@@ -37,7 +37,7 @@ architecture vunit_simulation of tb_branching is
     is
         constant program : program_array := (
             write_instruction(load_registers, reg_offset-reg_array'length*2),
-            write_instruction(stall, 5),
+            write_instruction(stall, 12),
             write_instruction(jump, 0));
     begin
         return program;
