@@ -16,26 +16,24 @@ package body test_programs_pkg is
 
 ------------------------------------------------------------------------
     function get_pipelined_low_pass_filter return program_array is
-        constant y           : integer := 0;
-        constant u           : integer := 1;
-        constant temp        : integer := 2;
-        constant g           : integer := 3;
-        constant result_name : integer := 4;
-        constant temp2        : integer := 5;
+        constant y            : integer := 0;
+        constant u            : integer := 1;
+        constant temp         : integer := 2;
+        constant g            : integer := 3;
+        constant result_name  : integer := 4;
+        constant reg_location : integer := 5;
 
         constant lpf : program_array := (
-            write_instruction(sub             , temp                 , u    , y)     ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
-            write_instruction(mpy             , temp                , temp , g)     ,
-            write_instruction(stall           , 1)                   ,
-            write_instruction(add             , y                    , y    , temp) ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
-            write_instruction(ready           , result_name)         ,
-            write_instruction(save_registers) ,
-            write_instruction(stall           , number_of_registers) ,
-            write_instruction(program_end)
+            write_instruction(sub   , temp         , u    , y)    ,
+            write_instruction(nop)  ,
+            write_instruction(nop)  ,
+            write_instruction(mpy   , temp         , temp , g)    ,
+            write_instruction(stall , 1)           ,
+            write_instruction(add   , y            , y    , temp) ,
+            write_instruction(nop)  ,
+            write_instruction(nop)  ,
+            write_instruction(ready , result_name) ,
+            write_instruction(save_registers, reg_location)
         );
 
     begin
