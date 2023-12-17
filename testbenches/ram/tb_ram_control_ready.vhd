@@ -48,7 +48,7 @@ architecture vunit_simulation of tb_ram_control_ready is
     signal self : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
     signal ram_data      : natural := 0;
     signal ram_address   : natural := 0;
-    signal flush_counter : natural := 0;
+    signal stall_counter : natural := 0;
 
     signal ram_is_ready : boolean := false;
 
@@ -83,7 +83,7 @@ begin
             init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
             create_ram_read_module(self,ram_address, ram_read_instruction_out);
 
-            if self.flush_counter = 0 then
+            if self.stall_counter = 0 then
                 request_data_from_ram(ram_read_instruction_in, ram_address);
             end if;
 

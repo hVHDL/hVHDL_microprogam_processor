@@ -10,7 +10,7 @@ package ram_read_control_module_pkg is
 
     type ram_read_contorl_module_record is record
         ram_data      : work.multi_port_ram_pkg.ramtype;
-        flush_counter : natural range 0 to 127; -- this is arbitrary
+        stall_counter : natural range 0 to 127; -- this is arbitrary
         has_stalled   : boolean;
     end record;
 ------------------------------------------------------------------------
@@ -118,12 +118,12 @@ package body ram_read_control_module_pkg is
             self.ram_data <= get_ram_data(ram_read_out);
         end if;
 
-        if self.flush_counter = 0 and ram_read_is_ready(ram_read_out) then
+        if self.stall_counter = 0 and ram_read_is_ready(ram_read_out) then
             self.has_stalled   <= false;
         end if;
 
-        if self.flush_counter > 0 then
-            self.flush_counter <= self.flush_counter - 1;
+        if self.stall_counter > 0 then
+            self.stall_counter <= self.stall_counter - 1;
             ram_address        <= ram_address;
             self.ram_data      <= self.ram_data;
         end if;
@@ -148,7 +148,7 @@ package body ram_read_control_module_pkg is
     begin
         if not self.has_stalled then
             ram_address        <= ram_address-number_of_ram_pipeline_cyles;
-            self.flush_counter <= number_of_wait_cycles;
+            self.stall_counter <= number_of_wait_cycles;
             self.has_stalled   <= true;
             self.ram_data      <= self.ram_data;
         end if;

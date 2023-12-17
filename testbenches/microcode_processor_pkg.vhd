@@ -10,30 +10,29 @@ LIBRARY ieee  ;
 
 package microcode_processor_pkg is
 
-
     type processor_with_ram_record is record
-        processor_enabled      : boolean;
-        read_address           : natural range 0 to 1023 ;
-        write_address          : natural range 0 to 1023 ;
-        register_write_counter : natural range 0 to 1023 ;
+        processor_enabled      : boolean                                   ;
+        read_address           : natural range 0 to 1023                   ;
+        write_address          : natural range 0 to 1023                   ;
+        register_write_counter : natural range 0 to 1023                   ;
         register_read_counter  : natural range 0 to number_of_registers +1 ;
         register_load_counter  : natural range 0 to number_of_registers +1 ;
-        program_counter        : natural range 0 to 1023 ;
-        registers              : reg_array               ;
-        instruction_pipeline   : instruction_array;
-        processor_has_stalled  : boolean;
-        stall_counter          : natural range 0 to 31;
-        ram_data               : work.multi_port_ram_pkg.ramtype;
+        program_counter        : natural range 0 to 1023                   ;
+        registers              : reg_array                                 ;
+        instruction_pipeline   : instruction_array                         ;
+        has_stalled            : boolean                                   ;
+        stall_counter          : natural range 0 to 127                    ;
+        ram_data               : work.multi_port_ram_pkg.ramtype           ;
         -- math unit for testing, will be removed later
-        add_a          : std_logic_vector(19 downto 0);
-        add_b          : std_logic_vector(19 downto 0);
-        add_result     : std_logic_vector(19 downto 0);
-        mpy_a          : std_logic_vector(19 downto 0);
-        mpy_b          : std_logic_vector(19 downto 0);
-        mpy_a1         : std_logic_vector(19 downto 0);
-        mpy_b1         : std_logic_vector(19 downto 0);
-        mpy_raw_result : signed(39 downto 0);
-        mpy_result     : std_logic_vector(19 downto 0);
+        add_a          : std_logic_vector(19 downto 0) ;
+        add_b          : std_logic_vector(19 downto 0) ;
+        add_result     : std_logic_vector(19 downto 0) ;
+        mpy_a          : std_logic_vector(19 downto 0) ;
+        mpy_b          : std_logic_vector(19 downto 0) ;
+        mpy_a1         : std_logic_vector(19 downto 0) ;
+        mpy_b1         : std_logic_vector(19 downto 0) ;
+        mpy_raw_result : signed(39 downto 0)           ;
+        mpy_result     : std_logic_vector(19 downto 0) ;
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
@@ -214,7 +213,7 @@ package body microcode_processor_pkg is
             registers            => (others => (others => '0')) ,
             instruction_pipeline => (others => (others => '0')) ,
 
-            processor_has_stalled  => false ,
+            has_stalled  => false ,
             stall_counter => 0,
             ram_data => (others => '0'),
             -- math unit                
@@ -288,8 +287,8 @@ package body microcode_processor_pkg is
         end if;
 
         if (decode(active_instruction) = save_registers) then
-            if self.processor_has_stalled = false then
-                self.processor_has_stalled <= true;
+            if self.has_stalled = false then
+                self.has_stalled <= true;
                 self.stall_counter <= 10;
             end if;
         end if;
@@ -301,7 +300,7 @@ package body microcode_processor_pkg is
         end if;
 
         if self.stall_counter = 1 then
-            self.processor_has_stalled <= false;
+            self.has_stalled <= false;
         end if;
         
         self.instruction_pipeline <= active_instruction & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
@@ -409,10 +408,10 @@ package body microcode_processor_pkg is
     ) is
         constant number_of_ram_pipeline_cyles : natural := 3;
     begin
-        if not self.processor_has_stalled then
+        if not self.has_stalled then
             self.program_counter       <= self.program_counter-number_of_ram_pipeline_cyles;
             self.stall_counter         <= number_of_wait_cycles;
-            self.processor_has_stalled <= true;
+            self.has_stalled <= true;
             self.ram_data              <= self.ram_data;
         end if;
     end stall_processor;

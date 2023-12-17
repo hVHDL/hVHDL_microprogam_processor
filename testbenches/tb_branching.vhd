@@ -37,6 +37,7 @@ architecture vunit_simulation of tb_branching is
     is
         constant program : program_array := (
             write_instruction(load_registers, reg_offset-reg_array'length*2),
+            write_instruction(stall, 4),
             write_instruction(nop),
             write_instruction(nop),
             write_instruction(nop),
@@ -94,6 +95,7 @@ architecture vunit_simulation of tb_branching is
 
     signal register_load_command_was_hit : boolean := false;
     signal jump_was_hit : boolean := false;
+    signal stall_was_hit : boolean := false;
 
 begin
 
@@ -104,6 +106,7 @@ begin
         wait for simtime_in_clocks*clock_period;
         check(register_load_command_was_hit);
         check(jump_was_hit);
+        check(stall_was_hit);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -123,14 +126,6 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
-            if decode(self.instruction_pipeline(0)) = load_registers then
-                register_load_command_was_hit <= true;
-            end if;
-
-            if decode(self.instruction_pipeline(0)) = jump then
-                jump_was_hit <= true;
-            end if;
-
             create_processor_w_ram(
                 self                     ,
                 ram_read_instruction_in  ,
@@ -162,6 +157,20 @@ begin
                     end if;
                 WHEN others => -- do nothing
             end CASE;
+        ------------------------------------------------------------------------
+        -- test signals
+            if decode(self.instruction_pipeline(0)) = load_registers then
+                register_load_command_was_hit <= true;
+            end if;
+
+            if decode(self.instruction_pipeline(0)) = jump then
+                jump_was_hit <= true;
+            end if;
+
+            if decode(self.instruction_pipeline(0)) = stall then
+                stall_was_hit <= true;
+            end if;
+        ------------------------------------------------------------------------
 
         end if; -- rising_edge
     end process stimulus;	
