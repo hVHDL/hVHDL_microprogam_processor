@@ -37,16 +37,7 @@ architecture vunit_simulation of tb_branching is
     is
         constant program : program_array := (
             write_instruction(load_registers, reg_offset-reg_array'length*2),
-            write_instruction(stall, 4),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
-            write_instruction(nop),
+            write_instruction(stall, 5),
             write_instruction(jump, 0));
     begin
         return program;
@@ -106,7 +97,7 @@ begin
         wait for simtime_in_clocks*clock_period;
         check(register_load_command_was_hit);
         check(jump_was_hit);
-        check(stall_was_hit);
+        check(stall_was_hit, "stall was not hit");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	

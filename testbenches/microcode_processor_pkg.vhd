@@ -247,13 +247,15 @@ package body microcode_processor_pkg is
         variable used_instruction              : std_logic_vector(self.instruction_pipeline(0)'range);
     begin
         init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
+    --------------------------------------------------
         if decode(self.instruction_pipeline(0)) = load_registers then
             load_registers(self, get_long_argument(self.instruction_pipeline(0)));
         end if;
 
         if decode(self.instruction_pipeline(0)) = jump then
-            self.program_counter <= 0;
+            self.program_counter <= get_long_argument(self.instruction_pipeline(0));
         end if;
+    --------------------------------------------------
     --------------------------------------------------
         -- save registers to ram
         if self.register_read_counter < self.registers'length then
@@ -274,29 +276,40 @@ package body microcode_processor_pkg is
         end if;
     ------------------------------------------------------------------------
     ------------------------------------------------------------------------
-        if self.processor_enabled then
-            request_data_from_ram(ram_read_instruction_in, self.program_counter);
+        active_instruction := get_ram_data(ram_read_instruction_out);
+        if not ram_read_is_ready(ram_read_instruction_out) then
+            active_instruction := write_instruction(nop);
         end if;
 
-        active_instruction := write_instruction(nop);
         if ram_read_is_ready(ram_read_instruction_out) then
-            active_instruction := get_ram_data(ram_read_instruction_out);
             if decode(active_instruction) /= program_end then
                 self.program_counter <= self.program_counter + 1;
             end if;
         end if;
 
+        if self.processor_enabled then
+            request_data_from_ram(ram_read_instruction_in, self.program_counter);
+        end if;
+
         if (decode(active_instruction) = save_registers) then
             if self.has_stalled = false then
                 self.has_stalled <= true;
-                self.stall_counter <= 10;
+                self.stall_counter <= self.registers'length;
+            end if;
+        end if;
+
+        if decode(active_instruction) = stall then
+            if self.has_stalled = false then
+                self.has_stalled <= true;
+                self.stall_counter <= get_long_argument(active_instruction);
+                self.program_counter <= self.program_counter - 2;
             end if;
         end if;
 
         if self.stall_counter > 0 then
             self.stall_counter   <= self.stall_counter - 1;
             self.program_counter <= self.program_counter;
-            active_instruction := write_instruction(program_end);
+            active_instruction := write_instruction(nop);
         end if;
 
         if self.stall_counter = 1 then
@@ -409,10 +422,10 @@ package body microcode_processor_pkg is
         constant number_of_ram_pipeline_cyles : natural := 3;
     begin
         if not self.has_stalled then
-            self.program_counter       <= self.program_counter-number_of_ram_pipeline_cyles;
-            self.stall_counter         <= number_of_wait_cycles;
-            self.has_stalled <= true;
-            self.ram_data              <= self.ram_data;
+            self.program_counter <= self.program_counter-number_of_ram_pipeline_cyles;
+            self.stall_counter   <= number_of_wait_cycles;
+            self.has_stalled     <= true;
+            self.ram_data        <= self.ram_data;
         end if;
     end stall_processor;
 ------------------------------------------------------------------------

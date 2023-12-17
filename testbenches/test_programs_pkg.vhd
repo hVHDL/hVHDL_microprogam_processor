@@ -21,17 +21,14 @@ package body test_programs_pkg is
         constant temp        : integer := 2;
         constant g           : integer := 3;
         constant result_name : integer := 4;
+        constant temp2        : integer := 5;
 
         constant lpf : program_array := (
-            write_instruction(sub             , temp                 , u    , y)    ,
+            write_instruction(sub             , temp                 , u    , y)     ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
-            write_instruction(mpy             , temp                 , temp , g)    ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
-            write_instruction(nop)            ,
+            write_instruction(mpy             , temp                , temp , g)     ,
+            write_instruction(stall           , 1)                   ,
             write_instruction(add             , y                    , y    , temp) ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
