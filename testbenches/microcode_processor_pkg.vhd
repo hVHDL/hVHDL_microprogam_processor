@@ -23,6 +23,7 @@ package microcode_processor_pkg is
         instruction_pipeline   : instruction_array;
         processor_has_stalled  : boolean;
         stall_counter          : natural range 0 to 31;
+        ram_data               : work.multi_port_ram_pkg.ramtype;
         -- math unit for testing, will be removed later
         add_a          : std_logic_vector(19 downto 0);
         add_b          : std_logic_vector(19 downto 0);
@@ -77,7 +78,8 @@ package microcode_processor_pkg is
         return boolean;
 
     procedure stall_processor (
-        signal self : inout processor_with_ram_record);
+        signal self : inout processor_with_ram_record;
+        number_of_wait_cycles : in natural);
 
 end package microcode_processor_pkg;
 
@@ -214,6 +216,7 @@ package body microcode_processor_pkg is
 
             processor_has_stalled  => false ,
             stall_counter => 0,
+            ram_data => (others => '0'),
             -- math unit                
             add_a           => (others => '0') ,
             add_b           => (others => '0') ,
@@ -245,6 +248,13 @@ package body microcode_processor_pkg is
         variable used_instruction              : std_logic_vector(self.instruction_pipeline(0)'range);
     begin
         init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
+        if decode(self.instruction_pipeline(0)) = load_registers then
+            load_registers(self, get_long_argument(self.instruction_pipeline(0)));
+        end if;
+
+        if decode(self.instruction_pipeline(0)) = jump then
+            self.program_counter <= 0;
+        end if;
     --------------------------------------------------
         -- save registers to ram
         if self.register_read_counter < self.registers'length then
@@ -302,9 +312,6 @@ package body microcode_processor_pkg is
     ------------------------------------------------------------------------
         --stage 0
         used_instruction := self.instruction_pipeline(0);
-    ------------------------------------------------------------------------
-        --stage 1
-        used_instruction := self.instruction_pipeline(1);
 
         CASE decode(used_instruction) is
             WHEN add =>
@@ -319,16 +326,16 @@ package body microcode_processor_pkg is
             WHEN others => -- do nothing
         end CASE;
     ------------------------------------------------------------------------
-        --stage 2
-        used_instruction := self.instruction_pipeline(2);
+        --stage 1
+        used_instruction := self.instruction_pipeline(1);
 
         self.add_result <= self.add_a + self.add_b;
         self.mpy_a1     <= self.mpy_a;
         self.mpy_b1     <= self.mpy_b;
 
     ------------------------------------------------------------------------
-        --stage 3
-        used_instruction := self.instruction_pipeline(3);
+        --stage 2
+        used_instruction := self.instruction_pipeline(2);
         
         self.mpy_raw_result <= signed(self.mpy_a1) * signed(self.mpy_b1);
         
@@ -339,14 +346,14 @@ package body microcode_processor_pkg is
         end CASE;
 
     ------------------------------------------------------------------------
-        --stage 4
-        used_instruction := self.instruction_pipeline(4);
+        --stage 3
+        used_instruction := self.instruction_pipeline(3);
         self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
 
 
     ------------------------------------------------------------------------
-        --stage 5
-        used_instruction := self.instruction_pipeline(5);
+        --stage 4
+        used_instruction := self.instruction_pipeline(4);
         CASE decode(used_instruction) is
             WHEN mpy =>
                 self.registers(get_dest(used_instruction)) <= self.mpy_result;
@@ -354,7 +361,9 @@ package body microcode_processor_pkg is
         end CASE;
 
     ------------------------------------------------------------------------
-        --stage 6
+        --stage 5
+        used_instruction := self.instruction_pipeline(5);
+    ------------------------------------------------------------------------
 
     ------------------------------------------------------------------------
     end create_processor_w_ram;
@@ -395,10 +404,17 @@ package body microcode_processor_pkg is
 ------------------------------------------------------------------------
     procedure stall_processor
     (
-        signal self : inout processor_with_ram_record
+        signal self : inout processor_with_ram_record;
+        number_of_wait_cycles : in natural
     ) is
+        constant number_of_ram_pipeline_cyles : natural := 3;
     begin
-        
+        if not self.processor_has_stalled then
+            self.program_counter       <= self.program_counter-number_of_ram_pipeline_cyles;
+            self.stall_counter         <= number_of_wait_cycles;
+            self.processor_has_stalled <= true;
+            self.ram_data              <= self.ram_data;
+        end if;
     end stall_processor;
 ------------------------------------------------------------------------
 end package body microcode_processor_pkg;

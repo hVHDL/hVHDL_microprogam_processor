@@ -5,14 +5,12 @@ library ieee;
     use work.real_to_fixed_pkg.all;
 
 package microinstruction_pkg is
-    -- TODO, move to configuration
-    constant number_of_registers : natural := 9;
+    -- TODO, move to configuration, needs to be more than 3
+    constant number_of_registers       : natural := 9;
     constant number_of_pipeline_stages : natural := 6;
 
     -- TODO some tests rely on program end being encoded into "0000"
-    type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_external, save_external, load_registers, save_registers);
-    type counter_array is array (integer range 0 to 1) of natural;
-
+    type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_registers, save_registers);
 
     type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);
     type realarray is array (natural range <>) of real;
@@ -26,7 +24,6 @@ package microinstruction_pkg is
     subtype t_instruction is std_logic_vector(comm'high downto 0);
     type instruction_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
-
 
     function to_fixed (
         array_of_reals : realarray;

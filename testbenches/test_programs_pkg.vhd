@@ -16,29 +16,28 @@ package body test_programs_pkg is
 
 ------------------------------------------------------------------------
     function get_pipelined_low_pass_filter return program_array is
-        constant y    : integer := 0;
-        constant u    : integer := 1;
-        constant temp : integer := 2;
-        constant g    : integer := 3;
-        -- alias "+" is "&" [program_array, t_instruction return program_array];
+        constant y           : integer := 0;
+        constant u           : integer := 1;
+        constant temp        : integer := 2;
+        constant g           : integer := 3;
+        constant result_name : integer := 4;
 
         constant lpf : program_array := (
-            write_instruction(sub             , temp , u    , y)    ,
+            write_instruction(sub             , temp                 , u    , y)    ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
-            write_instruction(mpy             , temp , temp , g)    ,
+            write_instruction(mpy             , temp                 , temp , g)    ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
-            write_instruction(add             , y    , y    , temp) ,
+            write_instruction(add             , y                    , y    , temp) ,
             write_instruction(nop)            ,
             write_instruction(nop)            ,
-            write_instruction(ready)          ,
+            write_instruction(ready           , result_name)         ,
             write_instruction(save_registers) ,
-            write_instruction(program_end)    ,
-            write_instruction(program_end)    ,
+            write_instruction(stall           , number_of_registers) ,
             write_instruction(program_end)
         );
 

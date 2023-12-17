@@ -125,12 +125,10 @@ begin
             --------------------
             if decode(self.instruction_pipeline(0)) = load_registers then
                 register_load_command_was_hit <= true;
-                load_registers(self, get_long_argument(self.instruction_pipeline(0)));
             end if;
 
             if decode(self.instruction_pipeline(0)) = jump then
-                jump_was_hit         <= true;
-                self.program_counter <= 0;
+                jump_was_hit <= true;
             end if;
 
             create_processor_w_ram(

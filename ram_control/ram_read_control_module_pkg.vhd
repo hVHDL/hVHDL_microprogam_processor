@@ -147,7 +147,7 @@ package body ram_read_control_module_pkg is
     is
     begin
         if not self.has_stalled then
-            ram_address   <= ram_address-number_of_ram_pipeline_cyles;
+            ram_address        <= ram_address-number_of_ram_pipeline_cyles;
             self.flush_counter <= number_of_wait_cycles;
             self.has_stalled   <= true;
             self.ram_data      <= self.ram_data;
