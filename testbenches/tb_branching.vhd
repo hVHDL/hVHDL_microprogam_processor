@@ -46,7 +46,7 @@ architecture vunit_simulation of tb_branching is
 
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
-    constant test_program    : program_array := get_pipelined_low_pass_filter & get_dummy & function_calls;
+    constant test_program    : program_array := get_pipelined_low_pass_filter & write_instruction(save_registers, reg_offset-reg_array'length*2) & get_dummy & function_calls;
 ------------------------------------------------------------------------
     function build_sw return ram_array
     is
@@ -134,7 +134,6 @@ begin
                 WHEN 1 =>
                     if program_is_ready(self) then
                         result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-                        save_registers(self, reg_offset-reg_array'length*2);
                         state_counter <= state_counter+1;
                     end if;
                 WHEN 2 =>
@@ -151,12 +150,9 @@ begin
         ------------------------------------------------------------------------
         -- test signals
             CASE decode(get_ram_data(ram_read_instruction_out)) is
-                WHEN load_registers => 
-                    register_load_command_was_hit <= true;
-                WHEN jump => 
-                    jump_was_hit <= true;
-                WHEN stall => 
-                    stall_was_hit <= true;
+                WHEN load_registers => register_load_command_was_hit <= true;
+                WHEN jump           => jump_was_hit                  <= true;
+                WHEN stall          => stall_was_hit                 <= true;
                 WHEN others => --do nothing
             end CASE;
         ------------------------------------------------------------------------

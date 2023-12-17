@@ -290,7 +290,9 @@ package body microcode_processor_pkg is
         end if;
 
         if (decode(active_instruction) = save_registers) then
-            self.stall_counter <= self.registers'length;
+            self.stall_counter <= 15;
+            save_registers(self,get_long_argument(active_instruction));
+            self.program_counter <= self.program_counter - 2;
         end if;
 
         if decode(active_instruction) = stall then
