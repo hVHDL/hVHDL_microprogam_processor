@@ -12,7 +12,6 @@ context vunit_lib.vunit_context;
     use work.microcode_processor_pkg.all;
     use work.multiplier_pkg.radix_multiply;
     use work.multi_port_ram_pkg.all;
-    use work.ram_read_control_module_pkg.all;
 
 entity tb_branching is
   generic (runner_cfg : string);
@@ -31,8 +30,8 @@ architecture vunit_simulation of tb_branching is
     ------------------------------------------------------------------------
 
     constant dummy      : program_array := get_dummy;
-    constant reg_offset : natural := ram_array'high;
-
+    constant reg_offset : natural := work.ram_configuration_pkg.ram_array'high;
+------------------------------------------------------------------------
     function test_function_calls return program_array
     is
         constant program : program_array := (
@@ -43,10 +42,12 @@ architecture vunit_simulation of tb_branching is
         return program;
         
     end test_function_calls;
+------------------------------------------------------------------------
 
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
     constant test_program    : program_array := get_pipelined_low_pass_filter & write_instruction(save_registers, reg_offset-reg_array'length*2) & get_dummy & function_calls;
+
 ------------------------------------------------------------------------
     function build_sw return ram_array
     is
@@ -75,18 +76,16 @@ architecture vunit_simulation of tb_branching is
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
-    signal result       : real := 0.0;
-    signal result2      : real := 0.0;
-    signal result3      : real := 0.0;
+    signal result       : real    := 0.0;
+    signal result2      : real    := 0.0;
+    signal result3      : real    := 0.0;
     signal test_counter : natural := 0;
 
     signal state_counter : natural := 0;
-    signal ram_read_control : ram_read_contorl_module_record := init_ram_read_module(ram_array'high, 0,0);
-
 
     signal register_load_command_was_hit : boolean := false;
-    signal jump_was_hit : boolean := false;
-    signal stall_was_hit : boolean := false;
+    signal jump_was_hit                  : boolean := false;
+    signal stall_was_hit                 : boolean := false;
 
 begin
 
@@ -106,12 +105,13 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-------------------------------------------------------------------------
+    ------------------------------------------------------------------------
         procedure request_low_pass_filter is
             constant temp : program_array := (get_pipelined_low_pass_filter & get_dummy);
         begin
             self.program_counter <= temp'length;
         end request_low_pass_filter;
+    ------------------------------------------------------------------------
 
     begin
         if rising_edge(simulator_clock) then
@@ -126,7 +126,7 @@ begin
                 ram_write_port           ,
                 ram_array'length);
 
-------------------------------------------------------------------------
+    ------------------------------------------------------------------------
             CASE state_counter is
                 WHEN 0 => 
                     state_counter <= state_counter+1;
@@ -159,6 +159,7 @@ begin
 
         end if; -- rising_edge
     end process stimulus;	
+
 ------------------------------------------------------------------------
     u_mpram : entity work.ram_read_x2_write_x1
     generic map(ram_contents)

@@ -10,6 +10,9 @@ LIBRARY ieee  ;
 
 package microcode_processor_pkg is
 
+    -- TODO, make a ret path address
+    -- type intarray is array (integer range 0 to 7) of natural range 0 to std_logic_vector(7 downto 0);
+
     type processor_with_ram_record is record
         processor_enabled      : boolean                                   ;
         read_address           : natural range 0 to 1023                   ;
@@ -325,6 +328,8 @@ package body microcode_processor_pkg is
             WHEN mpy =>
                 self.mpy_a <= self.registers(get_arg1(used_instruction));
                 self.mpy_b <= self.registers(get_arg2(used_instruction));
+            WHEN set =>
+                self.registers(get_dest(used_instruction)) <= get_long_argument(used_instruction);
             WHEN others => -- do nothing
         end CASE;
     ------------------------------------------------------------------------

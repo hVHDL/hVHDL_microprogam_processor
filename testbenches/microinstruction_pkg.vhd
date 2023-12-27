@@ -10,7 +10,7 @@ package microinstruction_pkg is
     constant number_of_pipeline_stages : natural := 6;
 
     -- TODO some tests rely on program end being encoded into "0000"
-    type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_registers, save_registers);
+    type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_registers, save_registers, set);
 
     type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);
     type realarray is array (natural range <>) of real;
@@ -77,6 +77,8 @@ package microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_long_argument ( input_register : std_logic_vector )
         return natural;
+    function get_long_argument ( input_register : std_logic_vector )
+        return std_logic_vector;
 
 end package microinstruction_pkg;
 
@@ -208,6 +210,20 @@ package body microinstruction_pkg is
         return to_integer(unsigned(input_register(comm'low-1 downto 0)));
         
     end get_long_argument;
+
+    function get_long_argument
+    (
+        input_register : std_logic_vector 
+    )
+    return std_logic_vector
+    is
+        variable retval : t_instruction := (others => '0');
+    begin
+        retval(comm'low-1 downto 0) := input_register(comm'low-1 downto 0);
+        return retval;
+        
+    end get_long_argument;
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function get_instruction
     (

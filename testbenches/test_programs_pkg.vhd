@@ -33,7 +33,6 @@ package body test_programs_pkg is
             write_instruction(nop)  ,
             write_instruction(nop)  ,
             write_instruction(ready , result_name) 
-            -- write_instruction(save_registers, reg_location)
         );
 
     begin
