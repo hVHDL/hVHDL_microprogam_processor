@@ -102,6 +102,8 @@ architecture vunit_simulation of tb_branching is
     signal stall_was_hit                   : boolean := false;
     signal save_registers_indirect_was_hit : boolean := false;
 
+    signal jump_indirect_was_hit : boolean := false;
+
 begin
 
 ------------------------------------------------------------------------
@@ -113,6 +115,7 @@ begin
         check(jump_was_hit);
         check(stall_was_hit, "stall was not hit");
         check(save_registers_indirect_was_hit,  "save registers was not hit");
+        check(jump_indirect_was_hit,  "jump_indirct was not hit");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -176,6 +179,7 @@ begin
                 WHEN jump           => jump_was_hit                             <= true;
                 WHEN stall          => stall_was_hit                            <= true;
                 WHEN save_registers_indirect => save_registers_indirect_was_hit <= true;
+                WHEN jump_indirect => jump_indirect_was_hit <= true;
 
                 WHEN others => --do nothing
             end CASE;
