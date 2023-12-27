@@ -37,20 +37,11 @@ architecture vunit_simulation of tb_branching is
     function test_function_calls return program_array
     is
         constant program : program_array := (
-            -- write_instruction(load_registers, reg_offset-reg_array'length*2),
-            -- write_instruction(stall, 12),
-            -- write_instruction(set, 4, 1),
-            -- write_instruction(jump, 0),
-            --
-            -- write_instruction(load_registers, reg_offset-reg_array'length*1),
-            -- write_instruction(stall, 12),
-            -- write_instruction(set, 4, 2),
-            -- write_instruction(jump, 0),
-
-            write_instruction(load_registers, reg_offset-reg_array'length*2),
+            write_instruction(load_registers, reg_offset-reg_array'length*0),
             write_instruction(stall, 12),
-            write_instruction(set, 5, reg_offset-reg_array'length*2),
+            write_instruction(set, 5, reg_offset-reg_array'length*0),
             write_instruction(set, 6, 1),
+            write_instruction(write_pc, 7),
             write_instruction(jump, 0)
         );
     begin
@@ -65,6 +56,8 @@ architecture vunit_simulation of tb_branching is
     constant test_program    : program_array := 
         get_pipelined_low_pass_filter                                                                                &
         write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
+        write_instruction(stall, 12)                                                                                 &
+        write_instruction(jump_indirect, 7)                                                                          &
         get_dummy                                                                                                    &
         function_calls
         ;
@@ -73,9 +66,9 @@ architecture vunit_simulation of tb_branching is
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
-        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , 0.1804166) , 19);
-        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.0804166) , 19);
-        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.0104166) , 19);
+        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , 0.0 , 0.1804166) , 19);
+        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.0 , 0.1204167) , 19);
+        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.0 , 0.0804166) , 19);
     begin
 
         retval := write_register_values_to_ram(init_ram(test_program) , reg_values1 , reg_offset-reg_array'length*2);

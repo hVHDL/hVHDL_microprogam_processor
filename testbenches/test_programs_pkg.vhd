@@ -80,7 +80,20 @@ package body test_programs_pkg is
             write_instruction(nop),
             write_instruction(nop),
             write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
+            write_instruction(nop),
             write_instruction(nop));
+            -- write_instruction(program_end));
 
         variable returned_code : program_array(0 to dummy'length-1);
     begin

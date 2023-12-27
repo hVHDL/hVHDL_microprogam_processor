@@ -25,7 +25,7 @@ package microinstruction_pkg is
         save_registers          ,
         save_registers_indirect ,
         set                     ,
-        unused1                 ,
+        jump_indirect           ,
         write_pc
     );
 

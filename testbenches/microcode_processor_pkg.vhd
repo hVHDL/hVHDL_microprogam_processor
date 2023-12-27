@@ -321,13 +321,16 @@ package body microcode_processor_pkg is
                 self.program_counter <= self.program_counter - 2;
 
                 save_registers(self,self.registers(5));
+
+            WHEN stall =>
+                self.stall_counter   <= get_long_argument(active_instruction);
+                self.program_counter <= self.program_counter - 2;
+
+            WHEN write_pc =>
+                self.registers(7) <= std_logic_vector(to_unsigned(self.program_counter-2,self.registers(0)'length));
             WHEN others => -- do nothing
         end CASE;
 
-        if decode(active_instruction) = stall then
-            self.stall_counter   <= get_long_argument(active_instruction);
-            self.program_counter <= self.program_counter - 2;
-        end if;
 
         if self.stall_counter > 0 then
             self.stall_counter   <= self.stall_counter - 1;
