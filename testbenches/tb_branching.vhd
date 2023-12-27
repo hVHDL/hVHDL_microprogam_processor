@@ -35,9 +35,22 @@ architecture vunit_simulation of tb_branching is
     function test_function_calls return program_array
     is
         constant program : program_array := (
+            -- write_instruction(load_registers, reg_offset-reg_array'length*2),
+            -- write_instruction(stall, 12),
+            -- write_instruction(set, 4, 1),
+            -- write_instruction(jump, 0),
+            --
+            -- write_instruction(load_registers, reg_offset-reg_array'length*1),
+            -- write_instruction(stall, 12),
+            -- write_instruction(set, 4, 2),
+            -- write_instruction(jump, 0),
+
             write_instruction(load_registers, reg_offset-reg_array'length*2),
             write_instruction(stall, 12),
-            write_instruction(jump, 0));
+            write_instruction(set, 5, reg_offset-reg_array'length*2),
+            write_instruction(set, 6, 2),
+            write_instruction(jump, 0)
+        );
     begin
         return program;
         
@@ -46,15 +59,23 @@ architecture vunit_simulation of tb_branching is
 
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
-    constant test_program    : program_array := get_pipelined_low_pass_filter & write_instruction(save_registers, reg_offset-reg_array'length*2) & get_dummy & function_calls;
+
+    constant load_save_address_from_register_5 : natural := 5;
+    constant test_program    : program_array := 
+        get_pipelined_low_pass_filter                                                                                &
+        -- write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
+        write_instruction(save_registers, reg_offset-reg_array'length*2)                                          &
+        get_dummy                                                                                                    &
+        function_calls
+        ;
 
 ------------------------------------------------------------------------
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
-        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , 0.1804166  , -0.99 , -0.99 , -0.99 , 0.1804166 , -0.99) , 19);
-        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.0804166  , 0.2   , 0.2   , 0.2   , 0.0804166 , 0.2)   , 19);
-        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.0104166  , 0.1   , 0.1   , 0.1   , 0.0104166 , 0.1)   , 19);
+        constant reg_values1 : reg_array := to_fixed((0.0 , 0.44252 , -0.99 , 0.1804166) , 19);
+        constant reg_values2 : reg_array := to_fixed((0.0 , 0.44252 , 0.2   , 0.0804166) , 19);
+        constant reg_values3 : reg_array := to_fixed((0.0 , 0.44252 , 0.1   , 0.0104166) , 19);
     begin
 
         retval := write_register_values_to_ram(init_ram(test_program) , reg_values1 , reg_offset-reg_array'length*2);
@@ -86,6 +107,7 @@ architecture vunit_simulation of tb_branching is
     signal register_load_command_was_hit : boolean := false;
     signal jump_was_hit                  : boolean := false;
     signal stall_was_hit                 : boolean := false;
+    signal save_registers_was_hit        : boolean := false;
 
 begin
 
@@ -97,6 +119,7 @@ begin
         check(register_load_command_was_hit);
         check(jump_was_hit);
         check(stall_was_hit, "stall was not hit");
+        check(save_registers_was_hit,  "save registers was not hit");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -133,7 +156,11 @@ begin
                     request_low_pass_filter;
                 WHEN 1 =>
                     if program_is_ready(self) then
-                        result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                        CASE get_register_value(self, 6) is
+                            WHEN 2 => result2     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                            WHEN 3 => result3     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                            WHEN others => result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                        end CASE;
                         state_counter <= state_counter+1;
                     end if;
                 WHEN 2 =>
@@ -153,6 +180,8 @@ begin
                 WHEN load_registers => register_load_command_was_hit <= true;
                 WHEN jump           => jump_was_hit                  <= true;
                 WHEN stall          => stall_was_hit                 <= true;
+                WHEN save_registers => save_registers_was_hit        <= true;
+
                 WHEN others => --do nothing
             end CASE;
         ------------------------------------------------------------------------

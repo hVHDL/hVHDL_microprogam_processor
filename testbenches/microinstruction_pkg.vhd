@@ -10,7 +10,24 @@ package microinstruction_pkg is
     constant number_of_pipeline_stages : natural := 6;
 
     -- TODO some tests rely on program end being encoded into "0000"
-    type t_command is (program_end, nop, add , sub , mpy , mpy_add , stall , ready , jump , ret , load_registers, save_registers, set);
+    type t_command is (
+        program_end             ,
+        nop                     ,
+        add                     ,
+        sub                     ,
+        mpy                     ,
+        mpy_add                 , -- not implemented at the moment
+        stall                   ,
+        ready                   ,
+        jump                    ,
+        ret                     ,
+        load_registers          ,
+        save_registers          ,
+        save_registers_indirect ,
+        set                     ,
+        unused1                 ,
+        write_pc
+    );
 
     type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);
     type realarray is array (natural range <>) of real;
@@ -53,6 +70,16 @@ package microinstruction_pkg is
         command     : in t_command;
         long_argument : in natural)
     return std_logic_vector;
+
+    function write_instruction (
+        command     : in t_command;
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural)
+    return std_logic_vector;
+
+    function get_sigle_argument (
+        input_register : std_logic_vector )
+    return std_logic_vector;
 ------------------------------------------------------------------------
     function get_instruction ( input_register : std_logic_vector )
         return integer;
@@ -84,6 +111,8 @@ end package microinstruction_pkg;
 
 package body microinstruction_pkg is
 ------------------------------------------------------------------------
+    constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
+
     function write_instruction
     (
         command     : in t_command;
@@ -123,6 +152,25 @@ package body microinstruction_pkg is
         instruction(dest'range) := std_logic_vector(to_unsigned(destination            , dest'length));
         instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , arg1'length));
         instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , arg2'length));
+
+        return instruction;
+        
+    end write_instruction;
+
+    function write_instruction
+    (
+        command     : in t_command;
+        destination : in natural range 0 to number_of_registers-1;
+        argument1   : in natural
+    )
+    return std_logic_vector
+    is
+        variable instruction : t_instruction := (others=>'0');
+    begin
+
+        instruction(comm'range)        := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(dest'range)        := std_logic_vector(to_unsigned(destination            , dest'length));
+        instruction(dest'low-1 downto 0) := std_logic_vector(to_unsigned(argument1            , ref'length));
 
         return instruction;
         
@@ -223,6 +271,19 @@ package body microinstruction_pkg is
         return retval;
         
     end get_long_argument;
+
+    function get_sigle_argument
+    (
+        input_register : std_logic_vector 
+    )
+    return std_logic_vector
+    is
+        variable retval : t_instruction := (others => '0');
+    begin
+        retval(ref'range) := input_register(ref'range);
+        return retval;
+        
+    end get_sigle_argument;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function get_instruction

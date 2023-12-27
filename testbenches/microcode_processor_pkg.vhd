@@ -82,6 +82,11 @@ package microcode_processor_pkg is
         signal self : inout processor_with_ram_record;
         number_of_wait_cycles : in natural);
 
+    function get_register_value (
+        self : processor_with_ram_record;
+        register_number : natural range reg_array'range)
+    return integer;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -180,6 +185,18 @@ package body microcode_processor_pkg is
         self.write_address          <= write_offset-self.registers'high;
         
     end save_registers;
+
+    procedure save_registers
+    (
+        signal self : inout processor_with_ram_record;
+        write_offset : in std_logic_vector
+    ) is
+    begin
+        self.register_write_counter <= 0;
+        self.write_address          <= to_integer(unsigned(write_offset))-self.registers'high;
+        
+    end save_registers;
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     procedure save_old_and_load_new_registers
     (
@@ -292,14 +309,23 @@ package body microcode_processor_pkg is
             request_data_from_ram(ram_read_instruction_in, self.program_counter);
         end if;
 
-        if (decode(active_instruction) = save_registers) then
-            self.stall_counter <= 15;
-            save_registers(self,get_long_argument(active_instruction));
-            self.program_counter <= self.program_counter - 2;
-        end if;
+        CASE decode(active_instruction) is
+            WHEN save_registers =>
+                self.stall_counter   <= 15;
+                self.program_counter <= self.program_counter - 2;
+
+                save_registers(self,integer'(get_long_argument(active_instruction)));
+
+            WHEN save_registers_indirect =>
+                self.stall_counter   <= 15;
+                self.program_counter <= self.program_counter - 2;
+
+                save_registers(self,self.registers(5));
+            WHEN others => -- do nothing
+        end CASE;
 
         if decode(active_instruction) = stall then
-            self.stall_counter <= get_long_argument(active_instruction);
+            self.stall_counter   <= get_long_argument(active_instruction);
             self.program_counter <= self.program_counter - 2;
         end if;
 
@@ -329,7 +355,9 @@ package body microcode_processor_pkg is
                 self.mpy_a <= self.registers(get_arg1(used_instruction));
                 self.mpy_b <= self.registers(get_arg2(used_instruction));
             WHEN set =>
-                self.registers(get_dest(used_instruction)) <= get_long_argument(used_instruction);
+                self.registers(get_dest(used_instruction)) <= get_sigle_argument(used_instruction);
+            -- WHEN write_pc =>
+            --     self.registers(get_dest(used_instruction)) <= get_sigle_argument(used_instruction);
             WHEN others => -- do nothing
         end CASE;
     ------------------------------------------------------------------------
@@ -370,6 +398,8 @@ package body microcode_processor_pkg is
     ------------------------------------------------------------------------
         --stage 5
         used_instruction := self.instruction_pipeline(5);
+        -- CASE decode(used_instruction) is
+        --     WHEN 
     ------------------------------------------------------------------------
 
     ------------------------------------------------------------------------
@@ -408,6 +438,17 @@ package body microcode_processor_pkg is
         return decode(self.instruction_pipeline(self.instruction_pipeline'high)) = ready;
         
     end program_is_ready;
+
+    function get_register_value
+    (
+        self : processor_with_ram_record;
+        register_number : natural range reg_array'range
+    )
+    return integer is
+    begin
+        return to_integer(unsigned(self.registers(register_number)));
+    end get_register_value;
+    
 ------------------------------------------------------------------------
     procedure stall_processor
     (

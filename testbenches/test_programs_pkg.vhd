@@ -21,7 +21,6 @@ package body test_programs_pkg is
         constant temp         : integer := 2;
         constant g            : integer := 3;
         constant result_name  : integer := 4;
-        constant reg_location : integer := 5;
 
         constant lpf : program_array := (
             write_instruction(sub   , temp         , u    , y)    ,
