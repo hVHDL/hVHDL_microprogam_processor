@@ -32,6 +32,8 @@ architecture vunit_simulation of tb_branching is
     constant dummy      : program_array := get_dummy;
     constant reg_offset : natural := work.ram_configuration_pkg.ram_array'high;
 ------------------------------------------------------------------------
+    constant load_save_address_from_register_5 : natural := 5;
+
     function test_function_calls return program_array
     is
         constant program : program_array := (
@@ -60,11 +62,9 @@ architecture vunit_simulation of tb_branching is
     constant low_pass_filter : program_array := get_pipelined_low_pass_filter;
     constant function_calls  : program_array := test_function_calls;
 
-    constant load_save_address_from_register_5 : natural := 5;
     constant test_program    : program_array := 
         get_pipelined_low_pass_filter                                                                                &
-        -- write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
-        write_instruction(save_registers, reg_offset-reg_array'length*2)                                          &
+        write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
         get_dummy                                                                                                    &
         function_calls
         ;
@@ -104,10 +104,10 @@ architecture vunit_simulation of tb_branching is
 
     signal state_counter : natural := 0;
 
-    signal register_load_command_was_hit : boolean := false;
-    signal jump_was_hit                  : boolean := false;
-    signal stall_was_hit                 : boolean := false;
-    signal save_registers_was_hit        : boolean := false;
+    signal register_load_command_was_hit   : boolean := false;
+    signal jump_was_hit                    : boolean := false;
+    signal stall_was_hit                   : boolean := false;
+    signal save_registers_indirect_was_hit : boolean := false;
 
 begin
 
@@ -119,7 +119,7 @@ begin
         check(register_load_command_was_hit);
         check(jump_was_hit);
         check(stall_was_hit, "stall was not hit");
-        check(save_registers_was_hit,  "save registers was not hit");
+        check(save_registers_indirect_was_hit,  "save registers was not hit");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -132,7 +132,7 @@ begin
         procedure request_low_pass_filter is
             constant temp : program_array := (get_pipelined_low_pass_filter & get_dummy);
         begin
-            self.program_counter <= temp'length;
+            self.program_counter <= temp'length+1;
         end request_low_pass_filter;
     ------------------------------------------------------------------------
 
@@ -177,10 +177,10 @@ begin
         ------------------------------------------------------------------------
         -- test signals
             CASE decode(get_ram_data(ram_read_instruction_out)) is
-                WHEN load_registers => register_load_command_was_hit <= true;
-                WHEN jump           => jump_was_hit                  <= true;
-                WHEN stall          => stall_was_hit                 <= true;
-                WHEN save_registers => save_registers_was_hit        <= true;
+                WHEN load_registers => register_load_command_was_hit            <= true;
+                WHEN jump           => jump_was_hit                             <= true;
+                WHEN stall          => stall_was_hit                            <= true;
+                WHEN save_registers_indirect => save_registers_indirect_was_hit <= true;
 
                 WHEN others => --do nothing
             end CASE;
