@@ -64,7 +64,8 @@ architecture vunit_simulation of tb_branching is
 
     constant test_program    : program_array := 
         get_pipelined_low_pass_filter                                                                                &
-        write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
+        -- write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
+        write_instruction(save_registers, reg_offset-reg_array'length*2) &
         get_dummy                                                                                                    &
         function_calls
         ;
@@ -132,7 +133,7 @@ begin
         procedure request_low_pass_filter is
             constant temp : program_array := (get_pipelined_low_pass_filter & get_dummy);
         begin
-            self.program_counter <= temp'length+1;
+            self.program_counter <= temp'length;
         end request_low_pass_filter;
     ------------------------------------------------------------------------
 
