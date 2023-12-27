@@ -50,7 +50,7 @@ architecture vunit_simulation of tb_branching is
             write_instruction(load_registers, reg_offset-reg_array'length*2),
             write_instruction(stall, 12),
             write_instruction(set, 5, reg_offset-reg_array'length*2),
-            write_instruction(set, 6, 2),
+            write_instruction(set, 6, 1),
             write_instruction(jump, 0)
         );
     begin
@@ -64,8 +64,7 @@ architecture vunit_simulation of tb_branching is
 
     constant test_program    : program_array := 
         get_pipelined_low_pass_filter                                                                                &
-        -- write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
-        write_instruction(save_registers, reg_offset-reg_array'length*2) &
+        write_instruction(save_registers_indirect, load_save_address_from_register_5, reg_offset-reg_array'length*2) &
         get_dummy                                                                                                    &
         function_calls
         ;
@@ -90,7 +89,7 @@ architecture vunit_simulation of tb_branching is
 
     constant ram_contents : ram_array := build_sw;
 
-    signal self                     : processor_with_ram_record := init_processor(test_program'high);
+    signal self                     : processor_with_ram_record := init_processor(100);
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
     signal ram_read_instruction_out : ram_read_out_record ;
     signal ram_read_data_in         : ram_read_in_record  := (0, '0');
@@ -133,7 +132,7 @@ begin
         procedure request_low_pass_filter is
             constant temp : program_array := (get_pipelined_low_pass_filter & get_dummy);
         begin
-            self.program_counter <= temp'length;
+            self.program_counter <= temp'length + 1;
         end request_low_pass_filter;
     ------------------------------------------------------------------------
 
@@ -151,30 +150,32 @@ begin
                 ram_array'length);
 
     ------------------------------------------------------------------------
-            CASE state_counter is
-                WHEN 0 => 
-                    state_counter <= state_counter+1;
-                    request_low_pass_filter;
-                WHEN 1 =>
-                    if program_is_ready(self) then
-                        CASE get_register_value(self, 6) is
-                            WHEN 2 => result2     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-                            WHEN 3 => result3     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-                            WHEN others => result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
-                        end CASE;
+            if simulation_counter > 30 then
+                CASE state_counter is
+                    WHEN 0 => 
                         state_counter <= state_counter+1;
-                    end if;
-                WHEN 2 =>
-                    if register_write_ready(self) then
-                        load_registers(self, 15);
-                        state_counter <= state_counter+1;
-                    end if;
-                WHEN 3 =>
-                    if register_load_ready(self) then
-                        state_counter <= 0;
-                    end if;
-                WHEN others => -- do nothing
-            end CASE;
+                        request_low_pass_filter;
+                    WHEN 1 =>
+                        if program_is_ready(self) then
+                            CASE get_register_value(self, 6) is
+                                WHEN 2 => result2     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                                WHEN 3 => result3     <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                                WHEN others => result <= to_real(signed(self.registers(0)),self.registers(0)'length-1);
+                            end CASE;
+                            state_counter <= state_counter+1;
+                        end if;
+                    WHEN 2 =>
+                        if register_write_ready(self) then
+                            load_registers(self, 15);
+                            state_counter <= state_counter+1;
+                        end if;
+                    WHEN 3 =>
+                        if register_load_ready(self) then
+                            state_counter <= 0;
+                        end if;
+                    WHEN others => -- do nothing
+                end CASE;
+            end if;
         ------------------------------------------------------------------------
         -- test signals
             CASE decode(get_ram_data(ram_read_instruction_out)) is
