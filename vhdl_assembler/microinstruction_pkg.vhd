@@ -7,27 +7,17 @@ library ieee;
 
 package microinstruction_pkg is
     -- TODO, move to configuration, needs to be more than 3
-    constant number_of_registers       : natural := 9;
+    constant number_of_registers       : natural := 5;
     constant number_of_pipeline_stages : natural := 6;
 
-    -- TODO some tests rely on program end being encoded into "0000"
     type t_command is (
         program_end             ,
         nop                     ,
         add                     ,
         sub                     ,
         mpy                     ,
-        stall                   ,
-        ready                   ,
-        jump                    ,
         save                    ,
-        load                    ,
-        load_registers          ,
-        save_registers          ,
-        save_registers_indirect ,
-        set                     ,
-        jump_indirect           ,
-        write_pc
+        load
     );
 
     type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);

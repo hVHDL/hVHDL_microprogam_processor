@@ -13,7 +13,6 @@ package simple_processor_pkg is
         program_counter        : natural range 0 to 1023 ;
         registers              : reg_array               ;
         instruction_pipeline   : instruction_array       ;
-        stall_counter          : natural range 0 to 127  ;
         -- math unit for testing, will be removed later
         add_a          : std_logic_vector(19 downto 0) ;
         add_b          : std_logic_vector(19 downto 0) ;
@@ -24,11 +23,10 @@ package simple_processor_pkg is
         mpy_b1         : std_logic_vector(19 downto 0) ;
         mpy_raw_result : signed(39 downto 0)           ;
         mpy_result     : std_logic_vector(19 downto 0) ;
-
     end record;
 
     function init_processor return simple_processor_record;
-
+------------------------------------------------------------------------
     procedure create_simple_processor (
         signal self                    : inout simple_processor_record;
         signal ram_read_instruction_in : out ram_read_in_record    ;
@@ -36,20 +34,19 @@ package simple_processor_pkg is
         signal ram_read_data_in        : out ram_read_in_record    ;
         ram_read_data_out              : in ram_read_out_record    ;
         signal ram_write_port          : out ram_write_in_record);
-    
+------------------------------------------------------------------------     
     function "+" ( left, right : std_logic_vector )
     return std_logic_vector ;
-
-    function "-" ( left, right : std_logic_vector )
-    return std_logic_vector ;
-
+------------------------------------------------------------------------     
     function "-" ( left : std_logic_vector )
     return std_logic_vector ;
+------------------------------------------------------------------------     
 
 end package simple_processor_pkg;
 
 package body simple_processor_pkg is
 
+------------------------------------------------------------------------     
     function init_processor return simple_processor_record
     is
         constant zero_all : simple_processor_record :=
@@ -58,7 +55,6 @@ package body simple_processor_pkg is
             program_counter      => 0,                           -- natural range 0 to 1023 ;
             registers            => (others => (others => '0')), -- reg_array               ;
             instruction_pipeline => (others => (others => '0')), -- instruction_array       ;
-            stall_counter        => 0,                           -- natural range 0 to 127  ;
             add_a                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
             add_b                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
             add_result           => (others => '0'),             -- std_logic_vector(19 downto 0) ;
@@ -73,7 +69,7 @@ package body simple_processor_pkg is
         return zero_all;
         
     end init_processor;
-
+------------------------------------------------------------------------
     function "+"
     (
         left, right : std_logic_vector 
@@ -84,16 +80,6 @@ package body simple_processor_pkg is
         return std_logic_vector(signed(left) + signed(right));
     end "+";
 ------------------------------------------------------------------------
-    function "-"
-    (
-        left, right : std_logic_vector 
-    )
-    return std_logic_vector 
-    is
-    begin
-        return std_logic_vector(signed(left) - signed(right));
-    end "-";
-
     function "-"
     (
         left : std_logic_vector 
@@ -115,8 +101,7 @@ package body simple_processor_pkg is
     begin
         return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
     end "*";
-
-
+------------------------------------------------------------------------     
     procedure create_simple_processor
     (
         signal self                    : inout simple_processor_record;
@@ -150,22 +135,8 @@ package body simple_processor_pkg is
             CASE decode(used_instruction) is
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
-
-                -- WHEN stall =>
-                --     self.stall_counter   <= get_long_argument(used_instruction);
-                --     self.program_counter <= self.program_counter - 3;
-                --     used_instruction := write_instruction(nop);
-                --
-                -- WHEN write_pc =>
-                --     self.registers(0) <= std_logic_vector(to_unsigned(self.program_counter-3,self.registers(0)'length));
                 WHEN others => -- do nothing
             end CASE;
-            -- if self.stall_counter > 0 then
-            --     self.stall_counter   <= self.stall_counter - 1;
-            --     self.program_counter <= self.program_counter;
-            --     used_instruction := write_instruction(nop);
-            -- end if;
-
             self.instruction_pipeline <= used_instruction & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
         ------------------------------------------------------------------------
         ------------------------------------------------------------------------
@@ -182,9 +153,6 @@ package body simple_processor_pkg is
                 WHEN mpy =>
                     self.mpy_a <= self.registers(get_arg1(used_instruction));
                     self.mpy_b <= self.registers(get_arg2(used_instruction));
-
-                WHEN jump =>
-                    self.program_counter <= get_long_argument(self.instruction_pipeline(0));
 
                 WHEN others => -- do nothing
             end CASE;
@@ -231,5 +199,5 @@ package body simple_processor_pkg is
         ------------------------------------------------------------------------
     end create_simple_processor;
 
+------------------------------------------------------------------------     
 end package body simple_processor_pkg;
-------------------------------------------------------------------------
