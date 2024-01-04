@@ -36,6 +36,8 @@ architecture vunit_simulation of low_pass_filter_tb is
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
+    signal processor_is_ready : boolean := false;
+
 begin
 
 ------------------------------------------------------------------------
@@ -79,6 +81,7 @@ begin
         ------------------------------------------------------------------------
         -- test signals
         ------------------------------------------------------------------------
+            processor_is_ready <= program_is_ready(self);
 
         end if; -- rising_edge
     end process stimulus;	

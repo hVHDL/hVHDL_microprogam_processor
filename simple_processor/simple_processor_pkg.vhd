@@ -10,6 +10,7 @@ package simple_processor_pkg is
 
     type simple_processor_record is record
         processor_enabled      : boolean                 ;
+        is_ready      : boolean                 ;
         program_counter        : natural range 0 to 1023 ;
         registers              : reg_array               ;
         instruction_pipeline   : instruction_array       ;
@@ -35,12 +36,8 @@ package simple_processor_pkg is
         ram_read_data_out              : in ram_read_out_record    ;
         signal ram_write_port          : out ram_write_in_record);
 ------------------------------------------------------------------------     
-    function "+" ( left, right : std_logic_vector )
-    return std_logic_vector ;
-------------------------------------------------------------------------     
-    function "-" ( left : std_logic_vector )
-    return std_logic_vector ;
-------------------------------------------------------------------------     
+    function program_is_ready ( self : simple_processor_record)
+        return boolean;
 
 end package simple_processor_pkg;
 
@@ -51,7 +48,8 @@ package body simple_processor_pkg is
     is
         constant zero_all : simple_processor_record :=
         (
-            processor_enabled    => false,                       -- boolean                 ;
+            processor_enabled => false ,                       -- boolean                 ;
+            is_ready          => false ,                       -- boolean                 ;
             program_counter      => 0,                           -- natural range 0 to 1023 ;
             registers            => (others => (others => '0')), -- reg_array               ;
             instruction_pipeline => (others => (others => '0')), -- instruction_array       ;
@@ -117,6 +115,7 @@ package body simple_processor_pkg is
         ------------------------------------------------------------------------
             --stage -1
 
+            self.is_ready <= false;
             used_instruction := write_instruction(nop);
             if self.processor_enabled then
                 request_data_from_ram(ram_read_instruction_in, self.program_counter);
@@ -127,6 +126,7 @@ package body simple_processor_pkg is
 
                 if decode(used_instruction) = program_end then
                     self.processor_enabled <= false;
+                    self.is_ready <= true;
                 else
                     self.program_counter <= self.program_counter + 1;
                 end if;
@@ -198,6 +198,17 @@ package body simple_processor_pkg is
             used_instruction := self.instruction_pipeline(5);
         ------------------------------------------------------------------------
     end create_simple_processor;
+
+    function program_is_ready
+    (
+        self : simple_processor_record
+    )
+    return boolean
+    is
+    begin
+        return self.is_ready;
+        
+    end program_is_ready;
 
 ------------------------------------------------------------------------     
 end package body simple_processor_pkg;
