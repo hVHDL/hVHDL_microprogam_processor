@@ -1,3 +1,115 @@
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+    use work.microinstruction_pkg.all;
+    use work.multi_port_ram_pkg.all;
+    use work.multiplier_pkg.radix_multiply;
+
+package simple_processor_pkg is
+
+    type simple_processor_record is record
+        processor_enabled      : boolean                 ;
+        program_counter        : natural range 0 to 1023 ;
+        registers              : reg_array               ;
+        instruction_pipeline   : instruction_array       ;
+        stall_counter          : natural range 0 to 127  ;
+        -- math unit for testing, will be removed later
+        add_a          : std_logic_vector(19 downto 0) ;
+        add_b          : std_logic_vector(19 downto 0) ;
+        add_result     : std_logic_vector(19 downto 0) ;
+        mpy_a          : std_logic_vector(19 downto 0) ;
+        mpy_b          : std_logic_vector(19 downto 0) ;
+        mpy_a1         : std_logic_vector(19 downto 0) ;
+        mpy_b1         : std_logic_vector(19 downto 0) ;
+        mpy_raw_result : signed(39 downto 0)           ;
+        mpy_result     : std_logic_vector(19 downto 0) ;
+
+    end record;
+
+    function init_processor return simple_processor_record;
+    
+    function "+" ( left, right : std_logic_vector )
+    return std_logic_vector ;
+
+    function "-" ( left, right : std_logic_vector )
+    return std_logic_vector ;
+
+    function "-" ( left : std_logic_vector )
+    return std_logic_vector ;
+
+end package simple_processor_pkg;
+
+package body simple_processor_pkg is
+
+    function init_processor return simple_processor_record
+    is
+        constant zero_all : simple_processor_record :=
+        (
+            processor_enabled    => false,                       -- boolean                 ;
+            program_counter      => 0,                           -- natural range 0 to 1023 ;
+            registers            => (others => (others => '0')), -- reg_array               ;
+            instruction_pipeline => (others => (others => '0')), -- instruction_array       ;
+            stall_counter        => 0,                           -- natural range 0 to 127  ;
+            add_a                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            add_b                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            add_result           => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            mpy_a                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            mpy_b                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            mpy_a1               => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            mpy_b1               => (others => '0'),             -- std_logic_vector(19 downto 0) ;
+            mpy_raw_result       => (others => '0'),             -- signed(39 downto 0)           ;
+            mpy_result           => (others => '0'));            -- std_logic_vector(19 downto 0) ;
+    begin
+
+        return zero_all;
+        
+    end init_processor;
+
+    function "+"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(signed(left) + signed(right));
+    end "+";
+------------------------------------------------------------------------
+    function "-"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(signed(left) - signed(right));
+    end "-";
+
+    function "-"
+    (
+        left : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+    begin
+        return std_logic_vector(-signed(left));
+    end "-";
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+    function "*"
+    (
+        left, right : std_logic_vector 
+    )
+    return std_logic_vector 
+    is
+        
+    begin
+        return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
+    end "*";
+
+end package body simple_processor_pkg;
+------------------------------------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -7,8 +119,8 @@ library vunit_lib;
 context vunit_lib.vunit_context;
 
     use work.microinstruction_pkg.all;
-    use work.microcode_processor_pkg.all;
     use work.multi_port_ram_pkg.all;
+    use work.simple_processor_pkg.all;
 
 entity low_pass_filter_tb is
   generic (runner_cfg : string);
@@ -25,10 +137,6 @@ architecture vunit_simulation of low_pass_filter_tb is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
-
-    constant reg_offset : natural := work.ram_configuration_pkg.ram_array'high;
-------------------------------------------------------------------------
-
     function low_pass_filter
     (
         gain_address   : natural;
@@ -112,15 +220,13 @@ architecture vunit_simulation of low_pass_filter_tb is
 
     constant ram_contents : ram_array := build_sw;
 
-    signal self                     : processor_with_ram_record := init_processor(100, false);
+    signal self                     : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
     signal ram_read_instruction_out : ram_read_out_record ;
     signal ram_read_data_in         : ram_read_in_record  := (0, '0');
     signal ram_read_data_out        : ram_read_out_record ;
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
-
-    signal state_counter : natural := 0;
 
 begin
 
@@ -179,22 +285,22 @@ begin
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
 
-                WHEN stall =>
-                    self.stall_counter   <= get_long_argument(used_instruction);
-                    self.program_counter <= self.program_counter - 3;
-                    used_instruction := write_instruction(nop);
-
-                WHEN write_pc =>
-                    self.registers(0) <= std_logic_vector(to_unsigned(self.program_counter-3,self.registers(0)'length));
+                -- WHEN stall =>
+                --     self.stall_counter   <= get_long_argument(used_instruction);
+                --     self.program_counter <= self.program_counter - 3;
+                --     used_instruction := write_instruction(nop);
+                --
+                -- WHEN write_pc =>
+                --     self.registers(0) <= std_logic_vector(to_unsigned(self.program_counter-3,self.registers(0)'length));
                 WHEN others => -- do nothing
             end CASE;
 
 
-            if self.stall_counter > 0 then
-                self.stall_counter   <= self.stall_counter - 1;
-                self.program_counter <= self.program_counter;
-                used_instruction := write_instruction(nop);
-            end if;
+            -- if self.stall_counter > 0 then
+            --     self.stall_counter   <= self.stall_counter - 1;
+            --     self.program_counter <= self.program_counter;
+            --     used_instruction := write_instruction(nop);
+            -- end if;
 
             self.instruction_pipeline <= used_instruction & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
         ------------------------------------------------------------------------
@@ -267,7 +373,7 @@ begin
 
         ------------------------------------------------------------------------
         ------------------------------------------------------------------------
-            if simulation_counter mod 80 = 0 then
+            if simulation_counter mod 55 = 0 then
                 request_program;
             end if;
         ------------------------------------------------------------------------
