@@ -36,8 +36,12 @@ package simple_processor_pkg is
         ram_read_data_out              : in ram_read_out_record    ;
         signal ram_write_port          : out ram_write_in_record);
 ------------------------------------------------------------------------     
+    procedure request_processor (
+        signal self : out simple_processor_record);
+------------------------------------------------------------------------
     function program_is_ready ( self : simple_processor_record)
         return boolean;
+------------------------------------------------------------------------
 
 end package simple_processor_pkg;
 
@@ -209,6 +213,15 @@ package body simple_processor_pkg is
         return self.is_ready;
         
     end program_is_ready;
+
+    procedure request_processor
+    (
+        signal self : out simple_processor_record
+    ) is
+    begin
+        self.program_counter <= 0;
+        self.processor_enabled <= true;
+    end request_processor;
 
 ------------------------------------------------------------------------     
 end package body simple_processor_pkg;

@@ -53,16 +53,6 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
-    ------------------------------------------------------------------------
-    ------------------------------------------------------------------------
-
-        procedure request_program is
-        begin
-            self.program_counter <= 0;
-            self.processor_enabled <= true;
-        end request_program;
-
-
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -76,7 +66,7 @@ begin
                 ram_write_port);
         ------------------------------------------------------------------------
             if simulation_counter mod 55 = 0 then
-                request_program;
+                request_processor(self);
             end if;
         ------------------------------------------------------------------------
         -- test signals
