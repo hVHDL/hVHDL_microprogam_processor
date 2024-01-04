@@ -46,5 +46,6 @@ testi.add_source_files(ROOT / "testbenches/tb_branching.vhd")
 testi.add_source_files(ROOT / "testbenches/tb_stall_pipeline.vhd")
 testi.add_source_files(ROOT / "testbenches/test_jump_tb.vhd")
 testi.add_source_files(ROOT / "testbenches/low_pass_filter_tb.vhd")
+testi.add_source_files(ROOT / "simple_processor/simple_processor_pkg.vhd")
 
 VU.main()

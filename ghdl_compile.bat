@@ -11,5 +11,4 @@ call source/hVHDL_memory_library/ghdl_compile_memory_library.bat source/hVHDL_me
 
 ghdl -a --ieee=synopsys --std=08 %src%/testbenches/microinstruction_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/testbenches/test_programs_pkg.vhd
-ghdl -a --ieee=synopsys --std=08 %src%/testbenches/microcode_processor_pkg.vhd
-ghdl -a --ieee=synopsys --std=08 %src%/ram_control/ram_read_control_module_pkg.vhd
+ghdl -a --ieee=synopsys --std=08 %src%/simple_processor/simple_processor_pkg.vhd
