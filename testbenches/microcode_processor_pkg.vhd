@@ -38,6 +38,10 @@ package microcode_processor_pkg is
     end record;
 
     function init_processor ( program_start_point : natural) return processor_with_ram_record;
+    function init_processor (
+        program_start_point : natural;
+        is_enabled : boolean)
+        return processor_with_ram_record;
 
     procedure create_processor_w_ram (
         signal self                    : inout processor_with_ram_record;
@@ -63,11 +67,10 @@ package microcode_processor_pkg is
         signal self : inout processor_with_ram_record;
         write_offset : in natural);
 
-    function write_register_values_to_ram (
-        ram_to_be_intialized : ram_array;
-        register_init_values : reg_array;
-        end_address : natural)
-    return ram_array;
+    procedure save_registers (
+        signal self : inout processor_with_ram_record;
+        write_offset : in std_logic_vector);
+
 
     function register_load_ready ( self : processor_with_ram_record)
         return boolean;
@@ -87,6 +90,15 @@ package microcode_processor_pkg is
         register_number : natural range reg_array'range)
     return integer;
 
+    function "+" ( left, right : std_logic_vector )
+    return std_logic_vector ;
+
+    function "-" ( left, right : std_logic_vector )
+    return std_logic_vector ;
+
+    function "-" ( left : std_logic_vector )
+    return std_logic_vector ;
+
 end package microcode_processor_pkg;
 
 package body microcode_processor_pkg is
@@ -103,24 +115,6 @@ package body microcode_processor_pkg is
         return retval;
     end init_ram;
 ------------------------------------------------------------------------
-    function write_register_values_to_ram
-    (
-        ram_to_be_intialized : ram_array;
-        register_init_values : reg_array;
-        end_address : natural
-    )
-    return ram_array
-    is
-        variable retval : ram_array := ram_to_be_intialized;
-    begin
-
-        for i in end_address-reg_array'high to end_address loop
-            retval(i) := register_init_values(i-(end_address-reg_array'high));
-        end loop;
-
-        return retval;
-        
-    end write_register_values_to_ram;
 ------------------------------------------------------------------------
     function "+"
     (
@@ -248,6 +242,20 @@ package body microcode_processor_pkg is
         );
         return retval;
     end init_processor;
+
+    function init_processor
+    (
+        program_start_point : natural;
+        is_enabled : boolean
+    )
+    return processor_with_ram_record
+    is
+        variable retval : processor_with_ram_record := init_processor(program_start_point);
+    begin
+        retval.processor_enabled := is_enabled;
+        return retval;
+        
+    end init_processor;
 ------------------------------------------------------------------------
     procedure create_processor_w_ram
     (
@@ -266,13 +274,18 @@ package body microcode_processor_pkg is
     begin
         init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
     --------------------------------------------------
-        if decode(self.instruction_pipeline(0)) = load_registers then
-            load_registers(self, get_long_argument(self.instruction_pipeline(0)));
-        end if;
+        CASE decode(self.instruction_pipeline(0)) is
+            WHEN load_registers =>
+                load_registers(self, get_long_argument(self.instruction_pipeline(0)));
 
-        if decode(self.instruction_pipeline(0)) = jump then
-            self.program_counter <= get_long_argument(self.instruction_pipeline(0));
-        end if;
+            WHEN jump =>
+                self.program_counter <= get_long_argument(self.instruction_pipeline(0));
+
+            WHEN jump_indirect =>
+                self.program_counter <= to_integer(unsigned(self.registers(7)));
+
+            WHEN others => -- do nothign
+        end case;
     --------------------------------------------------
     --------------------------------------------------
         -- save registers to ram

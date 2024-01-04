@@ -40,9 +40,15 @@ architecture vunit_simulation of tb_branching is
             write_instruction(load_registers, reg_offset-reg_array'length*0),
             write_instruction(stall, 12),
             write_instruction(set, 5, reg_offset-reg_array'length*0),
-            write_instruction(set, 6, 1),
-            write_instruction(write_pc, 7),
-            write_instruction(jump, 0)
+            write_instruction(set      , 6  , 1) ,
+            write_instruction(write_pc , 7) ,
+            write_instruction(jump     , 0) ,
+            write_instruction(nop)     ,
+            write_instruction(nop)     ,
+            write_instruction(nop)     ,
+            write_instruction(nop)     ,
+            write_instruction(nop)     ,
+            write_instruction(nop)     
         );
     begin
         return program;

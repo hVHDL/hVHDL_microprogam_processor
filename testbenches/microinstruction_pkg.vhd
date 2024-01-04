@@ -3,6 +3,7 @@ library ieee;
     use ieee.numeric_std.all;
 
     use work.real_to_fixed_pkg.all;
+    use work.multi_port_ram_pkg.all;
 
 package microinstruction_pkg is
     -- TODO, move to configuration, needs to be more than 3
@@ -16,11 +17,11 @@ package microinstruction_pkg is
         add                     ,
         sub                     ,
         mpy                     ,
-        mpy_add                 , -- not implemented at the moment
         stall                   ,
         ready                   ,
         jump                    ,
-        ret                     ,
+        save                    ,
+        load                    ,
         load_registers          ,
         save_registers          ,
         save_registers_indirect ,
@@ -80,6 +81,10 @@ package microinstruction_pkg is
     function get_sigle_argument (
         input_register : std_logic_vector )
     return std_logic_vector;
+
+    function get_sigle_argument (
+        input_register : std_logic_vector )
+    return natural;
 ------------------------------------------------------------------------
     function get_instruction ( input_register : std_logic_vector )
         return integer;
@@ -106,7 +111,13 @@ package microinstruction_pkg is
         return natural;
     function get_long_argument ( input_register : std_logic_vector )
         return std_logic_vector;
-
+------------------------------------------------------------------------
+    function write_register_values_to_ram (
+        ram_to_be_intialized : ram_array;
+        register_init_values : reg_array;
+        end_address : natural)
+    return ram_array;
+------------------------------------------------------------------------
 end package microinstruction_pkg;
 
 package body microinstruction_pkg is
@@ -284,6 +295,19 @@ package body microinstruction_pkg is
         return retval;
         
     end get_sigle_argument;
+
+    function get_sigle_argument
+    (
+        input_register : std_logic_vector 
+    )
+    return natural
+    is
+        variable retval : t_instruction := (others => '0');
+    begin
+        retval(ref'range) := input_register(ref'range);
+        return to_integer(unsigned(retval));
+        
+    end get_sigle_argument;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     function get_instruction
@@ -340,5 +364,25 @@ package body microinstruction_pkg is
         return retval;
         
     end to_fixed;
+------------------------------------------------------------------------
+
+    function write_register_values_to_ram
+    (
+        ram_to_be_intialized : ram_array;
+        register_init_values : reg_array;
+        end_address : natural
+    )
+    return ram_array
+    is
+        variable retval : ram_array := ram_to_be_intialized;
+    begin
+
+        for i in end_address-reg_array'high to end_address loop
+            retval(i) := register_init_values(i-(end_address-reg_array'high));
+        end loop;
+
+        return retval;
+        
+    end write_register_values_to_ram;
 ------------------------------------------------------------------------
 end package body microinstruction_pkg;
