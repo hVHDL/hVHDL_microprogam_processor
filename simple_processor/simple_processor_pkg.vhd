@@ -9,11 +9,11 @@ library ieee;
 package simple_processor_pkg is
 
     type simple_processor_record is record
-        processor_enabled      : boolean                 ;
-        is_ready      : boolean                 ;
-        program_counter        : natural range 0 to 1023 ;
-        registers              : reg_array               ;
-        instruction_pipeline   : instruction_array       ;
+        processor_enabled    : boolean                 ;
+        is_ready             : boolean                 ;
+        program_counter      : natural range 0 to 1023 ;
+        registers            : reg_array               ;
+        instruction_pipeline : instruction_array       ;
         -- math unit for testing, will be removed later
         add_a          : std_logic_vector(19 downto 0) ;
         add_b          : std_logic_vector(19 downto 0) ;

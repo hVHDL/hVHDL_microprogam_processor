@@ -35,7 +35,7 @@ package body test_programs_pkg is
         constant program : program_array := (
         write_instruction(load , y    , result_address) ,
         write_instruction(load , g    , gain_address)   ,
-        write_instruction(load , u    , input_address)   ,
+        write_instruction(load , u    , input_address)  ,
         write_instruction(nop) ,
         write_instruction(sub  , temp , u , y) ,
         write_instruction(nop) ,
@@ -67,6 +67,8 @@ package body test_programs_pkg is
         variable retval : ram_array := (others => (others => '0'));
     begin
 
+        assert program'length < 100 report "program needs to be less than 100 instructions" severity failure;
+
         for i in program'range loop
             retval(i) := program(i);
         end loop;
@@ -77,7 +79,7 @@ package body test_programs_pkg is
         retval(103) := std_logic_vector(to_signed(integer(0.2*2**19),20));
         retval(104) := std_logic_vector(to_signed(integer(0.0*2**19),20));
 
-        retval(105) := std_logic_vector(to_signed(integer(0.3*2**19),20));
+        retval(105) := std_logic_vector(to_signed(integer(0.4*2**19),20));
         retval(106) := std_logic_vector(to_signed(integer(0.0*2**19),20));
             
         return retval;
