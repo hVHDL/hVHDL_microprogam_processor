@@ -15,12 +15,12 @@ package microinstruction_pkg is
     constant register_high             : natural := register_bit_width-1;
 
     type t_command is (
-        program_end             ,
-        nop                     ,
-        add                     ,
-        sub                     ,
-        mpy                     ,
-        save                    ,
+        program_end,
+        nop        ,
+        add        ,
+        sub        ,
+        mpy        ,
+        save       ,
         load
     );
 
