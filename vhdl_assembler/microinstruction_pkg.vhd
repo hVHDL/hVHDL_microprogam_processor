@@ -6,9 +6,13 @@ library ieee;
     use work.multi_port_ram_pkg.all;
 
 package microinstruction_pkg is
-    -- TODO, move to configuration, needs to be more than 3
+    -- TODO, move to configuration
     constant number_of_registers       : natural := 5;
     constant number_of_pipeline_stages : natural := 6;
+    constant instruction_bit_width     : natural := 20;
+    constant instruction_high          : natural := instruction_bit_width-1;
+    constant register_bit_width        : natural := 20;
+    constant register_high             : natural := register_bit_width-1;
 
     type t_command is (
         program_end             ,
@@ -20,7 +24,7 @@ package microinstruction_pkg is
         load
     );
 
-    type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(19 downto 0);
+    type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(register_high downto 0);
     type realarray is array (natural range <>) of real;
 
     subtype comm is std_logic_vector(19 downto 16);

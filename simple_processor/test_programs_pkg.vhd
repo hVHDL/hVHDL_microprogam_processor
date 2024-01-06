@@ -4,6 +4,7 @@ library ieee;
 
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
+    use work.real_to_fixed_pkg.all;
 
 package test_programs_pkg is
 
@@ -65,6 +66,15 @@ package body test_programs_pkg is
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
+        function to_fixed
+        (
+            number : real
+        )
+        return std_logic_vector 
+        is
+        begin
+            return to_fixed(number, 20,19);
+        end to_fixed;
     begin
 
         assert program'length < 100 report "program needs to be less than 100 instructions" severity failure;
@@ -72,15 +82,15 @@ package body test_programs_pkg is
         for i in program'range loop
             retval(i) := program(i);
         end loop;
-        retval(100) := std_logic_vector(to_signed(integer(0.1*2**19),20));
-        retval(101) := std_logic_vector(to_signed(integer(0.0*2**19),20));
-        retval(102) := std_logic_vector(to_signed(integer(0.5*2**19),20));
+        retval(100) := to_fixed(0.1);
+        retval(101) := to_fixed(0.0);
+        retval(102) := to_fixed(0.5);
 
-        retval(103) := std_logic_vector(to_signed(integer(0.2*2**19),20));
-        retval(104) := std_logic_vector(to_signed(integer(0.0*2**19),20));
+        retval(103) := to_fixed(0.2);
+        retval(104) := to_fixed(0.0);
 
-        retval(105) := std_logic_vector(to_signed(integer(0.4*2**19),20));
-        retval(106) := std_logic_vector(to_signed(integer(0.0*2**19),20));
+        retval(105) := to_fixed(0.4);
+        retval(106) := to_fixed(0.0);
             
         return retval;
         

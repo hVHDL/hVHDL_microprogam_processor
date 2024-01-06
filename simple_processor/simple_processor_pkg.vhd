@@ -42,6 +42,9 @@ package simple_processor_pkg is
     function program_is_ready ( self : simple_processor_record)
         return boolean;
 ------------------------------------------------------------------------
+    function processor_is_enabled (
+        self : simple_processor_record)
+    return boolean;
 
 end package simple_processor_pkg;
 
@@ -223,5 +226,15 @@ package body simple_processor_pkg is
         self.processor_enabled <= true;
     end request_processor;
 
+------------------------------------------------------------------------     
+    function processor_is_enabled
+    (
+        self : simple_processor_record
+    )
+    return boolean
+    is
+    begin
+        return self.processor_enabled;
+    end processor_is_enabled;
 ------------------------------------------------------------------------     
 end package body simple_processor_pkg;

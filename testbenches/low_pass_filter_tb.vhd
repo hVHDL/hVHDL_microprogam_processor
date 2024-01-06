@@ -10,6 +10,7 @@ context vunit_lib.vunit_context;
     use work.multi_port_ram_pkg.all;
     use work.simple_processor_pkg.all;
     use work.test_programs_pkg.build_sw;
+    use work.real_to_fixed_pkg.all;
 
 entity low_pass_filter_tb is
   generic (runner_cfg : string);
@@ -38,6 +39,13 @@ architecture vunit_simulation of low_pass_filter_tb is
 
     signal processor_is_ready : boolean := false;
 
+    signal counter : natural range 0 to 7 :=7;
+    signal counter2 : natural range 0 to 7 :=7;
+
+    signal result1 : real := 0.0;
+    signal result2 : real := 0.0;
+    signal result3 : real := 0.0;
+
 begin
 
 ------------------------------------------------------------------------
@@ -65,13 +73,39 @@ begin
                 ram_read_data_out       ,
                 ram_write_port);
         ------------------------------------------------------------------------
-            if simulation_counter mod 55 = 0 then
+            if simulation_counter mod 60 = 0 then
                 request_processor(self);
             end if;
         ------------------------------------------------------------------------
         -- test signals
         ------------------------------------------------------------------------
             processor_is_ready <= program_is_ready(self);
+            if program_is_ready(self) then
+                counter <= 0;
+                counter2 <= 0;
+            end if;
+            if counter < 7 then
+                counter <= counter +1;
+            end if;
+
+            CASE counter is
+                WHEN 0 => request_data_from_ram(ram_read_data_in, 101);
+                WHEN 1 => request_data_from_ram(ram_read_data_in, 104);
+                WHEN 2 => request_data_from_ram(ram_read_data_in, 106);
+                WHEN others => --do nothing
+            end CASE;
+            if not processor_is_enabled(self) then
+                if ram_read_is_ready(ram_read_data_out) then
+                    counter2 <= counter2 + 1;
+                    CASE counter2 is
+                        WHEN 0 => result1 <= to_real(get_ram_data(ram_read_data_out),19);
+                        WHEN 1 => result2 <= to_real(get_ram_data(ram_read_data_out),19);
+                        WHEN 2 => result3 <= to_real(get_ram_data(ram_read_data_out),19);
+                        WHEN others => -- do nothing
+                    end CASE; --counter2
+                end if;
+            end if;
+
 
         end if; -- rising_edge
     end process stimulus;	
