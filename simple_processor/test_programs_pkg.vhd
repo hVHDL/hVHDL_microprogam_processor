@@ -75,6 +75,7 @@ package body test_programs_pkg is
             low_pass_filter(gain_address => 105 , result_address => 106 , input_address => 102) &
             write_instruction(program_end) 
         );
+
 ------------------------------------------------------------------------
     begin
 
@@ -90,7 +91,7 @@ package body test_programs_pkg is
         retval(103) := to_fixed(filter_gain/2.0);
         retval(104) := to_fixed(0.0);
 
-        retval(105) := to_fixed(filter_gain/8.0);
+        retval(105) := to_fixed(0.08);
         retval(106) := to_fixed(0.0);
         retval(107) := x"0acdc";
             
