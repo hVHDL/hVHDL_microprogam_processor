@@ -56,13 +56,6 @@ package body test_programs_pkg is
         
     end low_pass_filter;
 ------------------------------------------------------------------------
-    constant program : program_array := (
-        low_pass_filter(gain_address => 100 , result_address => 101 , input_address => 102) ,
-        low_pass_filter(gain_address => 103 , result_address => 104 , input_address => 102) ,
-        low_pass_filter(gain_address => 105 , result_address => 106 , input_address => 102) ,
-        write_instruction(program_end) 
-    );
-------------------------------------------------------------------------
     function build_sw return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
@@ -75,6 +68,14 @@ package body test_programs_pkg is
         begin
             return to_fixed(number, 20,19);
         end to_fixed;
+
+        constant program : program_array := (
+            low_pass_filter(gain_address => 100 , result_address => 101 , input_address => 102) &
+            low_pass_filter(gain_address => 103 , result_address => 104 , input_address => 102) &
+            low_pass_filter(gain_address => 105 , result_address => 106 , input_address => 102) &
+            write_instruction(program_end) 
+        );
+------------------------------------------------------------------------
     begin
 
         assert program'length < 100 report "program needs to be less than 100 instructions" severity failure;
@@ -91,6 +92,7 @@ package body test_programs_pkg is
 
         retval(105) := to_fixed(0.4);
         retval(106) := to_fixed(0.0);
+        retval(107) := x"0acdc";
             
         return retval;
         
