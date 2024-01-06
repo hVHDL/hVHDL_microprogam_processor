@@ -19,7 +19,7 @@ end;
 architecture vunit_simulation of low_pass_filter_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 5e3;
+    constant simtime_in_clocks : integer := 10e3;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -27,7 +27,7 @@ architecture vunit_simulation of low_pass_filter_tb is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
-    constant ram_contents : ram_array := build_sw;
+    constant ram_contents : ram_array := build_sw(0.2);
 
     signal self                     : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
@@ -53,6 +53,9 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
+        check(result1 > 0.45);
+        check(result2 > 0.45);
+        check(result3 > 0.45);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	

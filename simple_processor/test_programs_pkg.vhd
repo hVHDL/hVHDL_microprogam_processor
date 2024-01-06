@@ -14,7 +14,7 @@ package test_programs_pkg is
         input_address  : natural)
     return program_array;
 
-    function build_sw return ram_array;
+    function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array;
 
 end package test_programs_pkg;
 
@@ -56,7 +56,7 @@ package body test_programs_pkg is
         
     end low_pass_filter;
 ------------------------------------------------------------------------
-    function build_sw return ram_array
+    function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
         function to_fixed
@@ -83,14 +83,14 @@ package body test_programs_pkg is
         for i in program'range loop
             retval(i) := program(i);
         end loop;
-        retval(100) := to_fixed(0.1);
+        retval(100) := to_fixed(filter_gain);
         retval(101) := to_fixed(0.0);
         retval(102) := to_fixed(0.5);
 
-        retval(103) := to_fixed(0.2);
+        retval(103) := to_fixed(filter_gain/2.0);
         retval(104) := to_fixed(0.0);
 
-        retval(105) := to_fixed(0.4);
+        retval(105) := to_fixed(filter_gain/8.0);
         retval(106) := to_fixed(0.0);
         retval(107) := x"0acdc";
             
