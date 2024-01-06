@@ -27,6 +27,7 @@ architecture vunit_simulation of low_pass_filter_tb is
     -- simulation specific signals ----
 
     ------------------------------------------------------------------------
+    constant ram_contents : ram_array := build_sw;
 
     signal self                     : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
