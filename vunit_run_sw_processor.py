@@ -32,10 +32,12 @@ testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
+testi.add_source_files(ROOT / "processor_configuration/processor_configuration_pkg.vhd")
 testi.add_source_files(ROOT / "vhdl_assembler/microinstruction_pkg.vhd")
 testi.add_source_files(ROOT / "simple_processor/test_programs_pkg.vhd")
 testi.add_source_files(ROOT / "simple_processor/simple_processor_pkg.vhd")
 
 testi.add_source_files(ROOT / "testbenches/low_pass_filter_tb.vhd")
+testi.add_source_files(ROOT / "testbenches/float_processor_tb.vhd")
 
 VU.main()

@@ -5,15 +5,82 @@ library ieee;
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
     use work.multiplier_pkg.radix_multiply;
+    use work.processor_configuration_pkg.all;
 
-package simple_processor_pkg is
+package program_flow_control_pkg is
 
-    type simple_processor_record is record
+    type program_flow_control_record is record
         processor_enabled    : boolean                 ;
         is_ready             : boolean                 ;
         program_counter      : natural range 0 to 1023 ;
-        registers            : reg_array               ;
-        instruction_pipeline : instruction_array       ;
+    end record;
+
+    constant init_prgram_flow_control : program_flow_control_record := (false, false, 0);
+
+    procedure create_program_flow_control
+    (
+        signal self                    : inout program_flow_control_record ;
+        signal ram_read_instruction_in : out ram_read_in_record            ;
+        ram_read_instruction_out       : in ram_read_out_record            ;
+        signal ram_read_data_in        : out ram_read_in_record            ;
+        ram_read_data_out              : in ram_read_out_record            ;
+        used_instruction               : inout t_instruction);
+
+end package program_flow_control_pkg;
+
+package body program_flow_control_pkg is
+
+    procedure create_program_flow_control
+    (
+        signal self                    : inout program_flow_control_record ;
+        signal ram_read_instruction_in : out ram_read_in_record            ;
+        ram_read_instruction_out       : in ram_read_out_record            ;
+        signal ram_read_data_in        : out ram_read_in_record            ;
+        ram_read_data_out              : in ram_read_out_record            ;
+        used_instruction               : inout t_instruction
+    ) is
+    begin
+        self.is_ready <= false;
+        used_instruction := write_instruction(nop);
+        if self.processor_enabled then
+            request_data_from_ram(ram_read_instruction_in, self.program_counter);
+
+            if ram_read_is_ready(ram_read_instruction_out) then
+                used_instruction := get_ram_data(ram_read_instruction_out);
+            end if;
+
+            if decode(used_instruction) = program_end then
+                self.processor_enabled <= false;
+                self.is_ready <= true;
+            else
+                self.program_counter <= self.program_counter + 1;
+            end if;
+        end if;
+    ------------------------------------------------------------------------
+        
+    end create_program_flow_control;
+
+
+end package body program_flow_control_pkg;
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+    use work.microinstruction_pkg.all;
+    use work.multi_port_ram_pkg.all;
+    use work.multiplier_pkg.radix_multiply;
+    use work.processor_configuration_pkg.all;
+    use work.program_flow_control_pkg.all;
+
+package simple_processor_pkg is
+
+
+    type simple_processor_record is record
+        program_flow_control : program_flow_control_record ;
+        registers            : reg_array                   ;
+        instruction_pipeline : instruction_array           ;
         -- math unit for testing, will be removed later
         add_a          : std_logic_vector(19 downto 0) ;
         add_b          : std_logic_vector(19 downto 0) ;
@@ -55,20 +122,18 @@ package body simple_processor_pkg is
     is
         constant zero_all : simple_processor_record :=
         (
-            processor_enabled => false ,                       -- boolean                 ;
-            is_ready          => false ,                       -- boolean                 ;
-            program_counter      => 0,                           -- natural range 0 to 1023 ;
-            registers            => (others => (others => '0')), -- reg_array               ;
-            instruction_pipeline => (others => (others => '0')), -- instruction_array       ;
-            add_a                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            add_b                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            add_result           => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            mpy_a                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            mpy_b                => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            mpy_a1               => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            mpy_b1               => (others => '0'),             -- std_logic_vector(19 downto 0) ;
-            mpy_raw_result       => (others => '0'),             -- signed(39 downto 0)           ;
-            mpy_result           => (others => '0'));            -- std_logic_vector(19 downto 0) ;
+            program_flow_control      => init_prgram_flow_control, -- natural range 0 to 1023 ;
+            registers            => (others => (others => '0')),   -- reg_array               ;
+            instruction_pipeline => (others => (others => '0')),   -- instruction_array       ;
+            add_a                => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            add_b                => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            add_result           => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            mpy_a                => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            mpy_b                => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            mpy_a1               => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            mpy_b1               => (others => '0'),               -- std_logic_vector(19 downto 0) ;
+            mpy_raw_result       => (others => '0'),               -- signed(39 downto 0)           ;
+            mpy_result           => (others => '0'));              -- std_logic_vector(19 downto 0) ;
     begin
 
         return zero_all;
@@ -107,6 +172,7 @@ package body simple_processor_pkg is
         return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
     end "*";
 ------------------------------------------------------------------------     
+------------------------------------------------------------------------     
     procedure create_simple_processor
     (
         signal self                    : inout simple_processor_record;
@@ -121,30 +187,15 @@ package body simple_processor_pkg is
             init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
         ------------------------------------------------------------------------
             --stage -1
+            create_program_flow_control(self.program_flow_control, ram_read_instruction_in, ram_read_instruction_out, ram_read_data_in, ram_read_data_out, used_instruction);
 
-            self.is_ready <= false;
-            used_instruction := write_instruction(nop);
-            if self.processor_enabled then
-                request_data_from_ram(ram_read_instruction_in, self.program_counter);
-
-                if ram_read_is_ready(ram_read_instruction_out) then
-                    used_instruction := get_ram_data(ram_read_instruction_out);
-                end if;
-
-                if decode(used_instruction) = program_end then
-                    self.processor_enabled <= false;
-                    self.is_ready <= true;
-                else
-                    self.program_counter <= self.program_counter + 1;
-                end if;
-            end if;
-        ------------------------------------------------------------------------
             CASE decode(used_instruction) is
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
                 WHEN others => -- do nothing
             end CASE;
             self.instruction_pipeline <= used_instruction & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
+
         ------------------------------------------------------------------------
         ------------------------------------------------------------------------
             --stage 0
@@ -213,7 +264,7 @@ package body simple_processor_pkg is
     return boolean
     is
     begin
-        return self.is_ready;
+        return self.program_flow_control.is_ready;
         
     end program_is_ready;
 
@@ -222,8 +273,8 @@ package body simple_processor_pkg is
         signal self : out simple_processor_record
     ) is
     begin
-        self.program_counter <= 0;
-        self.processor_enabled <= true;
+        self.program_flow_control.program_counter <= 0;
+        self.program_flow_control.processor_enabled <= true;
     end request_processor;
 
 ------------------------------------------------------------------------     
@@ -234,7 +285,7 @@ package body simple_processor_pkg is
     return boolean
     is
     begin
-        return self.processor_enabled;
+        return self.program_flow_control.processor_enabled;
     end processor_is_enabled;
 ------------------------------------------------------------------------     
 end package body simple_processor_pkg;

@@ -5,6 +5,7 @@ library ieee;
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
     use work.real_to_fixed_pkg.all;
+    use work.processor_configuration_pkg.all;
 
 package test_programs_pkg is
 
