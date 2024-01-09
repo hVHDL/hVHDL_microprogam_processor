@@ -4,7 +4,6 @@ library ieee;
 
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
-    use work.multiplier_pkg.radix_multiply;
     use work.processor_configuration_pkg.all;
 
 package program_flow_control_pkg is
