@@ -10,7 +10,6 @@ context vunit_lib.vunit_context;
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
     use work.simple_processor_pkg.all;
-    use work.test_programs_pkg.build_sw;
     use work.processor_configuration_pkg.all;
     use work.float_alu_pkg.all;
     use work.float_type_definitions_pkg.all;
@@ -41,7 +40,7 @@ architecture vunit_simulation of float_processor_tb is
         begin
             retval.sign     := float(float'left);
             retval.exponent := signed(float(float'left-1 downto float'left-1-exponent_high));
-            retval.mantissa := unsigned(float(float'left-exponent_high-1 downto 0));
+            retval.mantissa := unsigned(float(float'left-exponent_high-2 downto 0));
 
             return retval;
         end to_float;
@@ -76,19 +75,16 @@ architecture vunit_simulation of float_processor_tb is
         retval(3) := write_instruction(nop);
         retval(4) := write_instruction(nop);
         retval(5) := write_instruction(nop);
-        retval(6) := write_instruction(add, 2, 1, 0);
+        retval(6) := write_instruction(nop);
+        retval(7) := write_instruction(nop);
+        retval(8) := write_instruction(nop);
+        retval(8) := write_instruction(nop);
+        retval(9) := write_instruction(add, 2, 0, 1);
+        retval(10) := write_instruction(mpy, 3, 1, 0);
 
-        retval(20) := write_instruction(program_end);
+        retval(20)  := write_instruction(program_end);
         retval(100) := to_std_logic_vector(to_float(2.0));
-        retval(101) := to_std_logic_vector(to_float(2.1));
-        -- retval(102) := to_fixed(0.5);
-        --
-        -- retval(103) := to_fixed(filter_gain/2.0);
-        -- retval(104) := to_fixed(0.0);
-        --
-        -- retval(105) := to_fixed(0.08);
-        -- retval(106) := to_fixed(0.0);
-        -- retval(107) := x"0acdc";
+        retval(101) := to_std_logic_vector(to_float(-2.0));
             
         return retval;
         
@@ -114,6 +110,11 @@ architecture vunit_simulation of float_processor_tb is
 
     signal float_alu : float_alu_record := init_float_alu;
 
+    constant test_result : real := 0.0055435133453;
+    constant test : real := to_real(to_float(to_std_logic_vector(to_float(test_result))));
+    signal should_be_zero : real := test_result - test;
+    signal testi : real := test;
+
 begin
 
 ------------------------------------------------------------------------
@@ -121,7 +122,8 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        -- check(result1 > 0.45 and result1 < 0.55);
+        check(abs(testi - test_result) < 0.1);
+        -- check(abs(4.1 - result1) < 0.001);
         -- check(result2 > 0.45 and result2 < 0.55);
         -- check(result3 > 0.45 and result3 < 0.55);
         test_runner_cleanup(runner); -- Simulation ends here
@@ -156,8 +158,8 @@ begin
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
                 WHEN add => 
                     add(float_alu, 
-                        to_float(2.0),
-                        to_float(2.1));
+                        to_float(processor.registers(get_arg1(used_instruction))), 
+                        to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN sub =>
                     subtract(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
@@ -183,6 +185,7 @@ begin
 
             CASE decode(used_instruction) is
                 WHEN load =>
+                    processor.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
                 WHEN add | sub =>
                 WHEN others => -- do nothing
             end CASE;
@@ -208,6 +211,9 @@ begin
             used_instruction := processor.instruction_pipeline(5);
             CASE decode(used_instruction) is
                 WHEN mpy =>
+                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
+                WHEN add => 
+                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
@@ -218,7 +224,11 @@ begin
             if add_is_ready(float_alu) then
                 result1 <= to_real(get_add_result(float_alu));
             end if;
-            if simulation_counter mod 60 = 0 then
+
+            if multiplier_is_ready(float_alu) then
+                result2 <= to_real(get_multiplier_result(float_alu));
+            end if;
+            if simulation_counter = 0 then
                 request_processor(processor);
             end if;
             processor_is_ready <= program_is_ready(processor);
