@@ -11,6 +11,7 @@ context vunit_lib.vunit_context;
     use work.simple_processor_pkg.all;
     use work.test_programs_pkg.build_sw;
     use work.real_to_fixed_pkg.all;
+    use work.command_pipeline_pkg.all;
 
 entity low_pass_filter_tb is
   generic (runner_cfg : string);
@@ -30,9 +31,10 @@ architecture vunit_simulation of low_pass_filter_tb is
     constant ram_contents : ram_array := build_sw(0.2);
 
     signal self                     : simple_processor_record := init_processor;
-    signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
+    signal command_pipeline         : command_pipeline_record := init_fixed_point_command_pipeline;
+    signal ram_read_instruction_in  : ram_read_in_record      := (0, '0');
     signal ram_read_instruction_out : ram_read_out_record ;
-    signal ram_read_data_in         : ram_read_in_record  := (0, '0');
+    signal ram_read_data_in         : ram_read_in_record       := (0, '0');
     signal ram_read_data_out        : ram_read_out_record ;
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
@@ -64,6 +66,7 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
+        variable used_instruction : t_instruction;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -74,7 +77,20 @@ begin
                 ram_read_instruction_out,
                 ram_read_data_in        ,
                 ram_read_data_out       ,
-                ram_write_port);
+                ram_write_port,
+                used_instruction);
+
+            create_command_pipeline(
+                command_pipeline          ,
+                ram_read_instruction_in   ,
+                ram_read_instruction_out  ,
+                ram_read_data_in          ,
+                ram_read_data_out         ,
+                ram_write_port            ,
+                self.registers            ,
+                self.instruction_pipeline ,
+                used_instruction);
+    ------------------------------------------------------------------------
         ------------------------------------------------------------------------
             if simulation_counter mod 60 = 0 then
                 request_processor(self);

@@ -4,12 +4,10 @@ library ieee;
 
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
-    use work.multiplier_pkg.radix_multiply;
     use work.processor_configuration_pkg.all;
     use work.command_pipeline_pkg.all;
 
 package simple_processor_pkg is
-
 
     type simple_processor_record is record
         processor_enabled    : boolean                 ;
@@ -18,18 +16,18 @@ package simple_processor_pkg is
         registers            : reg_array               ;
         instruction_pipeline : instruction_array       ;
         -- math unit for testing, will be removed later
-        command_pipeline : command_pipeline_record;
     end record;
 
     function init_processor return simple_processor_record;
 ------------------------------------------------------------------------
     procedure create_simple_processor (
-        signal self                    : inout simple_processor_record;
-        signal ram_read_instruction_in : out ram_read_in_record    ;
-        ram_read_instruction_out       : in ram_read_out_record    ;
-        signal ram_read_data_in        : out ram_read_in_record    ;
-        ram_read_data_out              : in ram_read_out_record    ;
-        signal ram_write_port          : out ram_write_in_record);
+        signal self                    : inout simple_processor_record ;
+        signal ram_read_instruction_in : out ram_read_in_record        ;
+        ram_read_instruction_out       : in ram_read_out_record        ;
+        signal ram_read_data_in        : out ram_read_in_record        ;
+        ram_read_data_out              : in ram_read_out_record        ;
+        signal ram_write_port          : out ram_write_in_record       ;
+        used_instruction               : inout t_instruction);
 ------------------------------------------------------------------------     
     procedure request_processor (
         signal self : out simple_processor_record);
@@ -50,12 +48,11 @@ package body simple_processor_pkg is
     is
         constant zero_all : simple_processor_record :=
         (
-            processor_enabled    => false ,                       -- boolean                 ;
-            is_ready             => false ,                       -- boolean                 ;
-            program_counter      => 0,                           -- natural range 0 to 1023 ;
-            registers            => (others => (others => '0')), -- reg_array               ;
-            instruction_pipeline => (others => (others => '0')), -- instruction_array       ;
-            command_pipeline     => init_fixed_point_command_pipeline);
+            processor_enabled    => false                       , -- boolean                 ;
+            is_ready             => false                       , -- boolean                 ;
+            program_counter      => 0                           , -- natural range 0 to 1023 ;
+            registers            => (others => (others => '0')) , -- reg_array               ;
+            instruction_pipeline => (others => (others => '0')) ); -- instruction_array       ;
     begin
 
         return zero_all;
@@ -64,14 +61,14 @@ package body simple_processor_pkg is
 ------------------------------------------------------------------------     
     procedure create_simple_processor
     (
-        signal self                    : inout simple_processor_record;
-        signal ram_read_instruction_in : out ram_read_in_record    ;
-        ram_read_instruction_out       : in ram_read_out_record    ;
-        signal ram_read_data_in        : out ram_read_in_record    ;
-        ram_read_data_out              : in ram_read_out_record    ;
-        signal ram_write_port          : out ram_write_in_record
+        signal self                    : inout simple_processor_record ;
+        signal ram_read_instruction_in : out ram_read_in_record        ;
+        ram_read_instruction_out       : in ram_read_out_record        ;
+        signal ram_read_data_in        : out ram_read_in_record        ;
+        ram_read_data_out              : in ram_read_out_record        ;
+        signal ram_write_port          : out ram_write_in_record       ;
+        used_instruction               : inout t_instruction
     ) is
-        variable used_instruction : t_instruction;
     begin
         init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
     ------------------------------------------------------------------------
@@ -92,17 +89,6 @@ package body simple_processor_pkg is
             end if;
         end if;
         self.instruction_pipeline <= used_instruction & self.instruction_pipeline(0 to self.instruction_pipeline'high-1);
-    ------------------------------------------------------------------------
-        create_command_pipeline(
-            self.command_pipeline     ,
-            ram_read_instruction_in   ,
-            ram_read_instruction_out  ,
-            ram_read_data_in          ,
-            ram_read_data_out         ,
-            ram_write_port            ,
-            self.registers            ,
-            self.instruction_pipeline ,
-            used_instruction);
     ------------------------------------------------------------------------
     end create_simple_processor;
 
