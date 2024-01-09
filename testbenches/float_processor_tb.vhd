@@ -12,6 +12,7 @@ context vunit_lib.vunit_context;
     use work.test_programs_pkg.build_sw;
     use work.processor_configuration_pkg.all;
     use work.float_alu_pkg.all;
+    use work.float_type_definitions_pkg.all;
 
 entity float_processor_tb is
   generic (runner_cfg : string);
@@ -47,6 +48,8 @@ architecture vunit_simulation of float_processor_tb is
     signal result2 : real := 0.0;
     signal result3 : real := 0.0;
 
+    signal float_alu : float_alu_record := init_float_alu;
+
 begin
 
 ------------------------------------------------------------------------
@@ -67,12 +70,40 @@ begin
     stimulus : process(simulator_clock)
         variable used_instruction : t_instruction;
 ------------------------------------------------------------------------     
+        function to_float
+        (
+            float : std_logic_vector
+        )
+        return float_record 
+        is
+            variable retval : float_record;
+        begin
+            retval.sign     := float(float'left);
+            retval.exponent := signed(float(float'left-1 downto float'left-1-exponent_high));
+            retval.mantissa := unsigned(float(float'left-exponent_high-1 downto 0));
+
+            return retval;
+        end to_float;
+
+        function to_std_logic_vector
+        (
+            float : float_record
+        )
+        return std_logic_vector 
+        is
+            variable retval : std_logic_vector(1+mantissa_high+exponent_high downto 0);
+        begin
+            retval  := float.sign & std_logic_vector(float.exponent) & std_logic_vector(float.mantissa);
+
+            return retval;
+
+        end to_std_logic_vector;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             --------------------
             create_simple_processor (
-                processor                     ,
+                processor                ,
                 ram_read_instruction_in  ,
                 ram_read_instruction_out ,
                 ram_read_data_in         ,
@@ -80,20 +111,31 @@ begin
                 ram_write_port           ,
                 used_instruction);
 
+            create_float_alu(float_alu);
+
         ------------------------------------------------------------------------
             --stage -1
             CASE decode(used_instruction) is
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
+                WHEN add => 
+                    add(float_alu, 
+                        to_float(processor.registers(get_arg1(used_instruction))), 
+                        to_float(processor.registers(get_arg2(used_instruction))));
+                WHEN sub =>
+                    subtract(float_alu, 
+                        to_float(processor.registers(get_arg1(used_instruction))), 
+                        to_float(processor.registers(get_arg2(used_instruction))));
+                WHEN mpy =>
+                    multiply(float_alu, 
+                        to_float(processor.registers(get_arg1(used_instruction))), 
+                        to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
             used_instruction := processor.instruction_pipeline(0);
             --stage 0
             CASE decode(used_instruction) is
-                WHEN add =>
-                WHEN sub =>
-                WHEN mpy =>
 
                 WHEN others => -- do nothing
             end CASE;
