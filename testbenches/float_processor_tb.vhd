@@ -1,3 +1,4 @@
+------------------------------------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -13,6 +14,7 @@ context vunit_lib.vunit_context;
     use work.processor_configuration_pkg.all;
     use work.float_alu_pkg.all;
     use work.float_type_definitions_pkg.all;
+    use work.float_to_real_conversions_pkg.all;
 
 entity float_processor_tb is
   generic (runner_cfg : string);
@@ -27,8 +29,70 @@ architecture vunit_simulation of float_processor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
+        -- TODO, move to float library
+        ------------------------------------------------------------------------
+        function to_float
+        (
+            float : std_logic_vector
+        )
+        return float_record 
+        is
+            variable retval : float_record;
+        begin
+            retval.sign     := float(float'left);
+            retval.exponent := signed(float(float'left-1 downto float'left-1-exponent_high));
+            retval.mantissa := unsigned(float(float'left-exponent_high-1 downto 0));
+
+            return retval;
+        end to_float;
+
+        ------------------------------------------------------------------------
+        function to_std_logic_vector
+        (
+            float : float_record
+        )
+        return std_logic_vector 
+        is
+            variable retval : std_logic_vector(mantissa_high+exponent_high+2 downto 0);
+        begin
+            retval  := float.sign & std_logic_vector(float.exponent) & std_logic_vector(float.mantissa);
+
+            return retval;
+
+        end to_std_logic_vector;
+        ------------------------------------------------------------------------
 
     ------------------------------------------------------------------------
+    function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array
+    is
+        variable retval : ram_array := (others => (others => '0'));
+
+------------------------------------------------------------------------
+    begin
+
+        retval(0) := write_instruction(load, 0, 100);
+        retval(1) := write_instruction(load, 1, 101);
+        retval(2) := write_instruction(nop);
+        retval(3) := write_instruction(nop);
+        retval(4) := write_instruction(nop);
+        retval(5) := write_instruction(nop);
+        retval(6) := write_instruction(add, 2, 1, 0);
+
+        retval(20) := write_instruction(program_end);
+        retval(100) := to_std_logic_vector(to_float(2.0));
+        retval(101) := to_std_logic_vector(to_float(2.1));
+        -- retval(102) := to_fixed(0.5);
+        --
+        -- retval(103) := to_fixed(filter_gain/2.0);
+        -- retval(104) := to_fixed(0.0);
+        --
+        -- retval(105) := to_fixed(0.08);
+        -- retval(106) := to_fixed(0.0);
+        -- retval(107) := x"0acdc";
+            
+        return retval;
+        
+    end build_sw;
     constant ram_contents : ram_array := build_sw(0.2);
 
     signal processor                : simple_processor_record := init_processor;
@@ -70,34 +134,6 @@ begin
     stimulus : process(simulator_clock)
         variable used_instruction : t_instruction;
 ------------------------------------------------------------------------     
-        function to_float
-        (
-            float : std_logic_vector
-        )
-        return float_record 
-        is
-            variable retval : float_record;
-        begin
-            retval.sign     := float(float'left);
-            retval.exponent := signed(float(float'left-1 downto float'left-1-exponent_high));
-            retval.mantissa := unsigned(float(float'left-exponent_high-1 downto 0));
-
-            return retval;
-        end to_float;
-
-        function to_std_logic_vector
-        (
-            float : float_record
-        )
-        return std_logic_vector 
-        is
-            variable retval : std_logic_vector(1+mantissa_high+exponent_high downto 0);
-        begin
-            retval  := float.sign & std_logic_vector(float.exponent) & std_logic_vector(float.mantissa);
-
-            return retval;
-
-        end to_std_logic_vector;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -120,8 +156,8 @@ begin
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
                 WHEN add => 
                     add(float_alu, 
-                        to_float(processor.registers(get_arg1(used_instruction))), 
-                        to_float(processor.registers(get_arg2(used_instruction))));
+                        to_float(2.0),
+                        to_float(2.1));
                 WHEN sub =>
                     subtract(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
@@ -179,6 +215,9 @@ begin
         ------------------------------------------------------------------------
         -- test signals
         ------------------------------------------------------------------------
+            if add_is_ready(float_alu) then
+                result1 <= to_real(get_add_result(float_alu));
+            end if;
             if simulation_counter mod 60 = 0 then
                 request_processor(processor);
             end if;
