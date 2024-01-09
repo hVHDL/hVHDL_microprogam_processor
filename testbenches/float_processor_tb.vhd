@@ -11,6 +11,7 @@ context vunit_lib.vunit_context;
     use work.simple_processor_pkg.all;
     use work.test_programs_pkg.build_sw;
     use work.processor_configuration_pkg.all;
+    use work.float_alu_pkg.all;
 
 entity float_processor_tb is
   generic (runner_cfg : string);
