@@ -53,9 +53,9 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        check(result1 > 0.45);
-        check(result2 > 0.45);
-        check(result3 > 0.45);
+        check(result1 > 0.45 and result1 < 0.55);
+        check(result2 > 0.45 and result2 < 0.55);
+        check(result3 > 0.45 and result3 < 0.55);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
