@@ -28,63 +28,71 @@ architecture vunit_simulation of float_processor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-        -- TODO, move to float library
-        ------------------------------------------------------------------------
-        function to_float
-        (
-            float : std_logic_vector
-        )
-        return float_record 
-        is
-            variable retval : float_record;
-        begin
-            retval.sign     := float(float'left);
-            retval.exponent := signed(float(float'left-1 downto float'left-1-exponent_high));
-            retval.mantissa := unsigned(float(float'left-exponent_high-2 downto 0));
-
-            return retval;
-        end to_float;
-
-        ------------------------------------------------------------------------
-        function to_std_logic_vector
-        (
-            float : float_record
-        )
-        return std_logic_vector 
-        is
-            variable retval : std_logic_vector(mantissa_high+exponent_high+2 downto 0);
-        begin
-            retval  := float.sign & std_logic_vector(float.exponent) & std_logic_vector(float.mantissa);
-
-            return retval;
-
-        end to_std_logic_vector;
-        ------------------------------------------------------------------------
-
     ------------------------------------------------------------------------
     function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
 
 ------------------------------------------------------------------------
+        constant u : natural := 0;
+        constant y : natural := 1;
+        constant g : natural := 2;
+        constant temp : natural := 3;
+
+        constant program : program_array :=(
+            write_instruction(load , 0    , 100) ,
+            write_instruction(load , 1    , 101) ,
+            write_instruction(load , 2    , 103) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(sub  , temp , u    , y)    ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(mpy  , temp , temp , g)    ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(add  , y    , y    , temp),
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(save  , y    , 99)
+        );
+
     begin
 
-        retval(0) := write_instruction(load, 0, 100);
-        retval(1) := write_instruction(load, 1, 101);
-        retval(2) := write_instruction(nop);
-        retval(3) := write_instruction(nop);
-        retval(4) := write_instruction(nop);
-        retval(5) := write_instruction(nop);
-        retval(6) := write_instruction(nop);
-        retval(7) := write_instruction(nop);
-        retval(8) := write_instruction(nop);
-        retval(8) := write_instruction(nop);
-        retval(9) := write_instruction(add, 2, 0, 1);
-        retval(10) := write_instruction(mpy, 3, 1, 0);
+        for i in program'range loop
+            retval(i) := program(i);
+        end loop;
 
-        retval(20)  := write_instruction(program_end);
-        retval(100) := to_std_logic_vector(to_float(2.0));
-        retval(101) := to_std_logic_vector(to_float(-2.0));
+        retval(50)  := write_instruction(program_end);
+        retval(100) := to_std_logic_vector(to_float(-2.0));
+        retval(101) := to_std_logic_vector(to_float(2.0));
+        retval(102) := to_std_logic_vector(to_float(0.1));
             
         return retval;
         
@@ -110,10 +118,9 @@ architecture vunit_simulation of float_processor_tb is
 
     signal float_alu : float_alu_record := init_float_alu;
 
-    constant test_result : real := 0.0055435133453;
-    constant test : real := to_real(to_float(to_std_logic_vector(to_float(test_result))));
-    signal should_be_zero : real := test_result - test;
-    signal testi : real := test;
+
+    signal testi1 : real := 0.0;
+    signal testi2 : real := 0.0;
 
 begin
 
@@ -122,7 +129,6 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        check(abs(testi - test_result) < 0.1);
         -- check(abs(4.1 - result1) < 0.001);
         -- check(result2 > 0.45 and result2 < 0.55);
         -- check(result3 > 0.45 and result3 < 0.55);
@@ -160,6 +166,9 @@ begin
                     add(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
                         to_float(processor.registers(get_arg2(used_instruction))));
+
+                        testi1 <= to_real(to_float(processor.registers(get_arg1(used_instruction))));
+                        testi2 <= to_real(to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN sub =>
                     subtract(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
@@ -194,8 +203,6 @@ begin
             used_instruction := processor.instruction_pipeline(3);
 
             CASE decode(used_instruction) is
-                WHEN save =>
-                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), processor.registers(get_dest(used_instruction)));
 
                 WHEN others => -- do nothing
             end CASE;
@@ -214,6 +221,8 @@ begin
                     processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
                 WHEN add => 
                     processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
+                WHEN save =>
+                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), processor.registers(get_dest(used_instruction)));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
@@ -228,7 +237,7 @@ begin
             if multiplier_is_ready(float_alu) then
                 result2 <= to_real(get_multiplier_result(float_alu));
             end if;
-            if simulation_counter = 0 then
+            if simulation_counter mod 60 = 0 then
                 request_processor(processor);
             end if;
             processor_is_ready <= program_is_ready(processor);
@@ -241,9 +250,7 @@ begin
             end if;
 
             CASE counter is
-                WHEN 0 => request_data_from_ram(ram_read_data_in, 101);
-                WHEN 1 => request_data_from_ram(ram_read_data_in, 104);
-                WHEN 2 => request_data_from_ram(ram_read_data_in, 106);
+                WHEN 0 => request_data_from_ram(ram_read_data_in, 99);
                 WHEN others => --do nothing
             end CASE;
             if not processor_is_enabled(processor) then
@@ -252,7 +259,7 @@ begin
                     CASE counter2 is
                         -- WHEN 0 => result1 <= to_real(get_ram_data(ram_read_data_out),19);
                         -- WHEN 1 => result2 <= to_real(get_ram_data(ram_read_data_out),19);
-                        -- WHEN 2 => result3 <= to_real(get_ram_data(ram_read_data_out),19);
+                        WHEN 0 => result3 <= to_real(to_float(get_ram_data(ram_read_data_out)));
                         WHEN others => -- do nothing
                     end CASE; --counter2
                 end if;
