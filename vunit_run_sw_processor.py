@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent
 VU = VUnit.from_argv()
 
 testi = VU.add_library("testi")
-testi.add_source_files(ROOT / "source/hVHDL_floating_point/float_type_definitions/float_word_length_20_bit_pkg.vhd")
+testi.add_source_files(ROOT / "source/hVHDL_floating_point/float_type_definitions/float_word_length_24_bit_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_floating_point/float_type_definitions/float_type_definitions_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_floating_point/float_arithmetic_operations/*.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_floating_point/normalizer/normalizer_configuration/normalizer_with_1_stage_pipe_pkg.vhd")

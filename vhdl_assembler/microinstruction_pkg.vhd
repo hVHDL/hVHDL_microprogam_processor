@@ -8,14 +8,7 @@ library ieee;
 
 package microinstruction_pkg is
 
-    type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(register_high downto 0);
-    type realarray is array (natural range <>) of real;
-
-    subtype comm is std_logic_vector(instruction_bit_width-1 downto 16);
-    subtype dest is std_logic_vector(15 downto 12);
-    subtype arg1 is std_logic_vector(11 downto 8);
-    subtype arg2 is std_logic_vector(7 downto 4);
-    subtype arg3 is std_logic_vector(3 downto 0);
+    type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(register_bit_width-1 downto 0);
 
     subtype t_instruction is std_logic_vector(comm'high downto 0);
     type instruction_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
@@ -87,12 +80,6 @@ package microinstruction_pkg is
         return natural;
     function get_long_argument ( input_register : std_logic_vector )
         return std_logic_vector;
-------------------------------------------------------------------------
-    function write_register_values_to_ram (
-        ram_to_be_intialized : ram_array;
-        register_init_values : reg_array;
-        end_address : natural)
-    return ram_array;
 ------------------------------------------------------------------------
 end package microinstruction_pkg;
 
@@ -317,50 +304,5 @@ package body microinstruction_pkg is
     begin
         return decode(get_instruction(number));
     end decode;
-------------------------------------------------------------------------
-    function to_fixed
-    (
-        array_of_reals : realarray;
-        radix  : natural 
-    )
-    return reg_array
-    is
-        variable retval : reg_array;
-        
-    begin
-
-        if array_of_reals'length >= retval'length then
-            for i in retval'range loop
-                retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
-            end loop;
-        else
-            for i in array_of_reals'range loop
-                retval(i) := to_fixed(array_of_reals(i), retval(0)'length, radix);
-            end loop;
-        end if;
-
-        return retval;
-        
-    end to_fixed;
-------------------------------------------------------------------------
-
-    function write_register_values_to_ram
-    (
-        ram_to_be_intialized : ram_array;
-        register_init_values : reg_array;
-        end_address : natural
-    )
-    return ram_array
-    is
-        variable retval : ram_array := ram_to_be_intialized;
-    begin
-
-        for i in end_address-reg_array'high to end_address loop
-            retval(i) := register_init_values(i-(end_address-reg_array'high));
-        end loop;
-
-        return retval;
-        
-    end write_register_values_to_ram;
 ------------------------------------------------------------------------
 end package body microinstruction_pkg;
