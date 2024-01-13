@@ -1,4 +1,3 @@
-------------------------------------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -15,6 +14,8 @@ context vunit_lib.vunit_context;
     use work.float_type_definitions_pkg.all;
     use work.float_to_real_conversions_pkg.all;
 
+    use work.float_pipeline_pkg.all;
+
 entity float_processor_tb is
   generic (runner_cfg : string);
 end;
@@ -29,10 +30,7 @@ architecture vunit_simulation of float_processor_tb is
     -----------------------------------
     -- simulation specific signals ----
     ------------------------------------------------------------------------
-    constant u_address : natural := 100;
-    constant y_address : natural := 101;
-    constant g_address : natural := 102;
-    function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array
+    function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
 
@@ -69,7 +67,7 @@ architecture vunit_simulation of float_processor_tb is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
-            write_instruction(save  , y    , y_address),
+            write_instruction(save , y    , y_address),
             write_instruction(program_end)
         );
 
@@ -81,12 +79,18 @@ architecture vunit_simulation of float_processor_tb is
 
         retval(y_address) := to_std_logic_vector(to_float(0.0));
         retval(u_address) := to_std_logic_vector(to_float(0.5));
-        retval(g_address) := to_std_logic_vector(to_float(0.1));
+        retval(g_address) := to_std_logic_vector(to_float(filter_gain));
             
         return retval;
         
     end build_sw;
-    constant ram_contents : ram_array := build_sw(0.2);
+
+    constant u_address : natural := 200;
+    constant y_address : natural := 335;
+    constant g_address : natural := 428;
+
+
+    constant ram_contents : ram_array := build_sw(0.05,u_address, y_address, g_address);
 
     signal processor                : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
@@ -128,7 +132,6 @@ begin
 
     stimulus : process(simulator_clock)
         variable used_instruction : t_instruction;
-------------------------------------------------------------------------     
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -144,75 +147,17 @@ begin
 
             create_float_alu(float_alu);
 
-        ------------------------------------------------------------------------
-            --stage -1
-            CASE decode(used_instruction) is
-                WHEN load =>
-                    request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
-                WHEN add => 
-                    add(float_alu, 
-                        to_float(processor.registers(get_arg1(used_instruction))), 
-                        to_float(processor.registers(get_arg2(used_instruction))));
+            create_float_command_pipeline(processor,float_alu, 
+                ram_read_instruction_in  ,
+                ram_read_instruction_out ,
+                ram_read_data_in         ,
+                ram_read_data_out        ,
+                ram_write_port           ,
+                used_instruction);
 
-                WHEN sub =>
-                    subtract(float_alu, 
-                        to_float(processor.registers(get_arg1(used_instruction))), 
-                        to_float(processor.registers(get_arg2(used_instruction))));
-                WHEN mpy =>
-                    multiply(float_alu, 
-                        to_float(processor.registers(get_arg1(used_instruction))), 
-                        to_float(processor.registers(get_arg2(used_instruction))));
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-            used_instruction := processor.instruction_pipeline(0);
-            --stage 0
-            CASE decode(used_instruction) is
-
-                WHEN others => -- do nothing
-            end CASE;
-            --stage 1
-            used_instruction := processor.instruction_pipeline(1);
-        ------------------------------------------------------------------------
-            --stage 2
-            used_instruction := processor.instruction_pipeline(2);
-
-            CASE decode(used_instruction) is
-                WHEN load =>
-                    processor.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-            --stage 3
-            used_instruction := processor.instruction_pipeline(3);
-
-            CASE decode(used_instruction) is
-
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-            --stage 4
-            used_instruction := processor.instruction_pipeline(4);
-            CASE decode(used_instruction) is
-                WHEN mpy =>
-                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
-                WHEN add | sub => 
-                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
-                WHEN save =>
-                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), processor.registers(get_dest(used_instruction)));
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-        --stage 5
-            used_instruction := processor.instruction_pipeline(5);
-            CASE decode(used_instruction) is
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-
-        ------------------------------------------------------------------------
-        -- test signals
-        ------------------------------------------------------------------------
+            ------------------------------------------------------------------------
+            -- test signals
+            ------------------------------------------------------------------------
             if simulation_counter mod 60 = 0 then
                 request_processor(processor);
             end if;
