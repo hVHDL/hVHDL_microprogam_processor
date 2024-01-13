@@ -10,15 +10,15 @@ library ieee;
 package command_pipeline_pkg is
 
     type command_pipeline_record is record
-        add_a          : std_logic_vector(19 downto 0) ;
-        add_b          : std_logic_vector(19 downto 0) ;
-        add_result     : std_logic_vector(19 downto 0) ;
-        mpy_a          : std_logic_vector(19 downto 0) ;
-        mpy_b          : std_logic_vector(19 downto 0) ;
-        mpy_a1         : std_logic_vector(19 downto 0) ;
-        mpy_b1         : std_logic_vector(19 downto 0) ;
-        mpy_raw_result : signed(39 downto 0)           ;
-        mpy_result     : std_logic_vector(19 downto 0) ;
+        add_a          : std_logic_vector(register_bit_width-1 downto 0) ;
+        add_b          : std_logic_vector(register_bit_width-1 downto 0) ;
+        add_result     : std_logic_vector(register_bit_width-1 downto 0) ;
+        mpy_a          : std_logic_vector(register_bit_width-1 downto 0) ;
+        mpy_b          : std_logic_vector(register_bit_width-1 downto 0) ;
+        mpy_a1         : std_logic_vector(register_bit_width-1 downto 0) ;
+        mpy_b1         : std_logic_vector(register_bit_width-1 downto 0) ;
+        mpy_raw_result : signed(register_bit_width*2-1 downto 0)           ;
+        mpy_result     : std_logic_vector(register_bit_width-1 downto 0) ;
     end record;
 
     function init_fixed_point_command_pipeline return command_pipeline_record;
@@ -77,18 +77,6 @@ package body command_pipeline_pkg is
         return std_logic_vector(-signed(left));
     end "-";
 ------------------------------------------------------------------------
-------------------------------------------------------------------------
-    function "*"
-    (
-        left, right : std_logic_vector 
-    )
-    return std_logic_vector 
-    is
-        
-    begin
-        return std_logic_vector(radix_multiply(signed(left), signed(right), 19));
-    end "*";
-------------------------------------------------------------------------     
 
     procedure create_command_pipeline
     (
@@ -150,7 +138,7 @@ package body command_pipeline_pkg is
     ------------------------------------------------------------------------
         --stage 3
         used_instruction := instruction_pipeline(3);
-        self.mpy_result <= std_logic_vector(self.mpy_raw_result(38 downto 38-19));
+        self.mpy_result <= std_logic_vector(self.mpy_raw_result(register_bit_width*2-2 downto register_bit_width*2-1-register_bit_width));
 
         CASE decode(used_instruction) is
             WHEN save =>

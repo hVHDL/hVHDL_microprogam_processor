@@ -10,7 +10,7 @@ package microinstruction_pkg is
 
     type reg_array is array (integer range 0 to number_of_registers-1) of std_logic_vector(register_bit_width-1 downto 0);
 
-    subtype t_instruction is std_logic_vector(comm'high downto 0);
+    subtype t_instruction is std_logic_vector(instruction_bit_width-1 downto 0);
     type instruction_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
 

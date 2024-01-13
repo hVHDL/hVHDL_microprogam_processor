@@ -2,10 +2,13 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+    -- ram package defines instruction bit widths
+    use work.ram_configuration_pkg.ram_bit_width;
+
 package processor_configuration_pkg is
 
-    constant instruction_bit_width     : natural := 20;
-    constant register_bit_width        : natural := 20;
+    constant instruction_bit_width     : natural := ram_bit_width;
+    constant register_bit_width        : natural := ram_bit_width;
 
     constant number_of_registers       : natural := 5;
     constant number_of_pipeline_stages : natural := 6;

@@ -9,6 +9,8 @@ library ieee;
 
 package simple_processor_pkg is
 
+    alias register_bit_width is work.processor_configuration_pkg.register_bit_width;
+
     type simple_processor_record is record
         processor_enabled    : boolean                 ;
         is_ready             : boolean                 ;

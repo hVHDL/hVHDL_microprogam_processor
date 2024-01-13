@@ -67,7 +67,7 @@ package body test_programs_pkg is
         return std_logic_vector 
         is
         begin
-            return to_fixed(number, 20,19);
+            return to_fixed(number, t_instruction'length,t_instruction'length-1);
         end to_fixed;
 
         constant program : program_array := (
@@ -94,7 +94,6 @@ package body test_programs_pkg is
 
         retval(105) := to_fixed(0.08);
         retval(106) := to_fixed(0.0);
-        retval(107) := x"0acdc";
             
         return retval;
         

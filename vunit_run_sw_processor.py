@@ -27,7 +27,8 @@ testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/configuration
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_base_types_20bit_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_pkg.vhd")
 
-testi.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/ram_configuration_pkg.vhd")
+testi.add_source_files(ROOT / "simple_processor/ram_configuration_for_simple_processor_pkg.vhd")
+
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_port_ram_pkg.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 testi.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
