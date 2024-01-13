@@ -5,7 +5,6 @@ library ieee;
     use work.microinstruction_pkg.all;
     use work.multi_port_ram_pkg.all;
     use work.processor_configuration_pkg.all;
-    use work.command_pipeline_pkg.all;
 
 package simple_processor_pkg is
 
