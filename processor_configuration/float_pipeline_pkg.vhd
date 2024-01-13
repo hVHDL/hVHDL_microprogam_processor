@@ -12,15 +12,17 @@ library ieee;
 
 package float_pipeline_pkg is
 
-        procedure create_float_command_pipeline (
-            signal self                    : inout simple_processor_record ;
-            signal float_alu                     : inout float_alu_record        ;
-            signal ram_read_instruction_in : out ram_read_in_record        ;
-            ram_read_instruction_out       : in ram_read_out_record        ;
-            signal ram_read_data_in        : out ram_read_in_record        ;
-            ram_read_data_out              : in ram_read_out_record        ;
-            signal ram_write_port          : out ram_write_in_record       ;
-            variable used_instruction      : inout t_instruction);
+    procedure create_float_command_pipeline (
+        signal self                    : inout simple_processor_record ;
+        signal float_alu                     : inout float_alu_record        ;
+        signal ram_read_instruction_in : out ram_read_in_record        ;
+        ram_read_instruction_out       : in ram_read_out_record        ;
+        signal ram_read_data_in        : out ram_read_in_record        ;
+        ram_read_data_out              : in ram_read_out_record        ;
+        signal ram_write_port          : out ram_write_in_record       ;
+        variable used_instruction      : inout t_instruction);
+
+    function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array;
 
 end package float_pipeline_pkg;
 
@@ -106,5 +108,60 @@ package body float_pipeline_pkg is
         ------------------------------------------------------------------------
             
         end create_float_command_pipeline;
+
+    function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array
+    is
+        variable retval : ram_array := (others => (others => '0'));
+
+------------------------------------------------------------------------
+        constant u    : natural := 4;
+        constant y    : natural := 2;
+        constant g    : natural := 3;
+        constant temp : natural := 1;
+
+        constant program : program_array :=(
+            write_instruction(load , u    , u_address) ,
+            write_instruction(load , y    , y_address) ,
+            write_instruction(load , g    , g_address) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(sub  , temp , u    , y)    ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(mpy  , temp , temp , g)    ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(add  , y    , y    , temp),
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(save , y    , y_address),
+            write_instruction(program_end)
+        );
+
+    begin
+
+        for i in program'range loop
+            retval(i) := program(i);
+        end loop;
+
+        retval(y_address) := to_std_logic_vector(to_float(0.0));
+        retval(u_address) := to_std_logic_vector(to_float(0.5));
+        retval(g_address) := to_std_logic_vector(to_float(filter_gain));
+            
+        return retval;
+        
+    end build_sw;
 
 end package body float_pipeline_pkg;
