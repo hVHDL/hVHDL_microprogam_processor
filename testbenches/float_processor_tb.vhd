@@ -37,10 +37,10 @@ architecture vunit_simulation of float_processor_tb is
         variable retval : ram_array := (others => (others => '0'));
 
 ------------------------------------------------------------------------
-        constant u : natural := 0;
-        constant y : natural := 1;
-        constant g : natural := 2;
-        constant temp : natural := 3;
+        constant u : natural := 4;
+        constant y : natural := 2;
+        constant g : natural := 3;
+        constant temp : natural := 1;
 
         constant program : program_array :=(
             write_instruction(load , u    , u_address) ,
@@ -158,8 +158,6 @@ begin
                     subtract(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
                         to_float(processor.registers(get_arg2(used_instruction))));
-                        testi1 <= to_real(to_float(processor.registers(get_arg1(used_instruction))));
-                        testi2 <= to_real(to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN mpy =>
                     multiply(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
@@ -182,7 +180,6 @@ begin
             CASE decode(used_instruction) is
                 WHEN load =>
                     processor.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
-                WHEN add | sub =>
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
@@ -207,7 +204,7 @@ begin
             end CASE;
         ------------------------------------------------------------------------
         --stage 5
-            used_instruction := processor.instruction_pipeline(4);
+            used_instruction := processor.instruction_pipeline(5);
             CASE decode(used_instruction) is
                 WHEN others => -- do nothing
             end CASE;
@@ -216,13 +213,6 @@ begin
         ------------------------------------------------------------------------
         -- test signals
         ------------------------------------------------------------------------
-            if add_is_ready(float_alu) then
-                result1 <= to_real(get_add_result(float_alu));
-            end if;
-
-            if multiplier_is_ready(float_alu) then
-                result2 <= to_real(get_multiplier_result(float_alu));
-            end if;
             if simulation_counter mod 60 = 0 then
                 request_processor(processor);
             end if;
