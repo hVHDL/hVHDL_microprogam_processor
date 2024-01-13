@@ -80,7 +80,7 @@ architecture vunit_simulation of float_processor_tb is
         end loop;
 
         retval(y_address) := to_std_logic_vector(to_float(0.0));
-        retval(u_address) := to_std_logic_vector(to_float(1.0));
+        retval(u_address) := to_std_logic_vector(to_float(0.5));
         retval(g_address) := to_std_logic_vector(to_float(0.1));
             
         return retval;
@@ -118,9 +118,7 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        -- check(abs(4.1 - result1) < 0.001);
-        -- check(result2 > 0.45 and result2 < 0.55);
-        -- check(result3 > 0.45 and result3 < 0.55);
+        check(result3 > 0.45 and result3 < 0.55);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
