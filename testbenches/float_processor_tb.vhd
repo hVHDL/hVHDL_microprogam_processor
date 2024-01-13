@@ -29,6 +29,9 @@ architecture vunit_simulation of float_processor_tb is
     -----------------------------------
     -- simulation specific signals ----
     ------------------------------------------------------------------------
+    constant u_address : natural := 100;
+    constant y_address : natural := 101;
+    constant g_address : natural := 102;
     function build_sw (filter_gain : real range 0.0 to 1.0) return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
@@ -40,9 +43,9 @@ architecture vunit_simulation of float_processor_tb is
         constant temp : natural := 3;
 
         constant program : program_array :=(
-            write_instruction(load , 0    , 100) ,
-            write_instruction(load , 1    , 101) ,
-            write_instruction(load , 2    , 103) ,
+            write_instruction(load , u    , u_address) ,
+            write_instruction(load , y    , y_address) ,
+            write_instruction(load , g    , g_address) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
@@ -54,16 +57,7 @@ architecture vunit_simulation of float_processor_tb is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
             write_instruction(mpy  , temp , temp , g)    ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
@@ -75,12 +69,8 @@ architecture vunit_simulation of float_processor_tb is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(save  , y    , 99)
+            write_instruction(save  , y    , y_address),
+            write_instruction(program_end)
         );
 
     begin
@@ -89,10 +79,9 @@ architecture vunit_simulation of float_processor_tb is
             retval(i) := program(i);
         end loop;
 
-        retval(50)  := write_instruction(program_end);
-        retval(100) := to_std_logic_vector(to_float(-2.0));
-        retval(101) := to_std_logic_vector(to_float(2.0));
-        retval(102) := to_std_logic_vector(to_float(0.1));
+        retval(y_address) := to_std_logic_vector(to_float(0.0));
+        retval(u_address) := to_std_logic_vector(to_float(1.0));
+        retval(g_address) := to_std_logic_vector(to_float(0.1));
             
         return retval;
         
@@ -167,12 +156,12 @@ begin
                         to_float(processor.registers(get_arg1(used_instruction))), 
                         to_float(processor.registers(get_arg2(used_instruction))));
 
-                        testi1 <= to_real(to_float(processor.registers(get_arg1(used_instruction))));
-                        testi2 <= to_real(to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN sub =>
                     subtract(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
                         to_float(processor.registers(get_arg2(used_instruction))));
+                        testi1 <= to_real(to_float(processor.registers(get_arg1(used_instruction))));
+                        testi2 <= to_real(to_float(processor.registers(get_arg2(used_instruction))));
                 WHEN mpy =>
                     multiply(float_alu, 
                         to_float(processor.registers(get_arg1(used_instruction))), 
@@ -211,18 +200,17 @@ begin
             used_instruction := processor.instruction_pipeline(4);
             CASE decode(used_instruction) is
                 WHEN mpy =>
+                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
+                WHEN add | sub => 
+                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
+                WHEN save =>
+                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), processor.registers(get_dest(used_instruction)));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
         --stage 5
-            used_instruction := processor.instruction_pipeline(5);
+            used_instruction := processor.instruction_pipeline(4);
             CASE decode(used_instruction) is
-                WHEN mpy =>
-                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
-                WHEN add => 
-                    processor.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
-                WHEN save =>
-                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), processor.registers(get_dest(used_instruction)));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
@@ -250,7 +238,7 @@ begin
             end if;
 
             CASE counter is
-                WHEN 0 => request_data_from_ram(ram_read_data_in, 99);
+                WHEN 0 => request_data_from_ram(ram_read_data_in, y_address);
                 WHEN others => --do nothing
             end CASE;
             if not processor_is_enabled(processor) then
