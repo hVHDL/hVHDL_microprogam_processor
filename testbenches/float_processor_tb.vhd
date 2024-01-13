@@ -30,67 +30,12 @@ architecture vunit_simulation of float_processor_tb is
     -----------------------------------
     -- simulation specific signals ----
     ------------------------------------------------------------------------
-    function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array
-    is
-        variable retval : ram_array := (others => (others => '0'));
-
-------------------------------------------------------------------------
-        constant u : natural := 4;
-        constant y : natural := 2;
-        constant g : natural := 3;
-        constant temp : natural := 1;
-
-        constant program : program_array :=(
-            write_instruction(load , u    , u_address) ,
-            write_instruction(load , y    , y_address) ,
-            write_instruction(load , g    , g_address) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(sub  , temp , u    , y)    ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(mpy  , temp , temp , g)    ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(add  , y    , y    , temp),
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(save , y    , y_address),
-            write_instruction(program_end)
-        );
-
-    begin
-
-        for i in program'range loop
-            retval(i) := program(i);
-        end loop;
-
-        retval(y_address) := to_std_logic_vector(to_float(0.0));
-        retval(u_address) := to_std_logic_vector(to_float(0.5));
-        retval(g_address) := to_std_logic_vector(to_float(filter_gain));
-            
-        return retval;
-        
-    end build_sw;
 
     constant u_address : natural := 200;
     constant y_address : natural := 335;
     constant g_address : natural := 428;
 
-
-    constant ram_contents : ram_array := build_sw(0.05,u_address, y_address, g_address);
+    constant ram_contents : ram_array := build_sw(0.05 , u_address , y_address , g_address);
 
     signal processor                : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
