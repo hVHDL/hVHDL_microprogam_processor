@@ -41,17 +41,11 @@ an example of a low pass filter assembly program, which is tested with hardware
 the repository source structure will be documented here as soon as I figure out how to use mermaid :) 
 
 ```mermaid
-requirementDiagram
-
-    requirement test_req {
-    id: 1
-    text: the test text.
-    risk: high
-    verifymethod: test
-    }
-
-    element test_entity {
-    type: simulation
+flowchart TD
+    A[float_type_definitions_pkg.vhd] -->|t_mantissa + t_exponent| B(ram_configuration_pkg.vhd)
+    B -->|RAM_port_width| C[processor_configuration_pkg.vhd]
+    C -->|t_command, comm'range, dest'range, argx'range| D[float_processing_pipeline.vhd]
+  
     }
 
     test_entity - satisfies -> test_req
