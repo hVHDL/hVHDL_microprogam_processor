@@ -8,7 +8,7 @@ library ieee;
 package ram_configuration_pkg is
 
     -- make visible when using ram_read
-    constant ram_bit_width : natural := 24;
+    constant ram_bit_width : natural := 33;
     constant ram_depth     : natural := 2**9;
 
     subtype address_integer is natural range 0 to ram_depth-1;
