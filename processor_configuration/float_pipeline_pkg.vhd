@@ -81,18 +81,18 @@ package body float_pipeline_pkg is
             end CASE;
         ------------------------------------------------------------------------
             --stage 3
-            used_instruction := self.instruction_pipeline(3);
+            used_instruction := self.instruction_pipeline(7);
 
             CASE decode(used_instruction) is
+                WHEN mpy =>
+                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
 
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
         --stage 4
-            used_instruction := self.instruction_pipeline(4);
+            used_instruction := self.instruction_pipeline(9);
             CASE decode(used_instruction) is
-                WHEN mpy =>
-                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
                 WHEN add | sub => 
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
                 WHEN save =>
@@ -130,13 +130,26 @@ package body float_pipeline_pkg is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
             write_instruction(mpy  , temp , temp , g)    ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
             write_instruction(add  , y    , y    , temp),
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,

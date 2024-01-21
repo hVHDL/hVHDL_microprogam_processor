@@ -11,7 +11,7 @@ package processor_configuration_pkg is
     constant register_bit_width        : natural := ram_bit_width;
 
     constant number_of_registers       : natural := 8;
-    constant number_of_pipeline_stages : natural := 9;
+    constant number_of_pipeline_stages : natural := 10;
 
 
     type t_command is (
