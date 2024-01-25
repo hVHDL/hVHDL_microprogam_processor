@@ -144,6 +144,7 @@ package body float_pipeline_pkg is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+            write_instruction(nop) ,
             write_instruction(add  , y    , y    , temp),
             write_instruction(nop) ,
             write_instruction(nop) ,
@@ -156,6 +157,7 @@ package body float_pipeline_pkg is
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(save , y    , y_address),
+            write_instruction(nop) ,
             write_instruction(program_end)
         );
 
