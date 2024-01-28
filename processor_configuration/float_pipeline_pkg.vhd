@@ -125,14 +125,12 @@ package body float_pipeline_pkg is
         use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
         constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
-        constant fill : program_array := normalizer_fill;
         ------------------------------
         function sub
         (
             result_reg, left, right : natural
         )
-        return program_array
-        is
+        return program_array is
         begin
             return write_instruction(sub, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
         end sub;
@@ -141,8 +139,7 @@ package body float_pipeline_pkg is
         (
             result_reg, left, right : natural
         )
-        return program_array
-        is
+        return program_array is
         begin
             return write_instruction(add, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
         end add;
@@ -151,8 +148,7 @@ package body float_pipeline_pkg is
         (
             result_reg, left, right : natural
         )
-        return program_array
-        is
+        return program_array is
         begin
             return write_instruction(mpy, result_reg, left, right) & normalizer_fill & program_array'(write_instruction(nop) , write_instruction(nop) , write_instruction(nop) , write_instruction(nop));
         end multiply;
