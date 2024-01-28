@@ -119,78 +119,69 @@ package body float_pipeline_pkg is
         constant g    : natural := 3;
         constant temp : natural := 1;
 
+        use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
+        constant normalizer_fill : program_array(0 to number_of_normalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
-        function fill return program_array
-        is
-            use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
-            constant normalizer_fill : program_array(0 to number_of_normalizer_pipeline_stages-1) := (others => write_instruction(nop));
+        use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
+        constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
-            use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
-            constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
+        constant fill : program_array := normalizer_fill;
 
-        begin
-            return normalizer_fill;
-        end fill;
-
-        function load_parameters return program_array
-        is
-        begin
-            
-            return (
+        constant load_parameters : program_array := (
                 write_instruction(load , u    , u_address)      ,
                 write_instruction(load , y    , y_address)      ,
                 write_instruction(load , g    , g_address)      ,
-                write_instruction(nop)                          ,
-                write_instruction(sub  , temp , u          , y) );
+                write_instruction(nop)                          );
 
-        end load_parameters;
+        constant fix : program_array := (
+            write_instruction(sub  , temp , u          , y) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(mpy  , temp , temp , g)    ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(add  , y    , y    , temp) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(save , y    , y_address) ,
+            write_instruction(nop) ,
+            write_instruction(program_end));
 
         constant program : program_array :=(
             load_parameters        &
-            fill                   &
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(mpy  , temp , temp , g)    &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(add  , y    , y    , temp) &
-
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(nop) &
-            write_instruction(nop) &
-
-            write_instruction(save , y    , y_address) &
-            write_instruction(nop) &
-            write_instruction(program_end)
+            normalizer_fill        &
+            fix
         );
 
     begin
