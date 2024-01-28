@@ -16,14 +16,14 @@ package microinstruction_pkg is
 
 ------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
-        return std_logic_vector;
+        return t_instruction;
 ------------------------------------------------------------------------
     function write_instruction (
         command     : in t_command;
         destination : in natural range 0 to number_of_registers-1;
         argument1   : in natural range 0 to number_of_registers-1;
         argument2   : in natural range 0 to number_of_registers-1)
-    return std_logic_vector;
+    return t_instruction;
 ----------------
     function write_instruction (
         command     : in t_command;
@@ -31,24 +31,24 @@ package microinstruction_pkg is
         argument1   : in natural range 0 to number_of_registers-1;
         argument2   : in natural range 0 to number_of_registers-1;
         argument3   : in natural range 0 to number_of_registers-1)
-    return std_logic_vector;
+    return t_instruction;
 ----------------
     function write_instruction (
         command     : in t_command;
         long_argument : in natural)
-    return std_logic_vector;
+    return t_instruction;
 
 ------------------------------------------------------------------------
     function write_instruction (
         command     : in t_command;
         destination : in natural range 0 to number_of_registers-1;
         argument1   : in natural)
-    return std_logic_vector;
+    return t_instruction;
 
 ------------------------------------------------------------------------
     function get_sigle_argument (
         input_register : std_logic_vector )
-    return std_logic_vector;
+    return t_instruction;
 
 ------------------------------------------------------------------------
     function get_sigle_argument (
@@ -79,7 +79,7 @@ package microinstruction_pkg is
     function get_long_argument ( input_register : std_logic_vector )
         return natural;
     function get_long_argument ( input_register : std_logic_vector )
-        return std_logic_vector;
+        return t_instruction;
 ------------------------------------------------------------------------
 end package microinstruction_pkg;
 
@@ -95,7 +95,7 @@ package body microinstruction_pkg is
         argument2   : in natural range 0 to number_of_registers-1;
         argument3   : in natural range 0 to number_of_registers-1
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
     begin
@@ -117,7 +117,7 @@ package body microinstruction_pkg is
         argument1   : in natural range 0 to number_of_registers-1;
         argument2   : in natural range 0 to number_of_registers-1
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
     begin
@@ -138,7 +138,7 @@ package body microinstruction_pkg is
         destination : in natural range 0 to number_of_registers-1;
         argument1   : in natural
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
     begin
@@ -156,7 +156,7 @@ package body microinstruction_pkg is
         command     : in t_command;
         long_argument : in natural
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
         constant get_long_argument_range : std_logic_vector(comm'right-1 downto 0) := (others => '0');
@@ -173,7 +173,7 @@ package body microinstruction_pkg is
     (
         command : in t_command
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
     begin
@@ -238,7 +238,7 @@ package body microinstruction_pkg is
     (
         input_register : std_logic_vector 
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable retval : t_instruction := (others => '0');
     begin
@@ -252,7 +252,7 @@ package body microinstruction_pkg is
     (
         input_register : std_logic_vector 
     )
-    return std_logic_vector
+    return t_instruction
     is
         variable retval : t_instruction := (others => '0');
     begin

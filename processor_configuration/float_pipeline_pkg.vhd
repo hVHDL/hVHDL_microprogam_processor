@@ -133,13 +133,18 @@ package body float_pipeline_pkg is
                 write_instruction(load , g    , g_address)      ,
                 write_instruction(nop)                          );
 
-        constant fix : program_array := (
-            write_instruction(sub  , temp , u          , y) ,
-            write_instruction(nop) ,
+        function sub
+        (
+            result_reg, left, right : natural
+        )
+        return program_array
+        is
+            constant retval : program_array(0 to 0) := (0 => write_instruction(sub, result_reg, left, right));
+        begin
+            return retval & normalizer_fill & denormalizer_fill;
+        end sub;
 
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
+        constant fix : program_array := (
             write_instruction(nop) ,
 
             write_instruction(nop) ,
@@ -179,9 +184,11 @@ package body float_pipeline_pkg is
             write_instruction(program_end));
 
         constant program : program_array :=(
+            write_instruction(nop) &
             load_parameters        &
-            normalizer_fill        &
-            fix
+            sub(temp, u, y)        &
+            fix                    &
+            write_instruction(nop)
         );
 
     begin
