@@ -133,9 +133,8 @@ package body float_pipeline_pkg is
         )
         return program_array
         is
-            constant retval : program_array(0 to 0) := (0 => write_instruction(sub, result_reg, left, right));
         begin
-            return retval & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
+            return write_instruction(sub, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
         end sub;
         ------------------------------
         function add
@@ -144,9 +143,8 @@ package body float_pipeline_pkg is
         )
         return program_array
         is
-            constant retval : program_array(0 to 0) := (0 => write_instruction(add, result_reg, left, right));
         begin
-            return retval & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
+            return write_instruction(add, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
         end add;
         ------------------------------
         function multiply
@@ -155,9 +153,8 @@ package body float_pipeline_pkg is
         )
         return program_array
         is
-            constant retval : program_array(0 to 0) := (0 => write_instruction(mpy, result_reg, left, right));
         begin
-            return retval & normalizer_fill & program_array'(write_instruction(nop) , write_instruction(nop) , write_instruction(nop) , write_instruction(nop));
+            return write_instruction(mpy, result_reg, left, right) & normalizer_fill & program_array'(write_instruction(nop) , write_instruction(nop) , write_instruction(nop) , write_instruction(nop));
         end multiply;
         ------------------------------
 
