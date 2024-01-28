@@ -125,37 +125,50 @@ package body float_pipeline_pkg is
             write_instruction(load , g    , g_address) ,
             write_instruction(nop) ,
             write_instruction(sub  , temp , u    , y)    ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
+            write_instruction(nop) ,
+
             write_instruction(mpy  , temp , temp , g)    ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
-            write_instruction(nop) ,
+
             write_instruction(add  , y    , y    , temp),
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
             write_instruction(nop) ,
+
             write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
             write_instruction(save , y    , y_address),
             write_instruction(nop) ,
             write_instruction(program_end)
