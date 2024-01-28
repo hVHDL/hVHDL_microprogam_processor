@@ -127,12 +127,6 @@ package body float_pipeline_pkg is
 
         constant fill : program_array := normalizer_fill;
 
-        constant load_parameters : program_array := (
-                write_instruction(load , u    , u_address)      ,
-                write_instruction(load , y    , y_address)      ,
-                write_instruction(load , g    , g_address)      ,
-                write_instruction(nop)                          );
-
         function sub
         (
             result_reg, left, right : natural
@@ -144,51 +138,52 @@ package body float_pipeline_pkg is
             return retval & normalizer_fill & denormalizer_fill;
         end sub;
 
-        constant fix : program_array := (
-            write_instruction(nop) ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(mpy  , temp , temp , g)    ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(add  , y    , y    , temp) ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(nop) ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(nop) ,
-            write_instruction(nop) ,
-
-            write_instruction(save , y    , y_address) ,
-            write_instruction(nop) ,
-            write_instruction(program_end));
-
         constant program : program_array :=(
-            write_instruction(nop) &
-            load_parameters        &
-            sub(temp, u, y)        &
-            fix                    &
-            write_instruction(nop)
+            program_array' (
+                write_instruction(load , u    , u_address),
+                write_instruction(load , y    , y_address),
+                write_instruction(load , g    , g_address),
+                write_instruction(nop)) &
+            sub(temp, u, y) &
+            program_array'(
+                write_instruction(nop) ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(mpy  , temp , temp , g)    ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(add  , y    , y    , temp) ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(nop) ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(nop) ,
+                write_instruction(nop) ,
+
+                write_instruction(save , y    , y_address) ,
+                write_instruction(nop)
+            ) &
+            write_instruction(program_end)
         );
 
     begin
