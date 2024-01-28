@@ -155,17 +155,17 @@ package body float_pipeline_pkg is
         ------------------------------
 
         constant program : program_array :=(
-            program_array' (
-                write_instruction(load , u    , u_address),
-                write_instruction(load , y    , y_address),
-                write_instruction(load , g    , g_address),
-                write_instruction(nop))                &
-            sub(temp, u, y)                            &
-            multiply(temp , temp , g)                  &
-            add(y, y, temp)                            &
-            write_instruction(save , y    , y_address) &
-            write_instruction(nop)                     &
-            write_instruction(program_end)
+            program_array'(
+                write_instruction(load , u , u_address) ,
+                write_instruction(load , y , y_address) ,
+                write_instruction(load , g , g_address) ,
+                write_instruction(nop)) &
+            sub(temp, u, y)             &
+            multiply(temp , temp , g)   &
+            add(y, y, temp)             &
+            program_array'(
+                write_instruction(save , y , y_address) ,
+                write_instruction(program_end))
         );
         ------------------------------
 
