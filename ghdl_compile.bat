@@ -17,4 +17,5 @@ ghdl -a --ieee=synopsys --std=08 %src%/vhdl_assembler/microinstruction_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/processor_configuration/fixed_point_command_pipeline_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/simple_processor/simple_processor_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/simple_processor/test_programs_pkg.vhd
+ghdl -a --ieee=synopsys --std=08 %src%/vhdl_assembler/float_assembler_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/processor_configuration/float_pipeline_pkg.vhd
