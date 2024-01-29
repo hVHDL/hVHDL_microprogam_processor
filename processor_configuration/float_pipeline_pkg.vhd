@@ -102,6 +102,8 @@ package body float_pipeline_pkg is
             variable used_instruction      : inout t_instruction
         )
         is
+            use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
+            use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
         begin
         ------------------------------------------------------------------------
             --stage -1
@@ -130,14 +132,14 @@ package body float_pipeline_pkg is
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(3 + work.normalizer_pkg.number_of_normalizer_pipeline_stages);
+            used_instruction := self.instruction_pipeline(3 + number_of_normalizer_pipeline_stages);
             CASE decode(used_instruction) is
                 WHEN mpy =>
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(2 + work.normalizer_pkg.number_of_normalizer_pipeline_stages + work.denormalizer_pkg.number_of_denormalizer_pipeline_stages);
+            used_instruction := self.instruction_pipeline(2 + number_of_normalizer_pipeline_stages + number_of_denormalizer_pipeline_stages);
             CASE decode(used_instruction) is
                 WHEN add | sub => 
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
@@ -182,24 +184,78 @@ package body float_pipeline_pkg is
         constant g    : natural := 3;
         constant temp : natural := 1;
 
-        constant load_parameters : program_array :=(
-                write_instruction(load , u , u_address) ,
-                write_instruction(load , y , y_address) ,
-                write_instruction(load , g , g_address) ,
-                write_instruction(nop));
+        -- constant load_parameters : program_array :=(
+        --         write_instruction(load , u , u_address) ,
+        --         write_instruction(load , y , y_address) ,
+        --         write_instruction(load , g , g_address) ,
+        --         write_instruction(nop));
+        --
+        -- constant save_and_end : program_array :=(
+        --     write_instruction(save , y , y_address) ,
+        --     write_instruction(program_end));
 
-        constant save_and_end : program_array :=(
-            write_instruction(save , y , y_address) ,
-            write_instruction(program_end));
-
-        constant program : program_array :=(
-            load_parameters                         &
-            sub(temp, u, y)                         &
-            multiply(temp , temp , g)               &
-            add(y, y, temp)                         &
-            save_and_end
-        );
+        -- constant program : program_array :=(
+        --     load_parameters                         &
+        --     sub(temp, u, y)                         &
+        --     multiply(temp , temp , g)               &
+        --     add(y, y, temp)                         &
+        --     save_and_end
+        -- );
         ------------------------------
+        constant program : program_array :=(
+            write_instruction(load , u    , u_address) ,
+            write_instruction(load , y    , y_address) ,
+            write_instruction(load , g    , g_address) ,
+            write_instruction(nop) ,
+            write_instruction(sub  , temp , u    , y)    ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(mpy  , temp , temp , g)    ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(add  , y    , y    , temp),
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+            write_instruction(nop) ,
+
+            write_instruction(save , y    , y_address),
+            write_instruction(nop) ,
+            write_instruction(program_end)
+        );
 
     begin
 
