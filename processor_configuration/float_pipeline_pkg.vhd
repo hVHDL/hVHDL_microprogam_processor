@@ -46,6 +46,12 @@ package body float_pipeline_pkg is
             CASE decode(used_instruction) is
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
+                WHEN others => -- do nothing
+            end CASE;
+
+        ------------------------------------------------------------------------
+        ------------------------------------------------------------------------
+            CASE decode(used_instruction) is
                 WHEN add => 
                     add(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
@@ -61,6 +67,23 @@ package body float_pipeline_pkg is
                         to_float(self.registers(get_arg2(used_instruction))));
                 WHEN others => -- do nothing
             end CASE;
+        ----------------------
+            used_instruction := self.instruction_pipeline(3 + work.normalizer_pkg.number_of_normalizer_pipeline_stages);
+            CASE decode(used_instruction) is
+                WHEN mpy =>
+                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
+                WHEN others => -- do nothing
+            end CASE;
+        ----------------------
+            used_instruction := self.instruction_pipeline(2 + work.normalizer_pkg.number_of_normalizer_pipeline_stages + work.denormalizer_pkg.number_of_denormalizer_pipeline_stages);
+            CASE decode(used_instruction) is
+                WHEN add | sub => 
+                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
+                WHEN save =>
+                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), self.registers(get_dest(used_instruction)));
+                WHEN others => -- do nothing
+            end CASE;
+        ------------------------------------------------------------------------
         ------------------------------------------------------------------------
             used_instruction := self.instruction_pipeline(0);
             --stage 0
@@ -80,48 +103,28 @@ package body float_pipeline_pkg is
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
-            --stage 3
-            used_instruction := self.instruction_pipeline(7);
-
-            CASE decode(used_instruction) is
-                WHEN mpy =>
-                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
-
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-        --stage 4
-            used_instruction := self.instruction_pipeline(9);
-            CASE decode(used_instruction) is
-                WHEN add | sub => 
-                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
-                WHEN save =>
-                    write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), self.registers(get_dest(used_instruction)));
-                WHEN others => -- do nothing
-            end CASE;
-        ------------------------------------------------------------------------
-        --stage 5
             used_instruction := self.instruction_pipeline(5);
             CASE decode(used_instruction) is
                 WHEN others => -- do nothing
             end CASE;
-        ------------------------------------------------------------------------
             
         end create_float_command_pipeline;
 
+------------------------------------------------------------------------
     function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array
     is
         variable retval : ram_array := (others => (others => '0'));
 
-------------------------------------------------------------------------
         constant u    : natural := 4;
         constant y    : natural := 2;
         constant g    : natural := 3;
         constant temp : natural := 1;
 
+        ------------------------------
         use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
         constant normalizer_fill : program_array(0 to number_of_normalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
+        ------------------------------
         use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
         constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
