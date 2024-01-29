@@ -35,8 +35,8 @@ float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_s
 
 float.add_source_files(ROOT / "processor_configuration/processor_configuration_pkg.vhd")
 float.add_source_files(ROOT / "vhdl_assembler/microinstruction_pkg.vhd")
-float.add_source_files(ROOT / "simple_processor/test_programs_pkg.vhd")
 float.add_source_files(ROOT / "vhdl_assembler/float_assembler_pkg.vhd")
+float.add_source_files(ROOT / "simple_processor/test_programs_pkg.vhd")
 float.add_source_files(ROOT / "processor_configuration/float_pipeline_pkg.vhd")
 float.add_source_files(ROOT / "simple_processor/simple_processor_pkg.vhd")
 
