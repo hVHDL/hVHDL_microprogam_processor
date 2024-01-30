@@ -4,6 +4,9 @@ library ieee;
 
     use work.microinstruction_pkg.all;
     use work.processor_configuration_pkg.all;
+    -- from float library
+    use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
+    use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
 
 package float_assembler_pkg is
 ------------------------------------------------------------------------
@@ -23,11 +26,9 @@ end package float_assembler_pkg;
 
 package body float_assembler_pkg is
     ------------------------------
-    use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
     constant normalizer_fill : program_array(0 to number_of_normalizer_pipeline_stages-1) := (others => write_instruction(nop));
 
     ------------------------------
-    use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
     constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
     -- move these to float library
     constant number_of_float_add_fills : natural := 2;
