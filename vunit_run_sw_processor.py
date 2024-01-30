@@ -12,8 +12,8 @@ float.add_source_files(ROOT / "source/hVHDL_floating_point/float_type_definition
 float.add_source_files(ROOT / "source/hVHDL_floating_point/float_type_definitions/float_type_definitions_pkg.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/float_arithmetic_operations/*.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/normalizer/normalizer_configuration/normalizer_with_3_stage_pipe_pkg.vhd")
-float.add_source_files(ROOT / "source/hVHDL_floating_point/normalizer/*.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/denormalizer/denormalizer_configuration/denormalizer_with_4_stage_pipe_pkg.vhd")
+float.add_source_files(ROOT / "source/hVHDL_floating_point/normalizer/*.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/denormalizer/*.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/float_to_real_conversions" / "*.vhd")
 float.add_source_files(ROOT / "source/hVHDL_floating_point/float_adder/*.vhd")
@@ -56,6 +56,8 @@ fixed_point.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/
 fixed_point.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 fixed_point.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
+fixed_point.add_source_files(ROOT / "source/hVHDL_floating_point/normalizer/normalizer_configuration/normalizer_with_3_stage_pipe_pkg.vhd")
+fixed_point.add_source_files(ROOT / "source/hVHDL_floating_point/denormalizer/denormalizer_configuration/denormalizer_with_4_stage_pipe_pkg.vhd")
 fixed_point.add_source_files(ROOT / "processor_configuration/processor_configuration_pkg.vhd")
 fixed_point.add_source_files(ROOT / "vhdl_assembler/microinstruction_pkg.vhd")
 fixed_point.add_source_files(ROOT / "simple_processor/test_programs_pkg.vhd")
