@@ -29,6 +29,9 @@ package body float_assembler_pkg is
     ------------------------------
     use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
     constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
+    -- move these to float library
+    constant number_of_float_add_fills : natural := 2;
+    constant number_of_float_mpy_fills : natural := 3;
 
     ------------------------------
     function sub
@@ -36,8 +39,9 @@ package body float_assembler_pkg is
         result_reg, left, right : natural
     )
     return program_array is
+        constant fill : program_array(0 to number_of_float_add_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(sub, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
+        return write_instruction(sub, result_reg, left, right) & normalizer_fill & denormalizer_fill & fill;
     end sub;
     ------------------------------
     function add
@@ -45,8 +49,9 @@ package body float_assembler_pkg is
         result_reg, left, right : natural
     )
     return program_array is
+        constant fill : program_array(0 to number_of_float_add_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(add, result_reg, left, right) & normalizer_fill & denormalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
+        return write_instruction(add, result_reg, left, right) & normalizer_fill & denormalizer_fill & fill;
     end add;
     ------------------------------
     function multiply
@@ -54,8 +59,9 @@ package body float_assembler_pkg is
         result_reg, left, right : natural
     )
     return program_array is
+        constant fill : program_array(0 to number_of_float_mpy_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(mpy, result_reg, left, right) & normalizer_fill & write_instruction(nop) & write_instruction(nop) & write_instruction(nop) & write_instruction(nop);
+        return write_instruction(mpy, result_reg, left, right) & normalizer_fill & fill;
     end multiply;
     ------------------------------
 end package body float_assembler_pkg;
