@@ -116,31 +116,34 @@ package body float_pipeline_pkg is
 ------------------------------------------------------------------------
     function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array
     is
-        variable retval : ram_array := (others => (others => '0'));
 
-        constant u    : natural := 4;
+        ------------------------------
+        constant u    : natural := 3;
         constant y    : natural := 2;
-        constant g    : natural := 3;
-        constant temp : natural := 1;
+        constant g    : natural := 1;
+        constant temp : natural := 0;
 
+        ------------------------------
         constant load_parameters : program_array :=(
                 write_instruction(load , u , u_address) ,
                 write_instruction(load , y , y_address) ,
                 write_instruction(load , g , g_address) ,
                 write_instruction(nop));
 
+        ------------------------------
         constant save_and_end : program_array :=(
             write_instruction(save , y , y_address) ,
             write_instruction(program_end));
 
-        constant program : program_array :=(
-            load_parameters                         &
-            sub(temp, u, y)                         &
-            multiply(temp , temp , g)               &
-            add(y, y, temp)                         &
-            save_and_end
-        );
         ------------------------------
+        constant program : program_array :=(
+            load_parameters           &
+            sub(temp, u, y)           &
+            multiply(temp , temp , g) &
+            add(y, y, temp)           &
+            save_and_end);
+        ------------------------------
+        variable retval : ram_array := (others => (others => '0'));
 
     begin
 
