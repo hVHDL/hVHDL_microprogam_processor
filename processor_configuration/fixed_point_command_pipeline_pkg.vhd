@@ -31,7 +31,7 @@ package command_pipeline_pkg is
         ram_read_data_out              : in ram_read_out_record                    ;
         signal ram_write_port          : out ram_write_in_record                   ;
         signal registers               : inout reg_array                           ;
-        signal instruction_pipeline    : inout instruction_array                   ;
+        signal instruction_pipeline    : inout instruction_pipeline_array                   ;
         instruction                    : in t_instruction);
 
 end package command_pipeline_pkg;
@@ -87,7 +87,7 @@ package body command_pipeline_pkg is
         ram_read_data_out              : in ram_read_out_record                    ;
         signal ram_write_port          : out ram_write_in_record                   ;
         signal registers               : inout reg_array                           ;
-        signal instruction_pipeline    : inout instruction_array                   ;
+        signal instruction_pipeline    : inout instruction_pipeline_array                   ;
         instruction                    : in t_instruction
     ) is
         variable used_instruction : t_instruction;

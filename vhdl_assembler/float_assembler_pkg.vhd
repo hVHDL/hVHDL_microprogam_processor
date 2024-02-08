@@ -31,7 +31,7 @@ package body float_assembler_pkg is
     ------------------------------
     constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
     -- move these to float library
-    constant number_of_float_add_fills : natural := 2;
+    constant number_of_float_add_fills : natural := 2 + number_of_normalizer_pipeline_stages + number_of_denormalizer_pipeline_stages;
     constant number_of_float_mpy_fills : natural := 3;
 
     ------------------------------

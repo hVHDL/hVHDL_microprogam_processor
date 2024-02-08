@@ -15,7 +15,7 @@ package simple_processor_pkg is
         is_ready             : boolean                 ;
         program_counter      : natural range 0 to 1023 ;
         registers            : reg_array               ;
-        instruction_pipeline : instruction_array       ;
+        instruction_pipeline : instruction_pipeline_array       ;
         -- math unit for testing, will be removed later
     end record;
 
@@ -53,7 +53,7 @@ package body simple_processor_pkg is
             is_ready             => false                       , -- boolean                 ;
             program_counter      => 0                           , -- natural range 0 to 1023 ;
             registers            => (others => (others => '0')) , -- reg_array               ;
-            instruction_pipeline => (others => (others => '0')) ); -- instruction_array       ;
+            instruction_pipeline => (others => (others => '0')) ); -- instruction_pipeline_array       ;
     begin
 
         return zero_all;
