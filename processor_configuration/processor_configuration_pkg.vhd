@@ -13,7 +13,7 @@ package processor_configuration_pkg is
     constant instruction_bit_width     : natural := ram_bit_width;
     constant register_bit_width        : natural := ram_bit_width;
 
-    constant number_of_registers       : natural := 8;
+    constant number_of_registers       : natural := 5;
     constant number_of_pipeline_stages : natural := get_number_of_pipeline_stages(6);
 
 

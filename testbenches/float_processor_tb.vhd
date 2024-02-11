@@ -123,8 +123,6 @@ begin
                 if ram_read_is_ready(ram_read_data_out) then
                     counter2 <= counter2 + 1;
                     CASE counter2 is
-                        -- WHEN 0 => result1 <= to_real(get_ram_data(ram_read_data_out),19);
-                        -- WHEN 1 => result2 <= to_real(get_ram_data(ram_read_data_out),19);
                         WHEN 0 => result3 <= to_real(to_float(get_ram_data(ram_read_data_out)));
                         WHEN others => -- do nothing
                     end CASE; --counter2
