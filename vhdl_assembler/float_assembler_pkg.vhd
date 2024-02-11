@@ -62,7 +62,7 @@ package body float_assembler_pkg is
     return program_array is
         constant fill : program_array(0 to number_of_float_mpy_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(mpy, result_reg, left, right) & normalizer_fill & fill;
+        return write_instruction(mpy, result_reg, left, right) & fill;
     end multiply;
     ------------------------------
 end package body float_assembler_pkg;
