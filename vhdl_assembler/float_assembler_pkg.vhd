@@ -4,9 +4,7 @@ library ieee;
 
     use work.microinstruction_pkg.all;
     use work.processor_configuration_pkg.all;
-    -- from float library
-    use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
-    use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
+    use work.float_alu_pkg.all;
 
 package float_assembler_pkg is
 ------------------------------------------------------------------------
@@ -21,18 +19,18 @@ package float_assembler_pkg is
     function multiply ( result_reg, left, right : natural)
         return program_array;
 
+    function multiply_add ( result_reg, mpy1, mpy2, post_add : natural)
+        return program_array;
+
 ------------------------------------------------------------------------
 end package float_assembler_pkg;
 
 package body float_assembler_pkg is
     ------------------------------
-    constant normalizer_fill : program_array(0 to number_of_normalizer_pipeline_stages-1) := (others => write_instruction(nop));
-
-    ------------------------------
-    constant denormalizer_fill : program_array(0 to number_of_denormalizer_pipeline_stages-1) := (others => write_instruction(nop));
     -- move these to float library
-    constant number_of_float_add_fills : natural := 2 + number_of_normalizer_pipeline_stages + number_of_denormalizer_pipeline_stages;
-    constant number_of_float_mpy_fills : natural := 3;
+    constant number_of_float_add_fills : natural := add_pipeline_depth;
+    constant number_of_float_mpy_fills : natural := mult_pipeline_depth;
+    constant number_of_float_mpy_add_fills : natural := alu_timing.madd_pipeline_depth;
 
     ------------------------------
     function sub
@@ -42,7 +40,7 @@ package body float_assembler_pkg is
     return program_array is
         constant fill : program_array(0 to number_of_float_add_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(sub, result_reg, left, right) & normalizer_fill & denormalizer_fill & fill;
+        return write_instruction(sub, result_reg, left, right) & fill;
     end sub;
     ------------------------------
     function add
@@ -52,7 +50,7 @@ package body float_assembler_pkg is
     return program_array is
         constant fill : program_array(0 to number_of_float_add_fills) := (others => write_instruction(nop));
     begin
-        return write_instruction(add, result_reg, left, right) & normalizer_fill & denormalizer_fill & fill;
+        return write_instruction(add, result_reg, left, right) & fill;
     end add;
     ------------------------------
     function multiply
@@ -64,5 +62,15 @@ package body float_assembler_pkg is
     begin
         return write_instruction(mpy, result_reg, left, right) & fill;
     end multiply;
+    ------------------------------
+    function multiply_add
+    (
+        result_reg,mpy1, mpy2, post_add : natural
+    )
+    return program_array is
+        constant fill : program_array(0 to number_of_float_mpy_add_fills) := (others => write_instruction(nop));
+    begin
+        return write_instruction(mpy_add, result_reg, mpy1, mpy2, post_add) & fill;
+    end multiply_add;
     ------------------------------
 end package body float_assembler_pkg;

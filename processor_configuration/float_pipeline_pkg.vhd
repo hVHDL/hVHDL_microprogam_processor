@@ -15,7 +15,7 @@ package float_pipeline_pkg is
 
     procedure create_float_command_pipeline (
         signal self                    : inout simple_processor_record ;
-        signal float_alu                     : inout float_alu_record        ;
+        signal float_alu               : inout float_alu_record        ;
         signal ram_read_instruction_in : out ram_read_in_record        ;
         ram_read_instruction_out       : in ram_read_out_record        ;
         signal ram_read_data_in        : out ram_read_in_record        ;
@@ -32,7 +32,7 @@ package body float_pipeline_pkg is
         procedure create_float_command_pipeline
         (
             signal self                    : inout simple_processor_record ;
-            signal float_alu                     : inout float_alu_record        ;
+            signal float_alu               : inout float_alu_record        ;
             signal ram_read_instruction_in : out ram_read_in_record        ;
             ram_read_instruction_out       : in ram_read_out_record        ;
             signal ram_read_data_in        : out ram_read_in_record        ;
@@ -41,8 +41,6 @@ package body float_pipeline_pkg is
             variable used_instruction      : inout t_instruction
         )
         is
-            use work.normalizer_pkg.number_of_normalizer_pipeline_stages;
-            use work.denormalizer_pkg.number_of_denormalizer_pipeline_stages;
         begin
         ------------------------------------------------------------------------
             --stage -1
@@ -59,7 +57,6 @@ package body float_pipeline_pkg is
                     add(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
                         to_float(self.registers(get_arg2(used_instruction))));
-
                 WHEN sub =>
                     subtract(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
@@ -68,22 +65,34 @@ package body float_pipeline_pkg is
                     multiply(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
                         to_float(self.registers(get_arg2(used_instruction))));
+                WHEN mpy_add =>
+                    fmac(float_alu, 
+                        to_float(self.registers(get_arg1(used_instruction))), 
+                        to_float(self.registers(get_arg2(used_instruction))),
+                        to_float(self.registers(get_arg3(used_instruction))));
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(3);
+            used_instruction := self.instruction_pipeline(mult_pipeline_depth-1);
             CASE decode(used_instruction) is
                 WHEN mpy =>
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(2 + number_of_normalizer_pipeline_stages + number_of_denormalizer_pipeline_stages);
+            used_instruction := self.instruction_pipeline(add_pipeline_depth-1);
             CASE decode(used_instruction) is
                 WHEN add | sub => 
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
                 WHEN save =>
                     write_data_to_ram(ram_write_port, get_sigle_argument(used_instruction), self.registers(get_dest(used_instruction)));
+                WHEN others => -- do nothing
+            end CASE;
+        ----------------------
+            used_instruction := self.instruction_pipeline(alu_timing.madd_pipeline_depth-1);
+            CASE decode(used_instruction) is
+                WHEN mpy_add =>
+                    self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
                 WHEN others => -- do nothing
             end CASE;
         ------------------------------------------------------------------------
@@ -137,10 +146,11 @@ package body float_pipeline_pkg is
 
         ------------------------------
         constant program : program_array :=(
-            load_parameters           &
-            sub(temp, u, y)           &
-            multiply(temp , temp , g) &
-            add(y, y, temp)           &
+            load_parameters              &
+            sub(temp, u, y)              &
+            multiply_add(y, temp, g, y)  &
+            -- multiply(temp , temp , g) &
+            -- add(y, y, temp)           &
             save_and_end);
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));

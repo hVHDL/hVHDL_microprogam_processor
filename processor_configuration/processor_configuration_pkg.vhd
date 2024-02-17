@@ -23,6 +23,7 @@ package processor_configuration_pkg is
         add        ,
         sub        ,
         mpy        ,
+        mpy_add        ,
         save       ,
         load
     );
@@ -39,8 +40,6 @@ end package processor_configuration_pkg;
 
 package body processor_configuration_pkg is
 
-    use work.normalizer_pipeline_pkg.normalizer_pipeline_configuration;
-    use work.denormalizer_pipeline_pkg.pipeline_configuration;
 
     function get_number_of_pipeline_stages
     (
@@ -48,7 +47,7 @@ package body processor_configuration_pkg is
     )
     return natural
     is
-        constant min_number_of_stages : natural := normalizer_pipeline_configuration + pipeline_configuration + 3;
+        constant min_number_of_stages : natural := 13;
         variable retval : natural := number_of_stages;
 
     begin
