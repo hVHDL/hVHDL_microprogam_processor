@@ -149,8 +149,6 @@ package body float_pipeline_pkg is
             load_parameters              &
             sub(temp, u, y)              &
             multiply_add(y, temp, g, y)  &
-            -- multiply(temp , temp , g) &
-            -- add(y, y, temp)           &
             save_and_end);
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
