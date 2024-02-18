@@ -37,11 +37,15 @@ architecture vunit_simulation of vector_processing_tb is
 
     constant ram_contents : ram_array := build_sw(0.05 , u_address , y_address , g_address);
 
-    signal self                : simple_processor_record := init_processor;
+    signal self                     : simple_processor_record := init_processor;
     signal ram_read_instruction_in  : ram_read_in_record  := (0, '0');
     signal ram_read_instruction_out : ram_read_out_record ;
-    signal ram_read_data_in         : ram_read_in_record  := (0, '0');
-    signal ram_read_data_out        : ram_read_out_record ;
+    signal ram_read_data_in       : ram_read_in_record  := (0, '0');
+    signal ram_read_data_out      : ram_read_out_record ;
+    signal ram_read_2_data_in       : ram_read_in_record  := (0, '0');
+    signal ram_read_2_data_out      : ram_read_out_record ;
+    signal ram_read_3_data_in       : ram_read_in_record  := (0, '0');
+    signal ram_read_3_data_out      : ram_read_out_record ;
     signal ram_write_port           : ram_write_in_record ;
     signal ram_write_port2          : ram_write_in_record ;
 
@@ -77,6 +81,7 @@ begin
 
     stimulus : process(simulator_clock)
         variable used_instruction : t_instruction;
+        constant initial_pipeline_stage : natural := 3;
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -96,6 +101,15 @@ begin
             CASE decode(used_instruction) is
                 WHEN load =>
                     request_data_from_ram(ram_read_data_in, get_sigle_argument(used_instruction));
+                WHEN others => -- do nothing
+            end CASE;
+        ------------------------------------------------------------------------
+            --stage 2
+            used_instruction := self.instruction_pipeline(2);
+
+            CASE decode(used_instruction) is
+                WHEN load =>
+                    self.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
                 WHEN others => -- do nothing
             end CASE;
 
@@ -122,14 +136,14 @@ begin
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(mult_pipeline_depth-1);
+            used_instruction := self.instruction_pipeline(initial_pipeline_stage + mult_pipeline_depth-1);
             CASE decode(used_instruction) is
                 WHEN mpy =>
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_multiplier_result(float_alu));
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(add_pipeline_depth-1);
+            used_instruction := self.instruction_pipeline(initial_pipeline_stage + add_pipeline_depth-1);
             CASE decode(used_instruction) is
                 WHEN add | sub => 
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
@@ -138,7 +152,7 @@ begin
                 WHEN others => -- do nothing
             end CASE;
         ----------------------
-            used_instruction := self.instruction_pipeline(alu_timing.madd_pipeline_depth-1);
+            used_instruction := self.instruction_pipeline(initial_pipeline_stage + alu_timing.madd_pipeline_depth-1);
             CASE decode(used_instruction) is
                 WHEN mpy_add =>
                     self.registers(get_dest(used_instruction)) <= to_std_logic_vector(get_add_result(float_alu));
@@ -146,23 +160,6 @@ begin
             end CASE;
         ------------------------------------------------------------------------
         ------------------------------------------------------------------------
-            used_instruction := self.instruction_pipeline(0);
-            --stage 0
-            CASE decode(used_instruction) is
-
-                WHEN others => -- do nothing
-            end CASE;
-            --stage 1
-            used_instruction := self.instruction_pipeline(1);
-        ------------------------------------------------------------------------
-            --stage 2
-            used_instruction := self.instruction_pipeline(2);
-
-            CASE decode(used_instruction) is
-                WHEN load =>
-                    self.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
-                WHEN others => -- do nothing
-            end CASE;
         ------------------------------------------------------------------------
             used_instruction := self.instruction_pipeline(5);
             CASE decode(used_instruction) is
@@ -202,7 +199,7 @@ begin
     end process stimulus;	
 
 ------------------------------------------------------------------------
-    u_mpram : entity work.ram_read_x2_write_x1
+    u_mpram : entity work.ram_read_x4_write_x1
     generic map(ram_contents)
     port map(
     simulator_clock          ,
@@ -210,6 +207,10 @@ begin
     ram_read_instruction_out ,
     ram_read_data_in         ,
     ram_read_data_out        ,
+    ram_read_2_data_in       ,
+    ram_read_2_data_out      ,
+    ram_read_3_data_in       ,
+    ram_read_3_data_out      ,
     ram_write_port);
 ------------------------------------------------------------------------
 end vunit_simulation;

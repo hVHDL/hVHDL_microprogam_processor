@@ -33,6 +33,9 @@ float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_
 float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
+float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x4_write_x1.vhd")
+float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x4_write_x1.vhd")
+
 float.add_source_files(ROOT / "processor_configuration/processor_configuration_pkg.vhd")
 float.add_source_files(ROOT / "vhdl_assembler/microinstruction_pkg.vhd")
 float.add_source_files(ROOT / "vhdl_assembler/float_assembler_pkg.vhd")
