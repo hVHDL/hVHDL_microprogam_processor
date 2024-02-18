@@ -19,17 +19,17 @@ package microinstruction_pkg is
 ------------------------------------------------------------------------
     function write_instruction (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
-        argument1   : in natural range 0 to number_of_registers-1;
-        argument2   : in natural range 0 to number_of_registers-1)
+        destination : in natural ;
+        argument1   : in natural ;
+        argument2   : in natural )
     return t_instruction;
 ----------------
     function write_instruction (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
-        argument1   : in natural range 0 to number_of_registers-1;
-        argument2   : in natural range 0 to number_of_registers-1;
-        argument3   : in natural range 0 to number_of_registers-1)
+        destination : in natural ;
+        argument1   : in natural ;
+        argument2   : in natural ;
+        argument3   : in natural )
     return t_instruction;
 ----------------
     function write_instruction (
@@ -40,7 +40,7 @@ package microinstruction_pkg is
 ------------------------------------------------------------------------
     function write_instruction (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
+        destination : in natural ;
         argument1   : in natural)
     return t_instruction;
 
@@ -89,10 +89,10 @@ package body microinstruction_pkg is
     function write_instruction
     (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
-        argument1   : in natural range 0 to number_of_registers-1;
-        argument2   : in natural range 0 to number_of_registers-1;
-        argument3   : in natural range 0 to number_of_registers-1
+        destination : in natural ;
+        argument1   : in natural ;
+        argument2   : in natural ;
+        argument3   : in natural 
     )
     return t_instruction
     is
@@ -112,9 +112,9 @@ package body microinstruction_pkg is
     function write_instruction
     (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
-        argument1   : in natural range 0 to number_of_registers-1;
-        argument2   : in natural range 0 to number_of_registers-1
+        destination : in natural ;
+        argument1   : in natural ;
+        argument2   : in natural 
     )
     return t_instruction
     is
@@ -134,7 +134,7 @@ package body microinstruction_pkg is
     function write_instruction
     (
         command     : in t_command;
-        destination : in natural range 0 to number_of_registers-1;
+        destination : in natural ;
         argument1   : in natural
     )
     return t_instruction

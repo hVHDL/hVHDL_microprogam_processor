@@ -13,6 +13,7 @@ context vunit_lib.vunit_context;
     use work.float_alu_pkg.all;
     use work.float_type_definitions_pkg.all;
     use work.float_to_real_conversions_pkg.all;
+    use work.float_example_program_pkg.all;
 
     use work.float_pipeline_pkg.all;
 

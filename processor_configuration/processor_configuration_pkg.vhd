@@ -18,21 +18,21 @@ package processor_configuration_pkg is
 
 
     type t_command is (
-        program_end,
-        nop        ,
-        add        ,
-        sub        ,
-        mpy        ,
-        mpy_add        ,
-        save       ,
+        program_end ,
+        nop         ,
+        add         ,
+        sub         ,
+        mpy         ,
+        mpy_add     ,
+        save        ,
         load
     );
 
-    subtype comm is std_logic_vector(19 downto 16);
-    subtype dest is std_logic_vector(15 downto 12);
-    subtype arg1 is std_logic_vector(11 downto 8);
-    subtype arg2 is std_logic_vector(7 downto 4);
-    subtype arg3 is std_logic_vector(3 downto 0);
+    subtype comm is std_logic_vector(31 downto 28);
+    subtype dest is std_logic_vector(27 downto 21);
+    subtype arg1 is std_logic_vector(20 downto 14);
+    subtype arg2 is std_logic_vector(13 downto 7);
+    subtype arg3 is std_logic_vector(6 downto 0);
 
 end package processor_configuration_pkg;
 

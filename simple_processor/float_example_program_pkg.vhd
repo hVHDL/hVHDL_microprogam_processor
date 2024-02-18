@@ -11,6 +11,7 @@ library ieee;
 package float_example_program_pkg is
 
     function build_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address : natural) return ram_array;
+    function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array;
 
 end package float_example_program_pkg;
 
@@ -40,10 +41,9 @@ package body float_example_program_pkg is
 
         ------------------------------
         constant program : program_array :=(
-            load_parameters           &
-            sub(temp, u, y)           &
-            multiply(temp , temp , g) &
-            add(y, y, temp)           &
+            load_parameters              &
+            sub(temp, u, y)              &
+            multiply_add(y, temp, g, y)  &
             save_and_end);
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
@@ -61,5 +61,30 @@ package body float_example_program_pkg is
         return retval;
         
     end build_sw;
+------------------------------------------------------------------------
+    function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
+    is
 
+        ------------------------------
+        constant program : program_array :=(
+            sub(temp_address, u_address, y_address)           &
+            multiply(temp_address , temp_address , g_address) &
+            add(y_address, y_address, temp_address));
+        ------------------------------
+        variable retval : ram_array := (others => (others => '0'));
+
+    begin
+
+        for i in program'range loop
+            retval(i) := program(i);
+        end loop;
+
+        retval(y_address) := to_std_logic_vector(to_float(0.0));
+        retval(u_address) := to_std_logic_vector(to_float(0.5));
+        retval(g_address) := to_std_logic_vector(to_float(filter_gain));
+            
+        return retval;
+        
+    end build_nmp_sw;
+------------------------------------------------------------------------
 end package body float_example_program_pkg;
