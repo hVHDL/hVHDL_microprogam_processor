@@ -41,6 +41,7 @@ float.add_source_files(ROOT / "processor_configuration/float_pipeline_pkg.vhd")
 float.add_source_files(ROOT / "simple_processor/simple_processor_pkg.vhd")
 
 float.add_source_files(ROOT / "testbenches/float_processor_tb.vhd")
+float.add_source_files(ROOT / "testbenches/vector_processing_tb.vhd")
 
 fixed_point = VU.add_library("fixed_point")
 
