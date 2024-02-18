@@ -87,7 +87,7 @@ begin
             simulation_counter <= simulation_counter + 1;
             --------------------
             create_simple_processor (
-                self                ,
+                self                     ,
                 ram_read_instruction_in  ,
                 ram_read_instruction_out ,
                 ram_read_data_in         ,
@@ -110,12 +110,7 @@ begin
             CASE decode(used_instruction) is
                 WHEN load =>
                     self.registers(get_dest(used_instruction)) <= get_ram_data(ram_read_data_out);
-                WHEN others => -- do nothing
-            end CASE;
 
-        ------------------------------------------------------------------------
-        ------------------------------------------------------------------------
-            CASE decode(used_instruction) is
                 WHEN add => 
                     add(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
