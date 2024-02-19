@@ -11,13 +11,12 @@ package simple_processor_pkg is
     alias register_bit_width is work.processor_configuration_pkg.register_bit_width;
 
     type simple_processor_record is record
-        processor_enabled    : boolean                 ;
-        is_ready             : boolean                 ;
-        program_counter      : natural range 0 to 1023 ;
-        registers            : reg_array               ;
-        instruction_pipeline : instruction_pipeline_array       ;
-        -- math unit for testing, will be removed later
-    end record;
+        processor_enabled    : boolean                    ;
+        is_ready             : boolean                    ;
+        program_counter      : natural range 0 to 1023    ;
+        registers            : reg_array                  ;
+        instruction_pipeline : instruction_pipeline_array ;
+    end record                                            ;
 
     function init_processor return simple_processor_record;
 ------------------------------------------------------------------------
