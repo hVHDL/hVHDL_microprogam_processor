@@ -91,7 +91,8 @@ package body float_example_program_pkg is
             write_instruction(nop) & 
             write_instruction(nop) & 
             write_instruction(nop) & 
-            write_instruction(nop) );
+            write_instruction(nop) &
+            write_instruction(program_end));
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
 

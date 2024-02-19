@@ -54,7 +54,7 @@ package body processor_configuration_pkg is
     )
     return natural
     is
-        constant min_number_of_stages : natural := 14;
+        constant min_number_of_stages : natural := 17;
         variable retval : natural := number_of_stages;
 
     begin
