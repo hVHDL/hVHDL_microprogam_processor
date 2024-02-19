@@ -97,6 +97,8 @@ begin
                 ram_write_port           ,
                 used_instruction);
 
+            init_ram_read(ram_read_2_data_in);
+            init_ram_read(ram_read_3_data_in);
             create_float_alu(float_alu);
 
             --stage -1

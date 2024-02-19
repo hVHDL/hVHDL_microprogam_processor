@@ -68,8 +68,30 @@ package body float_example_program_pkg is
         ------------------------------
         constant program : program_array :=(
             sub(temp_address, u_address, y_address)           &
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
             multiply(temp_address , temp_address , g_address) &
-            add(y_address, y_address, temp_address));
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            add(y_address, y_address, temp_address) &
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) & 
+            write_instruction(nop) );
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
 

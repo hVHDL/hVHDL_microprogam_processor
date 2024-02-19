@@ -28,8 +28,8 @@ end package float_assembler_pkg;
 package body float_assembler_pkg is
     ------------------------------
     -- move these to float library
-    constant number_of_float_add_fills : natural := add_pipeline_depth;
-    constant number_of_float_mpy_fills : natural := mult_pipeline_depth;
+    constant number_of_float_add_fills     : natural := add_pipeline_depth;
+    constant number_of_float_mpy_fills     : natural := mult_pipeline_depth;
     constant number_of_float_mpy_add_fills : natural := alu_timing.madd_pipeline_depth;
 
     ------------------------------

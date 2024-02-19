@@ -158,11 +158,10 @@ package body microinstruction_pkg is
     return t_instruction
     is
         variable instruction : t_instruction := (others=>'0');
-        constant get_long_argument_range : std_logic_vector(comm'right-1 downto 0) := (others => '0');
     begin
 
         instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
-        instruction(get_long_argument_range'range) := std_logic_vector(to_unsigned(long_argument, get_long_argument_range'length));
+        instruction(long_arg'range) := std_logic_vector(to_unsigned(long_argument, long_arg'length));
 
         return instruction;
         

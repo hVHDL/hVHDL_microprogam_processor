@@ -24,6 +24,12 @@ package processor_configuration_pkg is
         sub         ,
         mpy         ,
         mpy_add     ,
+
+        mem_sub     ,
+        mem_add     ,
+        mem_mpy     ,
+        mem_mpy_add ,
+
         save        ,
         load
     );
@@ -33,6 +39,7 @@ package processor_configuration_pkg is
     subtype arg1 is std_logic_vector(20 downto 14);
     subtype arg2 is std_logic_vector(13 downto 7);
     subtype arg3 is std_logic_vector(6 downto 0);
+    subtype long_arg is std_logic_vector(27 downto 0);
 
 end package processor_configuration_pkg;
 
