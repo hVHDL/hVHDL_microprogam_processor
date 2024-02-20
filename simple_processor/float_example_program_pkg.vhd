@@ -75,6 +75,9 @@ package body float_example_program_pkg is
             write_instruction(nop) & 
             write_instruction(nop) & 
             write_instruction(nop) & 
+            write_instruction(nop) &
+            write_instruction(nop) &
+            write_instruction(nop) &
             multiply(temp_address , temp_address , g_address) &
             write_instruction(nop) & 
             write_instruction(nop) & 
@@ -82,7 +85,10 @@ package body float_example_program_pkg is
             write_instruction(nop) & 
             write_instruction(nop) & 
             write_instruction(nop) & 
+            write_instruction(nop) &
+            write_instruction(nop) &
             write_instruction(nop) & 
+            write_instruction(nop) &
             add(y_address, y_address, temp_address) &
             write_instruction(nop) & 
             write_instruction(nop) & 
@@ -91,6 +97,9 @@ package body float_example_program_pkg is
             write_instruction(nop) & 
             write_instruction(nop) & 
             write_instruction(nop) & 
+            write_instruction(nop) &
+            write_instruction(nop) &
+            write_instruction(nop) &
             write_instruction(nop) &
             write_instruction(program_end));
         ------------------------------
