@@ -175,7 +175,7 @@ begin
             end if;
 
             CASE counter is
-                WHEN 0 => request_data_from_ram(ram_read_data_in, y_address);
+                WHEN 0 => request_data_from_ram(ram_read_data_in, y_address+7);
                 WHEN others => --do nothing
             end CASE;
             if not processor_is_enabled(self) then

@@ -82,15 +82,15 @@ package body float_example_program_pkg is
         
     end sequential_block;
 ------------------------------------------------------------------------
-    -- function sequential_block
-    -- (
-    --     instruction : t_instruction
-    -- )
-    -- return program_array
-    -- is
-    -- begin
-    --     return sequential_block(program_array'(0=>instruction));
-    -- end sequential_block;
+    function sequential_block
+    (
+        instruction : t_instruction
+    )
+    return program_array
+    is
+    begin
+        return sequential_block(program_array'(0=>instruction));
+    end sequential_block;
 ------------------------------------------------------------------------
     function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
     is
@@ -110,13 +110,13 @@ package body float_example_program_pkg is
             ) &
             sequential_block(
                 program_array'(write_instruction(mpy_add, y_address, temp_address, g_address, y_address) ,
-                write_instruction(mpy_add, y_address+1, temp_address+1, g_address, y_address+1) ,
-                write_instruction(mpy_add, y_address+2, temp_address+2, g_address, y_address+2) ,
-                write_instruction(mpy_add, y_address+3, temp_address+3, g_address, y_address+3) ,
-                write_instruction(mpy_add, y_address+4, temp_address+4, g_address, y_address+4) ,
-                write_instruction(mpy_add, y_address+5, temp_address+5, g_address, y_address+5) ,
-                write_instruction(mpy_add, y_address+6, temp_address+6, g_address, y_address+6) ,
-                write_instruction(mpy_add, y_address+7, temp_address+7, g_address, y_address+7))
+                write_instruction(mpy_add, y_address+1, temp_address+1, g_address+1, y_address+1) ,
+                write_instruction(mpy_add, y_address+2, temp_address+2, g_address+2, y_address+2) ,
+                write_instruction(mpy_add, y_address+3, temp_address+3, g_address+3, y_address+3) ,
+                write_instruction(mpy_add, y_address+4, temp_address+4, g_address+4, y_address+4) ,
+                write_instruction(mpy_add, y_address+5, temp_address+5, g_address+5, y_address+5) ,
+                write_instruction(mpy_add, y_address+6, temp_address+6, g_address+6, y_address+6) ,
+                write_instruction(mpy_add, y_address+7, temp_address+7, g_address+7, y_address+7))
             ) &
             write_instruction(program_end));
         ------------------------------
@@ -131,6 +131,9 @@ package body float_example_program_pkg is
         retval(y_address) := to_std_logic_vector(to_float(0.0));
         retval(u_address) := to_std_logic_vector(to_float(0.5));
         retval(g_address) := to_std_logic_vector(to_float(filter_gain));
+        for i in 0 to 7 loop
+            retval(g_address+i) := to_std_logic_vector(to_float(filter_gain + filter_gain*(real(i))));
+        end loop;
             
         return retval;
         
