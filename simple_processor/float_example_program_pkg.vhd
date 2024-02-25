@@ -62,45 +62,62 @@ package body float_example_program_pkg is
         
     end build_sw;
 ------------------------------------------------------------------------
+    function sequential_block
+    (
+        program : program_array
+    )
+    return program_array
+    is
+        variable retval : program_array(0 to number_of_pipeline_stages-1) := (others => write_instruction(nop));
+    begin
+
+        if program'length < retval'length then
+            for i in program'range loop
+                retval(i) := program(i);
+            end loop;
+            return retval;
+        else
+            return program;
+        end if;
+        
+    end sequential_block;
+------------------------------------------------------------------------
+    -- function sequential_block
+    -- (
+    --     instruction : t_instruction
+    -- )
+    -- return program_array
+    -- is
+    -- begin
+    --     return sequential_block(program_array'(0=>instruction));
+    -- end sequential_block;
+------------------------------------------------------------------------
     function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
     is
 
+        -- does the memory get read with new value?
         ------------------------------
         constant program : program_array :=(
-            sub(temp_address, u_address, y_address)           &
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            multiply(temp_address , temp_address , g_address) &
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) & 
-            write_instruction(nop) &
-            add(y_address, y_address, temp_address) &
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) & 
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
-            write_instruction(nop) &
+            sequential_block(
+                program_array'(write_instruction(sub, temp_address, u_address, y_address)    ,
+                write_instruction(sub, temp_address+1, u_address, y_address+1) ,
+                write_instruction(sub, temp_address+2, u_address, y_address+2) ,
+                write_instruction(sub, temp_address+3, u_address, y_address+3) ,
+                write_instruction(sub, temp_address+4, u_address, y_address+4) ,
+                write_instruction(sub, temp_address+5, u_address, y_address+5) ,
+                write_instruction(sub, temp_address+6, u_address, y_address+6) ,
+                write_instruction(sub, temp_address+7, u_address, y_address+7))
+            ) &
+            sequential_block(
+                program_array'(write_instruction(mpy_add, y_address, temp_address, g_address, y_address) ,
+                write_instruction(mpy_add, y_address+1, temp_address+1, g_address, y_address+1) ,
+                write_instruction(mpy_add, y_address+2, temp_address+2, g_address, y_address+2) ,
+                write_instruction(mpy_add, y_address+3, temp_address+3, g_address, y_address+3) ,
+                write_instruction(mpy_add, y_address+4, temp_address+4, g_address, y_address+4) ,
+                write_instruction(mpy_add, y_address+5, temp_address+5, g_address, y_address+5) ,
+                write_instruction(mpy_add, y_address+6, temp_address+6, g_address, y_address+6) ,
+                write_instruction(mpy_add, y_address+7, temp_address+7, g_address, y_address+7))
+            ) &
             write_instruction(program_end));
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
