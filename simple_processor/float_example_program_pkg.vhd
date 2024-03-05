@@ -62,7 +62,7 @@ package body float_example_program_pkg is
         
     end build_sw;
 ------------------------------------------------------------------------
-    function sequential_block
+    function pipelined_block
     (
         program : program_array
     )
@@ -80,17 +80,17 @@ package body float_example_program_pkg is
             return program;
         end if;
         
-    end sequential_block;
+    end pipelined_block;
 ------------------------------------------------------------------------
-    function sequential_block
+    function pipelined_block
     (
         instruction : t_instruction
     )
     return program_array
     is
     begin
-        return sequential_block(program_array'(0=>instruction));
-    end sequential_block;
+        return pipelined_block(program_array'(0=>instruction));
+    end pipelined_block;
 ------------------------------------------------------------------------
     function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
     is
@@ -98,7 +98,7 @@ package body float_example_program_pkg is
         -- does the memory get read with new value?
         ------------------------------
         constant program : program_array :=(
-            sequential_block(
+            pipelined_block(
                 program_array'(write_instruction(sub, temp_address, u_address, y_address)    ,
                 write_instruction(sub, temp_address+1, u_address, y_address+1) ,
                 write_instruction(sub, temp_address+2, u_address, y_address+2) ,
@@ -108,7 +108,7 @@ package body float_example_program_pkg is
                 write_instruction(sub, temp_address+6, u_address, y_address+6) ,
                 write_instruction(sub, temp_address+7, u_address, y_address+7))
             ) &
-            sequential_block(
+            pipelined_block(
                 program_array'(write_instruction(mpy_add, y_address, temp_address, g_address, y_address) ,
                 write_instruction(mpy_add, y_address+1, temp_address+1, g_address+1, y_address+1) ,
                 write_instruction(mpy_add, y_address+2, temp_address+2, g_address+2, y_address+2) ,
