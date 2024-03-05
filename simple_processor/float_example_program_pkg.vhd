@@ -134,7 +134,7 @@ package body float_example_program_pkg is
         retval(y_address) := to_std_logic_vector(to_float(0.0));
         retval(u_address) := to_std_logic_vector(to_float(0.5));
         retval(g_address) := to_std_logic_vector(to_float(filter_gain));
-        for i in 0 to 7 loop
+        for i in 0 to 9 loop
             retval(g_address+i) := to_std_logic_vector(to_float(filter_gain + filter_gain*(real(i))));
         end loop;
             
