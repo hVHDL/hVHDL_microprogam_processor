@@ -95,7 +95,6 @@ package body float_example_program_pkg is
     function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
     is
 
-        -- does the memory get read with new value?
         ------------------------------
         constant program : program_array :=(
             pipelined_block(
@@ -106,7 +105,9 @@ package body float_example_program_pkg is
                 write_instruction(sub, temp_address+4, u_address, y_address+4) ,
                 write_instruction(sub, temp_address+5, u_address, y_address+5) ,
                 write_instruction(sub, temp_address+6, u_address, y_address+6) ,
-                write_instruction(sub, temp_address+7, u_address, y_address+7))
+                write_instruction(sub, temp_address+7, u_address, y_address+7) ,
+                write_instruction(sub, temp_address+8, u_address, y_address+8) ,
+                write_instruction(sub, temp_address+9, u_address, y_address+9))
             ) &
             pipelined_block(
                 program_array'(write_instruction(mpy_add, y_address, temp_address, g_address, y_address) ,
@@ -116,7 +117,9 @@ package body float_example_program_pkg is
                 write_instruction(mpy_add, y_address+4, temp_address+4, g_address+4, y_address+4) ,
                 write_instruction(mpy_add, y_address+5, temp_address+5, g_address+5, y_address+5) ,
                 write_instruction(mpy_add, y_address+6, temp_address+6, g_address+6, y_address+6) ,
-                write_instruction(mpy_add, y_address+7, temp_address+7, g_address+7, y_address+7))
+                write_instruction(mpy_add, y_address+7, temp_address+7, g_address+7, y_address+7) ,
+                write_instruction(mpy_add, y_address+8, temp_address+8, g_address+8, y_address+8) ,
+                write_instruction(mpy_add, y_address+9, temp_address+9, g_address+9, y_address+9))
             ) &
             write_instruction(program_end));
         ------------------------------

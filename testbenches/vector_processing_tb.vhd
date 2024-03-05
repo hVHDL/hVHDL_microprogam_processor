@@ -32,10 +32,10 @@ architecture vunit_simulation of vector_processing_tb is
     -- simulation specific signals ----
     ------------------------------------------------------------------------
 
-    constant u_address : natural := 90;
-    constant y_address : natural := 100;
-    constant g_address : natural := 110;
-    constant temp_address : natural := 120;
+    constant u_address : natural := 80;
+    constant y_address : natural := 90;
+    constant g_address : natural := 100;
+    constant temp_address : natural := 110;
 
     constant ram_contents : ram_array := build_nmp_sw(0.05 , u_address , y_address , g_address, temp_address);
 
