@@ -94,8 +94,6 @@ package body float_example_program_pkg is
 ------------------------------------------------------------------------
     function build_nmp_sw (filter_gain : real range 0.0 to 1.0; u_address, y_address, g_address, temp_address : natural) return ram_array
     is
-
-        ------------------------------
         constant program : program_array :=(
             pipelined_block(
                 program_array'(write_instruction(sub, temp_address, u_address, y_address)    ,
@@ -124,7 +122,6 @@ package body float_example_program_pkg is
             write_instruction(program_end));
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
-
     begin
 
         for i in program'range loop
