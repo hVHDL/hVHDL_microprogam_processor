@@ -123,20 +123,16 @@ package body float_example_program_pkg is
         ------------------------------
         variable retval : ram_array := (others => (others => '0'));
     begin
-
         for i in program'range loop
             retval(i) := program(i);
         end loop;
-
         retval(y_address) := to_std_logic_vector(to_float(0.0));
         retval(u_address) := to_std_logic_vector(to_float(0.5));
         retval(g_address) := to_std_logic_vector(to_float(filter_gain));
         for i in 0 to 9 loop
             retval(g_address+i) := to_std_logic_vector(to_float(filter_gain + filter_gain*(real(i))));
         end loop;
-            
         return retval;
-        
     end build_nmp_sw;
 ------------------------------------------------------------------------
 end package body float_example_program_pkg;
