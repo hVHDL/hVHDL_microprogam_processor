@@ -21,3 +21,4 @@ ghdl -a --ieee=synopsys --std=08 %src%/vhdl_assembler/float_assembler_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/processor_configuration/float_pipeline_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/simple_processor/float_example_program_pkg.vhd
 ghdl -a --ieee=synopsys --std=08 %src%/memory_processor/memory_processing_pkg.vhd
+ghdl -a --ieee=synopsys --std=08 %src%/memory_processor/memory_processor.vhd
