@@ -2,6 +2,8 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
     USE ieee.NUMERIC_STD.all  ; 
 
+    use work.ram_configuration_pkg.t_ram_data;
+
 package memory_processor_pkg is
 
     type memory_processor_data_in_record is record
@@ -16,20 +18,38 @@ package memory_processor_pkg is
     type memory_processor_data_out_record is record
         processor_is_ready : boolean;
         data_is_ready      : boolean;
-        data               : std_logic_vector(31 downto 0);
+        data               : std_logic_vector(t_ram_data'range);
     end record;
 
+------------------------------------------------------------------------
     procedure init_memory_processor (
         signal self_data_in : out memory_processor_data_in_record);
-
+------------------------------------------------------------------------
+    procedure request_processor (
+        signal self_data_in : out memory_processor_data_in_record);
+------------------------------------------------------------------------
     function program_is_ready (
         self_data_out : memory_processor_data_out_record)
     return boolean;
+------------------------------------------------------------------------
+    procedure request_data_from_ram (
+        signal self_data_in : out memory_processor_data_in_record;
+        address : in natural);
+------------------------------------------------------------------------
+    function ram_read_is_ready (
+        self_data_out : memory_processor_data_out_record)
+    return boolean;
+------------------------------------------------------------------------
+    function get_ram_data (
+        self_data_out : memory_processor_data_out_record)
+    return std_logic_vector;
+------------------------------------------------------------------------
 
 end package memory_processor_pkg;
 
 package body memory_processor_pkg is
 
+------------------------------------------------------------------------
     procedure init_memory_processor
     (
         signal self_data_in : out memory_processor_data_in_record
@@ -40,6 +60,15 @@ package body memory_processor_pkg is
         self_data_in.processor_is_requested <= false;
     end init_memory_processor;
 
+------------------------------------------------------------------------
+    procedure request_processor
+    (
+        signal self_data_in : out memory_processor_data_in_record
+    ) is
+    begin
+        self_data_in.processor_is_requested <= true;
+    end request_processor;
+------------------------------------------------------------------------
     function program_is_ready
     (
         self_data_out : memory_processor_data_out_record
@@ -49,6 +78,37 @@ package body memory_processor_pkg is
     begin
         return false;
     end program_is_ready;
+------------------------------------------------------------------------
+    procedure request_data_from_ram
+    (
+        signal self_data_in : out memory_processor_data_in_record;
+        address : in natural
+    ) is
+    begin
+        self_data_in.memory_address <= address;
+        self_data_in.memory_is_requested <= true;
+        
+    end request_data_from_ram;
+------------------------------------------------------------------------
+    function ram_read_is_ready
+    (
+        self_data_out : memory_processor_data_out_record
+    )
+    return boolean
+    is
+    begin
+        return self_data_out.data_is_ready;
+    end ram_read_is_ready;
+------------------------------------------------------------------------
+    function get_ram_data
+    (
+        self_data_out : memory_processor_data_out_record
+    )
+    return std_logic_vector
+    is
+    begin
+        return self_data_out.data;
+    end get_ram_data;
 
 end package body memory_processor_pkg;
 ------------------------------------------------------------------------
@@ -89,11 +149,11 @@ architecture rtl of memory_processor is
     signal ram_read_3_data_out      : ram_read_out_record ;
     signal ram_write_port           : ram_write_in_record ;
 
-
     signal float_alu : float_alu_record := init_float_alu;
 
 begin
-    memory_processor : process(clock, self)
+
+    memory_processor : process(clock, self, data_in)
         variable used_instruction : t_instruction;
     begin
         if rising_edge(clock) then
@@ -124,11 +184,24 @@ begin
              ram_read_3_data_out      ,
              ram_write_port          );
 
-             -- if processor_has_been_requested then
-                request_processor(self);
-             -- end if;
+            data_out.data_is_ready <= false;
+            if (not processor_is_enabled(self)) and ram_read_is_ready(ram_read_3_data_out) then
+                data_out.data <= get_ram_data(ram_read_3_data_out);
+                data_out.data_is_ready <= true;
+            end if;
+
         end if; --rising_edge
-        -- processor_is_ready <= program_is_ready(self);
+
+        if data_in.memory_is_requested then
+            request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
+        end if;
+
+        if data_in.processor_is_requested then
+            request_processor(self);
+        end if;
+
+        data_out.processor_is_ready <= program_is_ready(self);
+
     end process memory_processor;	
 
     u_mpram : entity work.ram_read_x4_write_x1
@@ -146,6 +219,4 @@ begin
     ram_write_port);
 ------------------------------------------------------------------------
 
-
 end rtl;
-------------------------------------------------------------------------
