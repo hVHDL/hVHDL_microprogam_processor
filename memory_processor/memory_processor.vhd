@@ -192,12 +192,12 @@ begin
 
         end if; --rising_edge
 
-        if data_in.memory_is_requested then
-            request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
-        end if;
-
         if data_in.processor_is_requested then
             request_processor(self);
+        end if;
+
+        if (not processor_is_enabled(self)) and data_in.memory_is_requested then
+            request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
         end if;
 
         data_out.processor_is_ready <= program_is_ready(self);

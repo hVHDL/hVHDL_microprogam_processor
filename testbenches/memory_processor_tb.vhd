@@ -55,8 +55,8 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        -- check(ram_was_ready, "ram was not read");
-        -- check(result3 > 0.45 and result3 < 0.55);
+        check(ram_was_ready, "ram was not read");
+        check(result3 > 0.45 and result3 < 0.55);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
