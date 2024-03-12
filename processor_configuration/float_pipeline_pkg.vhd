@@ -64,7 +64,7 @@ package body float_pipeline_pkg is
                         to_float(self.registers(get_arg1(used_instruction))), 
                         to_float(self.registers(get_arg2(used_instruction))));
                 WHEN mpy_add =>
-                    fmac(float_alu, 
+                    madd(float_alu, 
                         to_float(self.registers(get_arg1(used_instruction))), 
                         to_float(self.registers(get_arg2(used_instruction))),
                         to_float(self.registers(get_arg3(used_instruction))));
