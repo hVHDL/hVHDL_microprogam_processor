@@ -56,7 +56,7 @@ begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
         check(ram_was_ready, "ram was not read");
-        check(result3 > 0.45 and result3 < 0.55);
+        check(result3 > 0.7-0.05 and result3 < 0.7+0.05);
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -76,6 +76,7 @@ begin
             ------------------------------------------------------------------------
             if simulation_counter mod 60 = 0 then
                 request_processor(self_data_in);
+                write_data_to_ram(self_data_in, u_address, to_std_logic_vector(to_float(0.7)));
             end if;
             if program_is_ready(self_data_out) then
                 counter <= 0;

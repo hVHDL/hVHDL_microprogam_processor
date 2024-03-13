@@ -10,10 +10,14 @@ package memory_processor_pkg is
         memory_is_requested    : boolean;
         memory_address         : natural;
         processor_is_requested : boolean;
+
+        write_is_requested : boolean;
+        write_address      : natural;
+        data_to_write      : std_logic_vector(t_ram_data'range);
     end record;
 
     constant init_memory_processor_data_in : memory_processor_data_in_record :=
-    ( false , 0 , false);
+    ( false , 0 , false, false, 0, (others => '0'));
 
     type memory_processor_data_out_record is record
         processor_is_ready : boolean;
@@ -44,6 +48,11 @@ package memory_processor_pkg is
         self_data_out : memory_processor_data_out_record)
     return std_logic_vector;
 ------------------------------------------------------------------------
+    procedure write_data_to_ram (
+        signal self_data_in : out memory_processor_data_in_record;
+        write_address : natural;
+        data_to_write : std_logic_vector(t_ram_data'range));
+------------------------------------------------------------------------
 
 end package memory_processor_pkg;
 
@@ -58,6 +67,10 @@ package body memory_processor_pkg is
         self_data_in.memory_is_requested <= false;
         self_data_in.memory_address <= 0;
         self_data_in.processor_is_requested <= false;
+
+        self_data_in.write_is_requested <= false;
+        self_data_in.write_address      <= 0;
+        self_data_in.data_to_write      <= (others => '0');
     end init_memory_processor;
 
 ------------------------------------------------------------------------
@@ -109,6 +122,20 @@ package body memory_processor_pkg is
     begin
         return self_data_out.data;
     end get_ram_data;
+------------------------------------------------------------------------
+    procedure write_data_to_ram
+    (
+        signal self_data_in : out memory_processor_data_in_record;
+        write_address : natural;
+        data_to_write : std_logic_vector(t_ram_data'range)
+    ) is
+    begin
+
+        self_data_in.write_is_requested <= true;
+        self_data_in.write_address <= write_address;
+        self_data_in.data_to_write <= data_to_write;
+        
+    end write_data_to_ram;
 
 end package body memory_processor_pkg;
 ------------------------------------------------------------------------
@@ -192,18 +219,26 @@ begin
 
         end if; --rising_edge
 
+        -- interface entity to processor
         if data_in.processor_is_requested then
             request_processor(self);
         end if;
 
-        if (not processor_is_enabled(self)) and data_in.memory_is_requested then
-            request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
+        if (not processor_is_enabled(self)) then
+            if data_in.memory_is_requested then
+                request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
+            end if;
+
+            if data_in.write_is_requested then
+                write_data_to_ram(ram_write_port, data_in.write_address, data_in.data_to_write);
+            end if;
         end if;
 
         data_out.processor_is_ready <= program_is_ready(self);
 
     end process memory_processor;	
 
+------------------------------------------------------------------------
     u_mpram : entity work.ram_read_x4_write_x1
     generic map(ram_contents)
     port map(
