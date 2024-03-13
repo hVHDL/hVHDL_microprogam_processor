@@ -217,24 +217,24 @@ begin
                 data_out.data_is_ready <= true;
             end if;
 
+
+            -- interface entity to processor
+            if data_in.processor_is_requested then
+                request_processor(self);
+            end if;
+
+            if (not processor_is_enabled(self)) then
+                if data_in.memory_is_requested then
+                    request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
+                end if;
+
+                if data_in.write_is_requested then
+                    write_data_to_ram(ram_write_port, data_in.write_address, data_in.data_to_write);
+                end if;
+            end if;
+
+            data_out.processor_is_ready <= program_is_ready(self);
         end if; --rising_edge
-
-        -- interface entity to processor
-        if data_in.processor_is_requested then
-            request_processor(self);
-        end if;
-
-        if (not processor_is_enabled(self)) then
-            if data_in.memory_is_requested then
-                request_data_from_ram(ram_read_3_data_in, data_in.memory_address);
-            end if;
-
-            if data_in.write_is_requested then
-                write_data_to_ram(ram_write_port, data_in.write_address, data_in.data_to_write);
-            end if;
-        end if;
-
-        data_out.processor_is_ready <= program_is_ready(self);
 
     end process memory_processor;	
 
