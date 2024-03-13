@@ -76,7 +76,7 @@ package body memory_processor_pkg is
     return boolean
     is
     begin
-        return false;
+        return self_data_out.processor_is_ready;
     end program_is_ready;
 ------------------------------------------------------------------------
     procedure request_data_from_ram
