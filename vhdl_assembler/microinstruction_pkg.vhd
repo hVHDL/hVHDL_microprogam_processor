@@ -80,6 +80,12 @@ package microinstruction_pkg is
     function get_long_argument ( input_register : std_logic_vector )
         return t_instruction;
 ------------------------------------------------------------------------
+    function pipelined_block ( program : program_array)
+        return program_array;
+------------------------------------------------------------------------
+    function pipelined_block ( instruction : t_instruction)
+        return program_array;
+------------------------------------------------------------------------
 end package microinstruction_pkg;
 
 package body microinstruction_pkg is
@@ -302,5 +308,35 @@ package body microinstruction_pkg is
     begin
         return decode(get_instruction(number));
     end decode;
+------------------------------------------------------------------------
+    function pipelined_block
+    (
+        program : program_array
+    )
+    return program_array
+    is
+        variable retval : program_array(0 to number_of_pipeline_stages-1) := (others => write_instruction(nop));
+    begin
+
+        if program'length < retval'length then
+            for i in program'range loop
+                retval(i) := program(i);
+            end loop;
+            return retval;
+        else
+            return program;
+        end if;
+        
+    end pipelined_block;
+------------------------------------------------------------------------
+    function pipelined_block
+    (
+        instruction : t_instruction
+    )
+    return program_array
+    is
+    begin
+        return pipelined_block(program_array'(0=>instruction));
+    end pipelined_block;
 ------------------------------------------------------------------------
 end package body microinstruction_pkg;
