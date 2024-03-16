@@ -161,6 +161,7 @@ begin
         variable add : realarray(0 to 15) := (others => 0.0);
         variable sub : realarray(0 to 15) := (others => 0.0);
         variable mult_add : realarray(0 to 15) := (others => 0.0);
+        variable mult : realarray(0 to 15) := (others => 0.0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -181,69 +182,36 @@ begin
             -- end CASE;
             CASE sequencer is
                 WHEN 1 => 
+                    -- sequential block 
+                    mult_add(0) := -r/2.0*i1 + u1;
+                    mult_add(1) := -r/2.0*i2 + u2;
+                    mult_add(2) := -r/2.0*i3 + u3;
 
-                    -- pipelined block 1
-                    add(0) := u1 + u2;
-                    add(1) := u2 + u3;
-                    add(2) := u1 + u3;
+                    mult_add(3) := uc3*l/2.0 + i1;
+                    mult_add(4) := uc1*l/2.0 + i2;
+                    mult_add(5) := uc2*l/2.0 + i3;
 
-                    add(3) := u1 + u2;
-                    add(4) := u2 + u3;
-                    add(5) := u1 + u3;
+                    mult(0) := uc1*l/2.0;
+                    mult(1) := uc2*l/2.0;
+                    mult(2) := uc3*l/2.0;
 
-                    add(6) := uc1 + uc2;
-                    add(7) := uc2 + uc3;
-                    add(8) := uc1 + uc3;
+                    -- pipelined_block 1
+                    mult_add(6)  :=  mult_add(0)*l/2.0 - mult(0);
+                    mult_add(7)  := -mult_add(1)*l/2.0 + mult(1);
+                    mult_add(8)  := -mult_add(2)*l/2.0 + mult_add(3);
 
-                    add(9)  := uc1 + uc2;
-                    add(10) := uc2 + uc3;
-                    add(11) := uc1 + uc3;
-
-                    add(12) := i1 + i2;
-                    add(13) := i2 + i3;
-                    add(14) := i1 + i3;
-
-                    -- pipelined block 2
-                    sub(0) := u1 - add(1);
-                    sub(1) := u2 - add(2);
-                    sub(2) := u3 - add(0);
-
-                    sub(3) := uc1 - add(7);
-                    sub(4) := uc2 - add(8);
-                    sub(5) := uc3 - add(6);
-
-                    sub(6) := i1 - add(13);
-                    sub(7) := i2 - add(14);
-                    sub(8) := i3 - add(12);
-
-                    sub(9)  := sub(0) - sub(3);
-                    sub(10) := sub(1) - sub(4);
-                    sub(11) := sub(2) - sub(5);
-
-                    -- pipelined block 3
-                    mult_add(0) := sub(9)  - sub(6)/2.0*r  ;
-                    mult_add(1) := sub(10) - sub(7)/2.0*r  ;
-                    mult_add(2) := sub(11) - sub(8)/2.0*r  ;
-
-                    -- pipelined block 4
-                    mult_add(3) := mult_add(0) * l/2.0 + i1;
-                    mult_add(4) := mult_add(1) * l/2.0 + i2;
-                    mult_add(5) := mult_add(2) * l/2.0 + i3;
-
-                    -- pipelined block 5
-
-                    i1   <= mult_add(3);
-                    i2   <= mult_add(4);
-                    i3   <= mult_add(5);
-
+                    i1 <= mult_add(6)  + mult_add(7) + mult_add(8);
+                    i2 <= (-u1+u2-u3 - (-i1+i2-i3 )/2.0*r) * l/2.0          + mult_add(4) - mult(1) + mult(2);
+                    i3 <= (-u1-u2+u3 - (-i1-i2+i3 )/2.0*r) * l/2.0          + mult(0) + mult_add(5) - mult(2);
 
                     -- i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
                     -- i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
                     -- i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
+
                 WHEN 0 => 
-                    uc1   <= ( +mult_add(3) - mult_add(4) - mult_add(5) ) * c/2.0 + uc1;
-                    uc2   <= ( -mult_add(3) + mult_add(4) - mult_add(5) ) * c/2.0 + uc2;
-                    uc3   <= ( -mult_add(3) - mult_add(4) + mult_add(5) ) * c/2.0 + uc3;
+                    uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
+                    uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
+                    uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
 
                     -- uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     -- uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
