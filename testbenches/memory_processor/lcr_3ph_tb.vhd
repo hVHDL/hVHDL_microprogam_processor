@@ -216,9 +216,17 @@ begin
                     sub(7) := i2 - add(14);
                     sub(8) := i3 - add(12);
 
-                    i1   <= (sub(0) - (sub(6))/2.0*r -(sub(3))) * l/2.0 + i1;
-                    i2   <= (sub(1) - (sub(7))/2.0*r -(sub(4))) * l/2.0 + i2;
-                    i3   <= (sub(2) - (sub(8))/2.0*r -(sub(5))) * l/2.0 + i3;
+                    sub(9)  := sub(0) - sub(3);
+                    sub(10) := sub(1) - sub(4);
+                    sub(11) := sub(2) - sub(5);
+
+                    mult_add(0) := sub(9)  - sub(6)/2.0*r  ;
+                    mult_add(1) := sub(10) - sub(7)/2.0*r  ;
+                    mult_add(2) := sub(11) - sub(8)/2.0*r  ;
+
+                    i1   <= ( mult_add(0)) * l/2.0 + i1;
+                    i2   <= ( mult_add(1)) * l/2.0 + i2;
+                    i3   <= ( mult_add(2)) * l/2.0 + i3;
 
                     -- i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
                     -- i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
