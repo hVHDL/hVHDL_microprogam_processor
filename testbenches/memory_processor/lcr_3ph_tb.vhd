@@ -49,7 +49,10 @@ architecture vunit_simulation of lcr_3ph_tb is
     signal u2 : real := 0.0;
     signal u3 : real := 0.0;
 
-    signal r : real := 1.5;
+    signal simtime : real := 0.0;
+    constant timestep : real := 100.0e-6;
+
+    signal r : real := 0.65;
     signal l : real := 0.01;
     signal c : real := 0.01;
     signal sequencer : natural := 0;
@@ -132,16 +135,17 @@ architecture vunit_simulation of lcr_3ph_tb is
 
     signal usum : real := 0.0;
 
+
 begin
 
 ------------------------------------------------------------------------
-    simtime : process
+    process
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
-    end process simtime;	
+    end process;
 
     simulator_clock <= not simulator_clock after clock_period/2.0;
 ------------------------------------------------------------------------
@@ -152,6 +156,10 @@ begin
         variable sub1 : real := 0.0;
         variable mac2 : real := 0.0;
         variable mac3 : real := 0.0;
+        variable ul1 : real := 0.0;
+        type realarray is array (natural range <>) of real;
+        variable add : realarray(0 to 7) := (others => 0.0);
+        variable sub : realarray(0 to 7) := (others => 0.0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -171,17 +179,27 @@ begin
             --     WHEN others => -- do nothing
             -- end CASE;
             CASE sequencer is
-                WHEN 0 => 
-                    i1   <= ((+u1-u2-u3) - ((+uc1-uc2-uc3))) * l/2.0 + i1;
-                    i2   <= ((-u1+u2-u3) - ((-uc1+uc2-uc3))) * l/2.0 + i2;
-                    i3   <= ((-u1-u2+u3) - ((-uc1-uc2+uc3))) * l/2.0 + i3;
-                    sequencer <= sequencer + 1;
-                    -- phase <= (phase + 2.0*math_pi/250.0) mod (2.0*math_pi);
                 WHEN 1 => 
-                    uc1   <= ((+i1-i2-i3 ) - uc1/r) * c/2.0 + uc1;
-                    uc2   <= ((-i1+i2-i3 ) - uc2/r) * c/2.0 + uc2;
-                    uc3   <= ((-i1-i2+i3 ) - uc3/r) * c/2.0 + uc3;
+                    sub(0) := +u1-u2;
 
+                    i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
+                    i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
+                    i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
+
+                WHEN 0 => 
+                    uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
+                    uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
+                    uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
+
+                    simtime <= simtime + timestep;
+                    sequencer <= sequencer + 1;
+                WHEN others => -- do nothing
+            end CASE;
+
+            CASE sequencer is
+                WHEN 0 =>
+                    phase <= (phase + 2.0*math_pi/250.0) mod (2.0*math_pi);
+                WHEN 1 =>
                     u1 <= sin((phase+2.0*math_pi/3.0) mod (2.0*math_pi));
                     u2 <= sin(phase);
                     u3 <= sin((phase-2.0*math_pi/3.0) mod (2.0*math_pi));
