@@ -166,20 +166,6 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
-            -- CASE sequencer is
-            --     WHEN 0 => 
-            --         mac1 := current * r + voltage;
-            --         mac2 := current * c + voltage;
-            --
-            --         sub1 := input_voltage - mac1;
-            --
-            --         mac3 := sub1 * l + current;
-            --
-            --         current   <= mac3;
-            --         voltage   <= mac2;
-            --         sequencer <= sequencer + 1;
-            --     WHEN others => -- do nothing
-            -- end CASE;
             CASE sequencer is
                 WHEN 1 => 
                     -- sequential block 
