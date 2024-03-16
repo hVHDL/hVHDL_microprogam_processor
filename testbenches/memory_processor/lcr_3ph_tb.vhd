@@ -158,8 +158,9 @@ begin
         variable mac3 : real := 0.0;
         variable ul1 : real := 0.0;
         type realarray is array (natural range <>) of real;
-        variable add : realarray(0 to 7) := (others => 0.0);
-        variable sub : realarray(0 to 7) := (others => 0.0);
+        variable add : realarray(0 to 15) := (others => 0.0);
+        variable sub : realarray(0 to 15) := (others => 0.0);
+        variable mult_add : realarray(0 to 15) := (others => 0.0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
@@ -180,16 +181,56 @@ begin
             -- end CASE;
             CASE sequencer is
                 WHEN 1 => 
-                    sub(0) := +u1-u2;
 
-                    i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
-                    i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
-                    i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
+                    -- pipelined block 1
+                    add(0) := u1 + u2;
+                    add(1) := u2 + u3;
+                    add(2) := u1 + u3;
 
+                    add(3) := u1 + u2;
+                    add(4) := u2 + u3;
+                    add(5) := u1 + u3;
+
+                    add(6) := uc1 + uc2;
+                    add(7) := uc2 + uc3;
+                    add(8) := uc1 + uc3;
+
+                    add(9)  := uc1 + uc2;
+                    add(10) := uc2 + uc3;
+                    add(11) := uc1 + uc3;
+
+                    add(9)  := i1 + i2;
+                    add(10) := i2 + i3;
+                    add(11) := i1 + i3;
+
+                    -- pipelined block 2
+                    sub(0) := u1 - add(1);
+                    sub(1) := u2 - add(2);
+                    sub(2) := u3 - add(0);
+
+                    sub(3) := uc1 - add(7);
+                    sub(4) := uc2 - add(8);
+                    sub(5) := uc3 - add(6);
+
+                    sub(6) := i1 - add(10);
+                    sub(7) := i2 - add(11);
+                    sub(8) := i3 - add(9);
+
+                    i1   <= (sub(0) - (sub(6))/2.0*r -(sub(3))) * l/2.0 + i1;
+                    i2   <= (sub(1) - (sub(7))/2.0*r -(sub(4))) * l/2.0 + i2;
+                    i3   <= (sub(2) - (sub(8))/2.0*r -(sub(5))) * l/2.0 + i3;
+
+                    -- i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
+                    -- i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
+                    -- i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
                 WHEN 0 => 
                     uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
                     uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
+
+                    -- uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
+                    -- uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
+                    -- uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
 
                     simtime <= simtime + timestep;
                     sequencer <= sequencer + 1;
