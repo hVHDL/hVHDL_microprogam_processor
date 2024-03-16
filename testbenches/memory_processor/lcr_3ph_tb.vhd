@@ -199,9 +199,9 @@ begin
                     add(10) := uc2 + uc3;
                     add(11) := uc1 + uc3;
 
-                    add(9)  := i1 + i2;
-                    add(10) := i2 + i3;
-                    add(11) := i1 + i3;
+                    add(12) := i1 + i2;
+                    add(13) := i2 + i3;
+                    add(14) := i1 + i3;
 
                     -- pipelined block 2
                     sub(0) := u1 - add(1);
@@ -212,9 +212,9 @@ begin
                     sub(4) := uc2 - add(8);
                     sub(5) := uc3 - add(6);
 
-                    sub(6) := i1 - add(10);
-                    sub(7) := i2 - add(11);
-                    sub(8) := i3 - add(9);
+                    sub(6) := i1 - add(13);
+                    sub(7) := i2 - add(14);
+                    sub(8) := i3 - add(12);
 
                     i1   <= (sub(0) - (sub(6))/2.0*r -(sub(3))) * l/2.0 + i1;
                     i2   <= (sub(1) - (sub(7))/2.0*r -(sub(4))) * l/2.0 + i2;
