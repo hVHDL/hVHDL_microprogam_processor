@@ -220,21 +220,30 @@ begin
                     sub(10) := sub(1) - sub(4);
                     sub(11) := sub(2) - sub(5);
 
+                    -- pipelined block 3
                     mult_add(0) := sub(9)  - sub(6)/2.0*r  ;
                     mult_add(1) := sub(10) - sub(7)/2.0*r  ;
                     mult_add(2) := sub(11) - sub(8)/2.0*r  ;
 
-                    i1   <= ( mult_add(0)) * l/2.0 + i1;
-                    i2   <= ( mult_add(1)) * l/2.0 + i2;
-                    i3   <= ( mult_add(2)) * l/2.0 + i3;
+                    -- pipelined block 4
+                    mult_add(3) := mult_add(0) * l/2.0 + i1;
+                    mult_add(4) := mult_add(1) * l/2.0 + i2;
+                    mult_add(5) := mult_add(2) * l/2.0 + i3;
+
+                    -- pipelined block 5
+
+                    i1   <= mult_add(3);
+                    i2   <= mult_add(4);
+                    i3   <= mult_add(5);
+
 
                     -- i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
                     -- i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
                     -- i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
                 WHEN 0 => 
-                    uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
-                    uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
-                    uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
+                    uc1   <= ( +mult_add(3) - mult_add(4) - mult_add(5) ) * c/2.0 + uc1;
+                    uc2   <= ( -mult_add(3) + mult_add(4) - mult_add(5) ) * c/2.0 + uc2;
+                    uc3   <= ( -mult_add(3) - mult_add(4) + mult_add(5) ) * c/2.0 + uc3;
 
                     -- uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     -- uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
