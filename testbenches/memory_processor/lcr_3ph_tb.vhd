@@ -42,6 +42,13 @@ architecture vunit_simulation of lcr_3ph_tb is
     signal uc2 : real := 0.0;
     signal uc3 : real := 0.0;
 
+    signal i1_ref : real := 0.0;
+    signal i2_ref : real := 0.0;
+    signal i3_ref : real := 0.0;
+    signal uc1_ref : real := 0.0;
+    signal uc2_ref : real := 0.0;
+    signal uc3_ref : real := 0.0;
+
     constant init_phase : real := 0.4;
     signal phase : real := 0.7*2.0*math_pi;
 
@@ -168,40 +175,28 @@ begin
 
             CASE sequencer is
                 WHEN 1 => 
-                    -- sequential block 
-                    mult_add(0) := -r/2.0*i1 + u1;
-                    mult_add(1) := -r/2.0*i2 + u2;
-                    mult_add(2) := -r/2.0*i3 + u3;
-
-                    mult_add(3) := uc3*l/2.0 + i1;
-                    mult_add(4) := uc1*l/2.0 + i2;
-                    mult_add(5) := uc2*l/2.0 + i3;
-
-                    mult(0) := uc1*l/2.0;
-                    mult(1) := uc2*l/2.0;
-                    mult(2) := uc3*l/2.0;
-
-                    -- pipelined_block 1
-                    mult_add(6)  :=  mult_add(0)*l/2.0 - mult(0);
-                    mult_add(7)  := -mult_add(1)*l/2.0 + mult(1);
-                    mult_add(8)  := -mult_add(2)*l/2.0 + mult_add(3);
-
-                    i1 <= mult_add(6)  + mult_add(7) + mult_add(8);
-                    i2 <= (-u1+u2-u3 - (-i1+i2-i3 )/2.0*r) * l/2.0          + mult_add(4) - mult(1) + mult(2);
-                    i3 <= (-u1-u2+u3 - (-i1-i2+i3 )/2.0*r) * l/2.0          + mult(0) + mult_add(5) - mult(2);
-
-                    -- i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
-                    -- i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
-                    -- i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
-
-                WHEN 0 => 
                     uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
                     uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
 
+                    uc1_ref   <= ((+i1_ref-i2_ref-i3 ) ) * c/2.0 + uc1_ref;
+                    uc2_ref   <= ((-i1_ref+i2_ref-i3 ) ) * c/2.0 + uc2_ref;
+                    uc3_ref   <= ((-i1_ref-i2_ref+i3 ) ) * c/2.0 + uc3_ref;
+
                     -- uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     -- uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
                     -- uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
+
+                WHEN 0 => 
+                    
+                    i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
+                    i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
+                    i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
+
+                    i1_ref   <= ((+u1-u2-u3) - (+i1_ref-i2_ref-i3_ref )/2.0*r -((+uc1_ref-uc2_ref-uc3_ref))) * l/2.0 + i1_ref;
+                    i2_ref   <= ((-u1+u2-u3) - (-i1_ref+i2_ref-i3_ref )/2.0*r -((-uc1_ref+uc2_ref-uc3_ref))) * l/2.0 + i2_ref;
+                    i3_ref   <= ((-u1-u2+u3) - (-i1_ref-i2_ref+i3_ref )/2.0*r -((-uc1_ref-uc2_ref+uc3_ref))) * l/2.0 + i3_ref;
+
 
                     simtime <= simtime + timestep;
                     sequencer <= sequencer + 1;
@@ -222,6 +217,13 @@ begin
 
             if sequencer = 1 then
                 sequencer <= 0;
+                check_equal(i1,i1_ref, "i1", 1.0e-6);
+                check_equal(i2,i2_ref, "i2", 1.0e-6);
+                check_equal(i3,i3_ref, "i3", 1.0e-6);
+
+                check_equal(uc1,uc1_ref, "uc1", 1.0e-6);
+                check_equal(uc2,uc2_ref, "uc2", 1.0e-6);
+                check_equal(uc3,uc3_ref, "uc3", 1.0e-6);
             end if;
 
             --------------------
