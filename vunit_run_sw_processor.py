@@ -77,6 +77,7 @@ float.add_source_files(ROOT / "testbenches/memory_processor/memory_processor_tb.
 float.add_source_files(ROOT / "testbenches/memory_processor/lcr_simulation_tb.vhd")
 
 float.add_source_files(ROOT / "testbenches/memory_processor/lcr_3ph_tb.vhd")
+float.add_source_files(ROOT / "testbenches/memory_processor/lcr_simulation_rk4_tb.vhd")
 
 
 VU.main()

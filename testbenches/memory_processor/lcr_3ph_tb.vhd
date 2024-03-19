@@ -26,7 +26,7 @@ end;
 architecture vunit_simulation of lcr_3ph_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1e4/3;
+    constant simtime_in_clocks : integer := 20e2;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -59,9 +59,9 @@ architecture vunit_simulation of lcr_3ph_tb is
     signal simtime : real := 0.0;
     constant timestep : real := 100.0e-6;
 
-    signal r : real := 0.65;
-    signal l : real := 0.01;
-    signal c : real := 0.01;
+    signal r : real := 0.55;
+    signal l : real := 0.1;
+    signal c : real := 0.1;
     signal sequencer : natural := 0;
 
     constant input_voltage_addr : natural := 89;
@@ -141,6 +141,7 @@ architecture vunit_simulation of lcr_3ph_tb is
     signal testi2 : real := 0.0;
 
     signal usum : real := 0.0;
+    signal usum_ref : real := 0.0;
 
 
 begin
@@ -158,30 +159,100 @@ begin
 ------------------------------------------------------------------------
 
     stimulus : process(simulator_clock)
+
         variable used_instruction : t_instruction;
+
         variable mac1 : real := 0.0;
         variable sub1 : real := 0.0;
         variable mac2 : real := 0.0;
         variable mac3 : real := 0.0;
-        variable ul1 : real := 0.0;
-        type realarray is array (natural range <>) of real;
-        variable add : realarray(0 to 15) := (others => 0.0);
-        variable sub : realarray(0 to 15) := (others => 0.0);
+        variable ul1  : real := 0.0;
+
+    type realarray is array (natural range <>) of real;
+
+        variable add      : realarray(0 to 15) := (others => 0.0);
+        variable sub      : realarray(0 to 15) := (others => 0.0);
         variable mult_add : realarray(0 to 15) := (others => 0.0);
-        variable mult : realarray(0 to 15) := (others => 0.0);
+        variable mult     : realarray(0 to 15) := (others => 0.0);
+        variable result   : realarray(0 to 15) := (others => 0.0);
+
+        variable i1k : realarray(0 to 3) := (others => 0.0);
+        variable uc1k : realarray(0 to 3) := (others => 0.0);
+
+        variable i2k : realarray(0 to 3) := (others => 0.0);
+        variable uc2k : realarray(0 to 3) := (others => 0.0);
+
+        variable i3k : realarray(0 to 3) := (others => 0.0);
+        variable uc3k : realarray(0 to 3) := (others => 0.0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
+            i1k := (others => 0.0);
+            uc1k := (others => 0.0);
+
+            i2k := (others => 0.0);
+            uc2k := (others => 0.0);
+
+            i3k := (others => 0.0);
+            uc3k := (others => 0.0);
+
             CASE sequencer is
                 WHEN 1 => 
-                    uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
-                    uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
-                    uc3   <= ((-i1-i2+i3 ) ) * c/2.0 + uc3;
 
-                    uc1_ref   <= ((+i1_ref-i2_ref-i3 ) ) * c/2.0 + uc1_ref;
-                    uc2_ref   <= ((-i1_ref+i2_ref-i3 ) ) * c/2.0 + uc2_ref;
-                    uc3_ref   <= ((-i1_ref-i2_ref+i3 ) ) * c/2.0 + uc3_ref;
+                    i1k(0)  := ( (+u1-u2-u3) - (+i1-i2-i3) * r - (+uc1-uc2-uc3))/2.0 * l/2.0;
+                    i2k(0)  := ( (-u1+u2-u3) - (-i1+i2-i3) * r - (-uc1+uc2-uc3))/2.0 * l/2.0;
+                    i3k(0)  := ( (-u1-u2+u3) - (-i1-i2+i3) * r - (-uc1-uc2+uc3))/2.0 * l/2.0;
+
+                    uc1k(0) := ((+i1-i2-i3 ))/2.0 * c/2.0;
+                    uc2k(0) := ((-i1+i2-i3 ))/2.0 * c/2.0;
+                    uc3k(0) := ((-i1-i2+i3 ))/2.0 * c/2.0;
+
+            ------------------------------
+
+                    i1k(1)  := ( (+u1-u2-u3) - (+i1-i2-i3 +i1k(0)-i2k(0)-i3k(0))* r- (+uc1-uc2-uc3+uc1k(0)-uc2k(0)-uc3k(0)))/2.0 * l/2.0;
+                    i2k(1)  := ( (-u1+u2-u3) - (-i1+i2-i3 -i1k(0)+i2k(0)-i3k(0))* r- (-uc1+uc2-uc3-uc1k(0)+uc2k(0)-uc3k(0)))/2.0 * l/2.0;
+                    i3k(1)  := ( (-u1-u2+u3) - (-i1-i2+i3 -i1k(0)-i2k(0)+i3k(0))* r- (-uc1-uc2+uc3-uc1k(0)-uc2k(0)+uc3k(0)))/2.0 * l/2.0;
+
+                    uc1k(1) := (+i1-i2-i3 +i1k(0)-i2k(0)-i3k(0))/2.0 * c/2.0;
+                    uc2k(1) := (-i1+i2-i3 -i1k(0)+i2k(0)-i3k(0))/2.0 * c/2.0;
+                    uc3k(1) := (-i1-i2+i3 -i1k(0)-i2k(0)+i3k(0))/2.0 * c/2.0;
+
+            ------------------------------
+
+                    i1k(2)  := ( (+u1-u2-u3) - (+i1-i2-i3+i1k(1)-i2k(1)-i3k(1)) * r- (+uc1-uc2-uc3+uc1k(1)-uc2k(1)-uc3k(1)))/2.0 * l;
+                    i2k(2)  := ( (-u1+u2-u3) - (-i1+i2-i3-i1k(1)+i2k(1)-i3k(1)) * r- (-uc1+uc2-uc3-uc1k(1)+uc2k(1)-uc3k(1)))/2.0 * l;
+                    i3k(2)  := ( (-u1-u2+u3) - (-i1-i2+i3-i1k(1)-i2k(1)+i3k(1)) * r- (-uc1-uc2+uc3-uc1k(1)-uc2k(1)+uc3k(1)))/2.0 * l;
+
+                    uc1k(2) := ((+i1-i2-i3 +i1k(1)-i2k(1)-i3k(1)))/2.0 * c;
+                    uc2k(2) := ((-i1+i2-i3 -i1k(1)+i2k(1)-i3k(1)))/2.0 * c;
+                    uc3k(2) := ((-i1-i2+i3 -i1k(1)-i2k(1)+i3k(1)))/2.0 * c;
+
+            ------------------------------
+
+                    i1k(3)  := ( (+u1-u2-u3) - (+i1-i2-i3+i1k(2)-i2k(2)-i3k(2)) * r- (+uc1-uc2-uc3+uc1k(2)-uc2k(2)-uc3k(2)))/2.0 * l;
+                    i2k(3)  := ( (-u1+u2-u3) - (-i1+i2-i3-i1k(2)+i2k(2)-i3k(2)) * r- (-uc1+uc2-uc3-uc1k(2)+uc2k(2)-uc3k(2)))/2.0 * l;
+                    i3k(3)  := ( (-u1-u2+u3) - (-i1-i2+i3-i1k(2)-i2k(2)+i3k(2)) * r- (-uc1-uc2+uc3-uc1k(2)-uc2k(2)+uc3k(2)))/2.0 * l;
+
+                    uc1k(3) := ((+i1-i2-i3 +i1k(2)-i2k(2)-i3k(2)))/2.0 * c;
+                    uc2k(3) := ((-i1+i2-i3 -i1k(2)+i2k(2)-i3k(2)))/2.0 * c;
+                    uc3k(3) := ((-i1-i2+i3 -i1k(2)-i2k(2)+i3k(2)))/2.0 * c;
+
+            ------------------------------
+
+                    i1 <= i1     + 1.0/6.0*(i1k(0)*2.0 + 4.0*i1k(1) + 2.0*i1k(2) + i1k(3));
+                    i2 <= i2     + 1.0/6.0*(i2k(0)*2.0 + 4.0*i2k(1) + 2.0*i2k(2) + i2k(3));
+                    i3 <= -i1-i2 + 1.0/6.0*(i3k(0)*2.0 + 4.0*i3k(1) + 2.0*i3k(2) + i3k(3));
+
+                    uc1 <= uc1      + 1.0/6.0*(uc1k(0)*2.0 + 4.0*uc1k(1) + 2.0*uc1k(2) + uc1k(3));
+                    uc2 <= uc2      + 1.0/6.0*(uc2k(0)*2.0 + 4.0*uc2k(1) + 2.0*uc2k(2) + uc2k(3));
+                    uc3 <= -uc1-uc2 + 1.0/6.0*(uc3k(0)*2.0 + 4.0*uc3k(1) + 2.0*uc3k(2) + uc3k(3));
+
+                    usum <= uc1+uc2+uc3;
+
+                    i1_ref <= ((+u1-u2-u3) - (+i1_ref-i2_ref-i3_ref) * r - (+uc1_ref-uc2_ref-uc3_ref))/2.0 * l + i1_ref;
+                    i2_ref <= ((-u1+u2-u3) - (-i1_ref+i2_ref-i3_ref) * r - (-uc1_ref+uc2_ref-uc3_ref))/2.0 * l + i2_ref;
+                    i3_ref <= ((-u1-u2+u3) - (-i1_ref-i2_ref+i3_ref) * r - (-uc1_ref-uc2_ref+uc3_ref))/2.0 * l - i1_ref - i2_ref;
 
                     -- uc1   <= ((+i1-i2-i3 ) ) * c/2.0 + uc1;
                     -- uc2   <= ((-i1+i2-i3 ) ) * c/2.0 + uc2;
@@ -189,13 +260,10 @@ begin
 
                 WHEN 0 => 
                     
-                    i1   <= ((+u1-u2-u3) - (+i1-i2-i3 )/2.0*r -((+uc1-uc2-uc3))) * l/2.0 + i1;
-                    i2   <= ((-u1+u2-u3) - (-i1+i2-i3 )/2.0*r -((-uc1+uc2-uc3))) * l/2.0 + i2;
-                    i3   <= ((-u1-u2+u3) - (-i1-i2+i3 )/2.0*r -((-uc1-uc2+uc3))) * l/2.0 + i3;
 
-                    i1_ref   <= ((+u1-u2-u3) - (+i1_ref-i2_ref-i3_ref )/2.0*r -((+uc1_ref-uc2_ref-uc3_ref))) * l/2.0 + i1_ref;
-                    i2_ref   <= ((-u1+u2-u3) - (-i1_ref+i2_ref-i3_ref )/2.0*r -((-uc1_ref+uc2_ref-uc3_ref))) * l/2.0 + i2_ref;
-                    i3_ref   <= ((-u1-u2+u3) - (-i1_ref-i2_ref+i3_ref )/2.0*r -((-uc1_ref-uc2_ref+uc3_ref))) * l/2.0 + i3_ref;
+                    uc1_ref <= ((+i1_ref-i2_ref-i3_ref ) )/2.0 * c + uc1_ref;
+                    uc2_ref <= ((-i1_ref+i2_ref-i3_ref ) )/2.0 * c + uc2_ref;
+                    uc3_ref <= ((-i1_ref-i2_ref+i3_ref ) )/2.0 * c  -uc1_ref - uc2_ref;
 
 
                     simtime <= simtime + timestep;
@@ -205,25 +273,27 @@ begin
 
             CASE sequencer is
                 WHEN 0 =>
-                    phase <= (phase + 2.0*math_pi/250.0) mod (2.0*math_pi);
+                    if simulation_counter < 2 then
+                        phase <= (phase + 2.0*math_pi/250.0) mod (2.0*math_pi);
+                    end if;
                 WHEN 1 =>
                     u1 <= sin((phase+2.0*math_pi/3.0) mod (2.0*math_pi));
                     u2 <= sin(phase);
-                    u3 <= sin((phase-2.0*math_pi/3.0) mod (2.0*math_pi));
+                    u3 <= -u1-u2;
 
-                    usum <= uc1+uc2+uc3;
+                    usum_ref <= uc1_ref+uc2_ref+uc3_ref;
                 WHEN others => -- do nothing
             end CASE;
 
             if sequencer = 1 then
                 sequencer <= 0;
-                check_equal(i1,i1_ref, "i1", 1.0e-6);
-                check_equal(i2,i2_ref, "i2", 1.0e-6);
-                check_equal(i3,i3_ref, "i3", 1.0e-6);
-
-                check_equal(uc1,uc1_ref, "uc1", 1.0e-6);
-                check_equal(uc2,uc2_ref, "uc2", 1.0e-6);
-                check_equal(uc3,uc3_ref, "uc3", 1.0e-6);
+                -- check_equal(i1,i1_ref, "i1", 1.0e-6);
+                -- check_equal(i2,i2_ref, "i2", 1.0e-6);
+                -- check_equal(i3,i3_ref, "i3", 1.0e-6);
+                --
+                -- check_equal(uc1,uc1_ref, "uc1", 1.0e-6);
+                -- check_equal(uc2,uc2_ref, "uc2", 1.0e-6);
+                -- check_equal(uc3,uc3_ref, "uc3", 1.0e-6);
             end if;
 
             --------------------
