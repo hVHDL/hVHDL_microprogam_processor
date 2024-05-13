@@ -38,6 +38,10 @@ package simple_processor_pkg is
     function processor_is_enabled (
         self : simple_processor_record)
     return boolean;
+------------------------------------------------------------------------
+    procedure request_processor (
+        signal self : out simple_processor_record;
+        program_start : in natural);
 
 end package simple_processor_pkg;
 
@@ -109,6 +113,16 @@ package body simple_processor_pkg is
     ) is
     begin
         self.program_counter <= 0;
+        self.processor_enabled <= true;
+    end request_processor;
+
+    procedure request_processor
+    (
+        signal self : out simple_processor_record;
+        program_start : in natural
+    ) is
+    begin
+        self.program_counter <= program_start;
         self.processor_enabled <= true;
     end request_processor;
 
