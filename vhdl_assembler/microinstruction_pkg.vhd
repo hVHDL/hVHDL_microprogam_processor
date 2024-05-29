@@ -13,6 +13,17 @@ package microinstruction_pkg is
     type instruction_pipeline_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array is array (natural range <>) of t_instruction;
 
+
+------------------------------------------------------------------------
+    -- these are used to help with using internal variables in microprograms
+    type variable_array is array (natural range <>) of integer;
+
+    function init_variables ( number_of_variables : natural)
+        return variable_array;
+
+    function "+" ( left : variable_array; right : integer)
+        return variable_array;
+
 ------------------------------------------------------------------------
     function write_instruction ( command : in t_command)
         return t_instruction;
@@ -338,5 +349,34 @@ package body microinstruction_pkg is
     begin
         return pipelined_block(program_array'(0=>instruction));
     end pipelined_block;
+------------------------------------------------------------------------
+    function "+"
+    (
+        left : variable_array; right : integer
+    )
+    return variable_array
+    is
+        variable retval : variable_array(left'range);
+    begin
+        for i in left'range loop
+            retval(i) := left(i) + right;
+        end loop;
+        return retval;
+    end "+";
+    function init_variables
+    (
+        number_of_variables : natural
+    )
+    return variable_array
+    is
+        variable retval : variable_array(0 to number_of_variables-1) := (others => 0);
+    begin
+        for i in retval'range loop
+            retval(i) := i;
+        end loop;
+
+        return retval;
+        
+    end init_variables;
 ------------------------------------------------------------------------
 end package body microinstruction_pkg;
