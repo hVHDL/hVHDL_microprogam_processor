@@ -24,11 +24,8 @@ package processor_configuration_pkg is
         sub         ,
         mpy         ,
         mpy_add     ,
-
-        mem_sub     ,
-        mem_add     ,
-        mem_mpy     ,
-        mem_mpy_add ,
+        neg_mpy_add ,
+        mpy_sub     ,
 
         save        ,
         load

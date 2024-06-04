@@ -11,6 +11,7 @@ LIBRARY ieee  ;
     use work.float_type_definitions_pkg.all;
     use work.float_to_real_conversions_pkg.all;
     use work.float_example_program_pkg.all;
+    use work.float_arithmetic_operations_pkg.all;
 
 package memory_processing_pkg is
 
@@ -61,7 +62,8 @@ package body memory_processing_pkg is
             WHEN mpy =>
                 request_data_from_ram(ram_read_data_in   , get_arg1(used_instruction));
                 request_data_from_ram(ram_read_2_data_in , get_arg2(used_instruction));
-            WHEN mpy_add =>
+
+            WHEN mpy_add | mpy_sub | neg_mpy_add =>
                 request_data_from_ram(ram_read_data_in   , get_arg1(used_instruction));
                 request_data_from_ram(ram_read_2_data_in , get_arg2(used_instruction));
                 request_data_from_ram(ram_read_3_data_in , get_arg3(used_instruction));
@@ -95,12 +97,22 @@ package body memory_processing_pkg is
                     to_float(get_ram_data(ram_read_data_out))   ,
                     to_float(get_ram_data(ram_read_2_data_out)) ,
                     to_float(get_ram_data(ram_read_3_data_out)));
+            WHEN neg_mpy_add =>
+                madd(float_alu                                  ,
+                    -to_float(get_ram_data(ram_read_data_out))   ,
+                    to_float(get_ram_data(ram_read_2_data_out)) ,
+                    to_float(get_ram_data(ram_read_3_data_out)));
+            WHEN mpy_sub =>
+                madd(float_alu                                  ,
+                    to_float(get_ram_data(ram_read_data_out))   ,
+                    to_float(get_ram_data(ram_read_2_data_out)) ,
+                    -to_float(get_ram_data(ram_read_3_data_out)));
             WHEN others => -- do nothing
         end CASE;
     ----------------------
         used_instruction := self.instruction_pipeline(3 + alu_timing.madd_pipeline_depth-1);
         CASE decode(used_instruction) is
-            WHEN add | sub | mpy | mpy_add => 
+            WHEN add | sub | mpy | mpy_add | mpy_sub | neg_mpy_add => 
                 write_data_to_ram(ram_write_port, get_dest(used_instruction), to_std_logic_vector(get_add_result(float_alu)));
             WHEN others => -- do nothing
         end CASE;
