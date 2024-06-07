@@ -7,16 +7,12 @@ library ieee;
 
 package processor_configuration_pkg is
 
-    function get_number_of_pipeline_stages ( number_of_stages : natural)
-        return natural;
-
     constant instruction_bit_width     : natural := ram_bit_width;
     constant register_bit_width        : natural := ram_bit_width;
 
     constant number_of_registers       : natural := 5;
-    constant number_of_pipeline_stages : natural := 17;
-
-
+    constant number_of_pipeline_stages : natural := 10 + work.denormalizer_pipeline_pkg.pipeline_configuration 
+                                                       + work.normalizer_pipeline_pkg.normalizer_pipeline_configuration;
     type t_command is (
         program_end ,
         nop         ,
@@ -39,27 +35,3 @@ package processor_configuration_pkg is
     subtype long_arg is std_logic_vector(27 downto 0);
 
 end package processor_configuration_pkg;
-
--- move this to separate source at some point
-
-package body processor_configuration_pkg is
-
-
-    function get_number_of_pipeline_stages
-    (
-        number_of_stages : natural
-    )
-    return natural
-    is
-        constant min_number_of_stages : natural := 17;
-        variable retval : natural := number_of_stages;
-
-    begin
-        if number_of_stages < min_number_of_stages then
-            retval := min_number_of_stages;
-        end if;
-
-        return retval;
-    end get_number_of_pipeline_stages;
-
-end package body processor_configuration_pkg;
