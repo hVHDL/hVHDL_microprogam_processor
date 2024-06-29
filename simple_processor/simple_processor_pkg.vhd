@@ -41,7 +41,7 @@ package simple_processor_pkg is
 ------------------------------------------------------------------------
     procedure request_processor (
         signal self : out simple_processor_record;
-        program_start : in natural);
+        program_start_address : in natural);
 
 end package simple_processor_pkg;
 
@@ -119,10 +119,10 @@ package body simple_processor_pkg is
     procedure request_processor
     (
         signal self : out simple_processor_record;
-        program_start : in natural
+        program_start_address : in natural
     ) is
     begin
-        self.program_counter <= program_start;
+        self.program_counter <= program_start_address;
         self.processor_enabled <= true;
     end request_processor;
 
