@@ -54,6 +54,9 @@ float.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_pk
 float.add_source_files(ROOT / "processor_configuration/float_processor_ram_width_pkg.vhd")
 
 float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_port_ram_pkg.vhd")
+float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/multi_port_ram_entity.vhd")
+float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_multi_port_ram.vhd")
+
 float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/ram_read_x2_write_x1.vhd")
 float.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/arch_sim_read_x2_write_x1.vhd")
 
