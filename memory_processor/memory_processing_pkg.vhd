@@ -18,7 +18,7 @@ package memory_processing_pkg is
     procedure create_memory_process_pipeline (
         signal self                     : inout simple_processor_record ;
         signal float_alu                : inout float_alu_record        ;
-        variable used_instruction       : inout t_instruction           ;
+        input_instruction               : in t_instruction           ;
         signal ram_read_instruction_out : in ram_read_out_record        ;
         signal ram_read_data_in         : out ram_read_in_record        ;
         signal ram_read_data_out        : in ram_read_out_record        ;
@@ -37,7 +37,7 @@ package body memory_processing_pkg is
     (
         signal self                     : inout simple_processor_record ;
         signal float_alu                : inout float_alu_record        ;
-        variable used_instruction       : inout t_instruction           ;
+        input_instruction               : in t_instruction           ;
         signal ram_read_instruction_out : in ram_read_out_record        ;
         signal ram_read_data_in         : out ram_read_in_record        ;
         signal ram_read_data_out        : in ram_read_out_record        ;
@@ -48,6 +48,7 @@ package body memory_processing_pkg is
         signal ram_write_port           : out ram_write_in_record
         
     ) is
+        variable used_instruction       : t_instruction := input_instruction;
     begin
         --stage -1
         CASE decode(used_instruction) is
