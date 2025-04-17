@@ -78,12 +78,12 @@ package microinstruction_pkg is
     return t_instruction;
 
 ------------------------------------------------------------------------
-    function get_sigle_argument (
+    function get_single_argument (
         input_register : std_logic_vector )
     return t_instruction;
 
 ------------------------------------------------------------------------
-    function get_sigle_argument (
+    function get_single_argument (
         input_register : std_logic_vector )
     return natural;
 ------------------------------------------------------------------------
@@ -285,7 +285,7 @@ package body microinstruction_pkg is
     end get_long_argument;
 
 ------------------------------------------------------------------------
-    function get_sigle_argument
+    function get_single_argument
     (
         input_register : std_logic_vector 
     )
@@ -296,10 +296,10 @@ package body microinstruction_pkg is
         retval(ref'range) := input_register(ref'range);
         return retval;
         
-    end get_sigle_argument;
+    end get_single_argument;
 
 ------------------------------------------------------------------------
-    function get_sigle_argument
+    function get_single_argument
     (
         input_register : std_logic_vector 
     )
@@ -310,7 +310,7 @@ package body microinstruction_pkg is
         retval(ref'range) := input_register(ref'range);
         return to_integer(unsigned(retval));
         
-    end get_sigle_argument;
+    end get_single_argument;
 ------------------------------------------------------------------------
     function get_instruction
     (
@@ -385,6 +385,7 @@ package body microinstruction_pkg is
         end loop;
         return retval;
     end "+";
+----
     function init_variables
     (
         number_of_variables : natural
