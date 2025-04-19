@@ -3,12 +3,13 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-package microinstruction_pkg is
+package generic_microinstruction_pkg is
     generic( ram_bit_width             : natural := 32
             ;instruction_bit_width     : natural := ram_bit_width
             ;register_bit_width        : natural := ram_bit_width
             ;number_of_registers       : natural := 5
-            ;number_of_pipeline_stages : natural := 10);
+            ;number_of_pipeline_stages : natural := 10
+    );
 
     type t_command is (
         program_end ,
@@ -119,9 +120,9 @@ package microinstruction_pkg is
     function pipelined_block ( instruction : t_instruction)
         return program_array;
 ------------------------------------------------------------------------
-end package microinstruction_pkg;
+end package generic_microinstruction_pkg;
 
-package body microinstruction_pkg is
+package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
 
@@ -402,4 +403,4 @@ package body microinstruction_pkg is
         
     end init_variables;
 ------------------------------------------------------------------------
-end package body microinstruction_pkg;
+end package body generic_microinstruction_pkg;

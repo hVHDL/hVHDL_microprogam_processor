@@ -8,6 +8,12 @@ library ieee;
     -- use work.processor_configuration_pkg.all;
 
 package microprogram_processor_pkg is
+    generic(
+        package mpram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
+        ;package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+    );
+    use mpram_pkg.all;
+    use microinstruction_pkg.all;
 
     alias register_bit_width is work.processor_configuration_pkg.register_bit_width;
 
