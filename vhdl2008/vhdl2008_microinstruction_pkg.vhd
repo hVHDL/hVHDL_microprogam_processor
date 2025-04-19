@@ -4,12 +4,19 @@ library ieee;
     use ieee.numeric_std.all;
 
 package generic_microinstruction_pkg is
-    generic( ram_bit_width             : natural := 32
-            ;instruction_bit_width     : natural := ram_bit_width
-            ;register_bit_width        : natural := ram_bit_width
-            ;number_of_registers       : natural := 5
-            ;number_of_pipeline_stages : natural := 10
+    generic(g_ram_bit_width             : natural := 32
+            ;g_instruction_bit_width     : natural := g_ram_bit_width
+            ;g_register_bit_width        : natural := g_ram_bit_width
+            ;g_number_of_registers       : natural := 5
+            ;g_number_of_pipeline_stages : natural := 10
+
     );
+
+    alias ram_bit_width is g_ram_bit_width;
+    alias instruction_bit_width is g_instruction_bit_width    ;
+    alias register_bit_width is g_register_bit_width       ;
+    alias number_of_registers is g_number_of_registers      ;
+    alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
     type t_command is (
         program_end ,

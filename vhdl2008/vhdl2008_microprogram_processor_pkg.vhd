@@ -15,8 +15,6 @@ package microprogram_processor_pkg is
     use mpram_pkg.all;
     use microinstruction_pkg.all;
 
-    alias register_bit_width is work.processor_configuration_pkg.register_bit_width;
-
     type microprogram_processor_record is record
         processor_enabled    : boolean                    ;
         is_ready             : boolean                    ;
@@ -80,7 +78,7 @@ package body microprogram_processor_pkg is
         alias ram_read_instruction_in is ram_read_in(0);
         alias ram_read_instruction_out is ram_read_out(0);
     begin
-        init_ram(ram_read_in, ram_write_port);
+        init_mp_ram(ram_read_in, ram_write_port);
     ------------------------------------------------------------------------
         self.is_ready <= false;
         used_instruction := write_instruction(nop);
@@ -114,7 +112,7 @@ package body microprogram_processor_pkg is
         used_instruction               : inout t_instruction
     ) is
     begin
-        init_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
+        -- init_mp_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
     ------------------------------------------------------------------------
         self.is_ready <= false;
         used_instruction := write_instruction(nop);
