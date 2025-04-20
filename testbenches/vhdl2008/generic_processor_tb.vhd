@@ -65,6 +65,10 @@ architecture vunit_simulation of generic_processor_tb is
     signal pim_ram_write     : ram_write_in_record;
     signal add_sub_ram_write : ram_write_in_record;
 
+    --
+    signal processor_enabled : boolean := true;
+    signal program_counter : natural range 0 to 1023 := 0;
+    --
 
 begin
 
@@ -87,18 +91,23 @@ begin
         end if;
     end process debug;
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
     stimulus : process(simulator_clock)
-        constant read_offset : natural := 57;
-        alias inst_ram is ram_read_in(0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             init_mp_ram_read(pim_read_in);
             init_mp_write(pim_ram_write);
 
-            if simulation_counter < ram_array'high
+            if processor_enabled
             then
-                request_data_from_ram(pim_read_in(4), simulation_counter);
+                program_counter <= program_counter + 1;
+                request_data_from_ram(pim_read_in(4), program_counter);
+
+                if program_counter > 150
+                then
+                    processor_enabled <= false;
+                end if;
             end if;
 
         end if; -- rising_edge
@@ -107,11 +116,16 @@ begin
     make_pipeline : process(simulator_clock) is
     begin
         if rising_edge(simulator_clock) then
-            instr_pipeline <= get_ram_data(ram_read_out(4)) 
-                              & instr_pipeline(0 to instr_pipeline'high-1);
+
+            instr_pipeline <= op(nop) & instr_pipeline(0 to instr_pipeline'high-1);
+
+            if processor_enabled 
+            then
+                instr_pipeline(0) <= get_ram_data(ram_read_out(4));
+            end if;
+
         end if;
     end process make_pipeline;
-    -----
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     add_sub : process(simulator_clock) is
@@ -163,6 +177,5 @@ begin
         ,ram_read_in  => ram_read_in
         ,ram_read_out => ram_read_out
         ,ram_write_in => ram_write_in);
-
 ------------------------------------------------------------------------
 end vunit_simulation;
