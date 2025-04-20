@@ -46,15 +46,17 @@ architecture vunit_simulation of generic_processor_tb is
     constant test_program : ram_array :=(
         6   => op(sub, 96, 101,101)
 
-        , 7  => op(sub , 100 , 101 , 102)
-        , 8  => op(sub , 99  , 102 , 101)
-        , 9  => op(add , 98  , 103 , 104)
-        , 10 => op(add , 97  , 104 , 103)
+         , 7  => op(sub     , 100 , 101 , 102)
+         , 8  => op(sub     , 99  , 102 , 101)
+         , 9  => op(add     , 98  , 103 , 104)
+         , 10 => op(add     , 97  , 104 , 103)
+         , 11 => op(mpy_add , 96  , 101 , 104, 105)
 
         , 101 => to_fixed(1.5  , 32 , 14)
         , 102 => to_fixed(0.5  , 32 , 14)
         , 103 => to_fixed(-1.5 , 32 , 14)
         , 104 => to_fixed(-0.5 , 32 , 14)
+        , 105 => to_fixed(-1.0 , 32 , 14)
 
         , others => op(program_end));
 
@@ -69,6 +71,9 @@ architecture vunit_simulation of generic_processor_tb is
     signal processor_enabled : boolean := true;
     signal program_counter : natural range 0 to 1023 := 0;
     --
+
+    signal a, b, c: signed(31 downto 0);
+    signal mpy_res : signed(63 downto 0);
 
 begin
 
@@ -150,20 +155,45 @@ begin
 
                         request_data_from_ram(sub_read_in(1)
                         , get_arg2(get_ram_data(ram_read_out(4))));
+
+                    WHEN mpy_add =>
+                        request_data_from_ram(sub_read_in(0)
+                        , get_arg1(get_ram_data(ram_read_out(4))));
+
+                        request_data_from_ram(sub_read_in(1)
+                        , get_arg2(get_ram_data(ram_read_out(4))));
+
+                        request_data_from_ram(sub_read_in(2)
+                        , get_arg3(get_ram_data(ram_read_out(4))));
+
                     WHEN others => -- do nothing
                 end CASE;
             end if;
             ---------------
+            mpy_res <= a * b + resize(shift_left(c , 14) , 63);
+
             CASE decode(instr_pipeline(2)) is
                 WHEN add =>
                     write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
                         std_logic_vector(signed(get_ram_data(ram_read_out(0))) + signed(get_ram_data(ram_read_out(1)))));
+
                 WHEN sub =>
                     write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
                         std_logic_vector(signed(get_ram_data(ram_read_out(0))) - signed(get_ram_data(ram_read_out(1)))));
+
+                WHEN mpy_add =>
+                        a <= signed(get_ram_data(ram_read_out(0)));
+                        b <= signed(get_ram_data(ram_read_out(1)));
+                        c <= signed(get_ram_data(ram_read_out(2)));
+
                 WHEN others => -- do nothing
             end CASE;
             ---------------
+            CASE decode(instr_pipeline(4)) is
+                WHEN mpy_add =>
+                    write_data_to_ram(add_sub_ram_write , get_dest(instr_pipeline(4)), std_logic_vector(mpy_res(14+31 downto 14)));
+                WHEN others => -- do nothing
+            end CASE;
         end if;
     end process add_sub;
 ------------------------------------------------------------------------
