@@ -170,7 +170,9 @@ begin
                 end CASE;
             end if;
             ---------------
+            --
             mpy_res <= a * b + resize(shift_left(c , 14) , 63);
+            --
 
             CASE decode(instr_pipeline(2)) is
                 WHEN add =>
@@ -185,7 +187,6 @@ begin
                         a <= signed(get_ram_data(ram_read_out(0)));
                         b <= signed(get_ram_data(ram_read_out(1)));
                         c <= signed(get_ram_data(ram_read_out(2)));
-
                 WHEN others => -- do nothing
             end CASE;
             ---------------
