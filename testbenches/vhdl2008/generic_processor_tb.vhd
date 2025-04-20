@@ -20,10 +20,19 @@ architecture vunit_simulation of generic_processor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    package microinstruction_pkg is new work.generic_microinstruction_pkg;
+    use work.real_to_fixed_pkg.all;
+    package multiplier_pkg is new work.multiplier_generic_pkg generic map(32,1,1);
+        use multiplier_pkg.all;
+
+    package microinstruction_pkg is new work.generic_microinstruction_pkg 
+        generic map(g_number_of_pipeline_stages => 4);
         use microinstruction_pkg.all;
 
-    package mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map(g_ram_bit_width => microinstruction_pkg.ram_bit_width, g_ram_depth_pow2 => 10);
+    package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
+        generic map(
+        g_ram_bit_width   => microinstruction_pkg.ram_bit_width
+        ,g_ram_depth_pow2 => 10);
+
     use mp_ram_pkg.all;
 
     signal ram_read_in : ram_read_in_array(0 to 4);

@@ -7,17 +7,18 @@ package microprogram_processor_pkg is
     generic(
         package mpram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
         ;package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+        ;g_maximum_program_size : natural := 1024
     );
     use mpram_pkg.all;
     use microinstruction_pkg.all;
 
     type microprogram_processor_record is record
-        processor_enabled    : boolean                    ;
-        is_ready             : boolean                    ;
-        program_counter      : natural range 0 to 1023    ;
-        registers            : reg_array                  ;
-        instruction_pipeline : instruction_pipeline_array ;
-    end record                                            ;
+        processor_enabled    : boolean                                         ;
+        is_ready             : boolean                                         ;
+        program_counter      : natural range 0 to g_maximum_program_size-1     ;
+        registers            : microinstruction_pkg.reg_array                  ;
+        instruction_pipeline : microinstruction_pkg.instruction_pipeline_array ;
+    end record;
 
     function init_processor return microprogram_processor_record;
 ------------------------------------------------------------------------

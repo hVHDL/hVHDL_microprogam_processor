@@ -84,6 +84,9 @@ float.add_source_files(ROOT / "testbenches/memory_processor/lcr_simulation_rk4_t
 
 v2008 = VU.add_library("v2008")
 
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_generic_pkg.vhd")
+
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/dual_port_ram_generic_pkg.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/arch_sim_generic_dual_port_ram.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/generic_multi_port_ram_pkg.vhd")
@@ -93,6 +96,6 @@ v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microprogram_processor_pkg.vhd"
 
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/generic_processor_tb.vhd")
 
-# VU.set_sim_option("nvc.sim_flags", ["-w"])
+VU.set_sim_option("nvc.sim_flags", ["-w"])
 
 VU.main()
