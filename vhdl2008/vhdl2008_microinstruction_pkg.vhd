@@ -18,17 +18,22 @@ package generic_microinstruction_pkg is
     alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
     type t_command is (
-        program_end ,
-        nop         ,
-        add         ,
-        sub         ,
-        mpy         ,
-        mpy_add     ,
-        neg_mpy_add ,
-        mpy_sub     ,
-
-        save        ,
-        load
+        program_end 
+        ,nop         
+        ,add         
+        ,sub         
+        ,mpy         
+        ,mpy_add     
+        ,neg_mpy_add 
+        ,mpy_sub     
+        ,save        
+        ,load
+        ,res1
+        ,res2
+        ,res3
+        ,res4
+        ,res5
+        ,res6
     );
 
     subtype comm is std_logic_vector(31 downto 28);
