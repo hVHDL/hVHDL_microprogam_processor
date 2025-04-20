@@ -35,28 +35,34 @@ architecture vunit_simulation of generic_processor_tb is
 
     use mp_ram_pkg.all;
 
-    signal ram_read_in : ram_read_in_array(0 to 4);
+    signal ram_read_in  : ram_read_in_array(0 to 4);
+
+    signal pim_read_in  : ram_read_in_array(0 to 4);
+    signal sub_read_in  : ram_read_in_array(0 to 4);
+
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
     signal ram_write_in : ram_write_in_record;
 
     constant test_program : ram_array :=(
-        7   => op(sub, 100, 101,102)
-        ,8  => op(sub, 99, 102,101)
-        ,9  => op(add, 98, 103,104)
-        ,10 => op(add, 97, 104,103)
+        6   => op(sub, 96, 101,101)
 
-        ,101 => to_fixed(1.5, 32, 14)
-        ,102 => to_fixed(0.5, 32, 14)
-        ,103 => to_fixed(-1.5, 32, 14)
-        ,104 => to_fixed(-0.5, 32, 14)
+        , 7  => op(sub , 100 , 101 , 102)
+        , 8  => op(sub , 99  , 102 , 101)
+        , 9  => op(add , 98  , 103 , 104)
+        , 10 => op(add , 97  , 104 , 103)
+
+        , 101 => to_fixed(1.5  , 32 , 14)
+        , 102 => to_fixed(0.5  , 32 , 14)
+        , 103 => to_fixed(-1.5 , 32 , 14)
+        , 104 => to_fixed(-0.5 , 32 , 14)
 
         , others => op(program_end));
 
 
-    signal command : t_command :=(program_end);
+    signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
-    signal pim_ram_write : ram_write_in_record;
+    signal pim_ram_write     : ram_write_in_record;
     signal add_sub_ram_write : ram_write_in_record;
 
 
@@ -74,50 +80,66 @@ begin
     simulator_clock <= not simulator_clock after clock_period/2.0;
 
 ------------------------------------------------------------------------
-
+    debug : process(all) is
+    begin
+        if ram_read_is_ready(ram_read_out(4)) then
+            command <= decode(get_ram_data(ram_read_out(4)));
+        end if;
+    end process debug;
+------------------------------------------------------------------------
     stimulus : process(simulator_clock)
         constant read_offset : natural := 57;
         alias inst_ram is ram_read_in(0);
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-            init_mp_ram_read(ram_read_in);
+            init_mp_ram_read(pim_read_in);
             init_mp_write(pim_ram_write);
 
             if simulation_counter < ram_array'high
             then
-                request_data_from_ram(ram_read_in(4), simulation_counter);
-            end if;
-
-            if ram_read_is_ready(ram_read_out(4)) then
-                command <= decode(get_ram_data(ram_read_out(4)));
-
-                CASE decode(get_ram_data(ram_read_out(4))) is
-                    WHEN add =>
-                        request_data_from_ram(ram_read_in(0)
-                        , get_arg1(get_ram_data(ram_read_out(4))));
-
-                        request_data_from_ram(ram_read_in(1)
-                        , get_arg2(get_ram_data(ram_read_out(4))));
-
-                    WHEN sub =>
-                        request_data_from_ram(ram_read_in(0)
-                        , get_arg1(get_ram_data(ram_read_out(4))));
-
-                        request_data_from_ram(ram_read_in(1)
-                        , get_arg2(get_ram_data(ram_read_out(4))));
-                    WHEN others => -- do nothing
-                end CASE;
+                request_data_from_ram(pim_read_in(4), simulation_counter);
             end if;
 
         end if; -- rising_edge
     end process stimulus;	
+    -----
+    make_pipeline : process(simulator_clock) is
+    begin
+        if rising_edge(simulator_clock) then
+            instr_pipeline <= get_ram_data(ram_read_out(4)) 
+                              & instr_pipeline(0 to instr_pipeline'high-1);
+        end if;
+    end process make_pipeline;
+    -----
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     add_sub : process(simulator_clock) is
     begin
         if rising_edge(simulator_clock) then
+            init_mp_ram_read(sub_read_in);
             init_mp_write(add_sub_ram_write);
 
+            ---------------
+            if ram_read_is_ready(ram_read_out(4)) then
+                CASE decode(get_ram_data(ram_read_out(4))) is
+                    WHEN add =>
+                        request_data_from_ram(sub_read_in(0)
+                        , get_arg1(get_ram_data(ram_read_out(4))));
+
+                        request_data_from_ram(sub_read_in(1)
+                        , get_arg2(get_ram_data(ram_read_out(4))));
+
+                    WHEN sub =>
+                        request_data_from_ram(sub_read_in(0)
+                        , get_arg1(get_ram_data(ram_read_out(4))));
+
+                        request_data_from_ram(sub_read_in(1)
+                        , get_arg2(get_ram_data(ram_read_out(4))));
+                    WHEN others => -- do nothing
+                end CASE;
+            end if;
+            ---------------
             CASE decode(instr_pipeline(2)) is
                 WHEN add =>
                     write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
@@ -127,21 +149,12 @@ begin
                         std_logic_vector(signed(get_ram_data(ram_read_out(0))) - signed(get_ram_data(ram_read_out(1)))));
                 WHEN others => -- do nothing
             end CASE;
-
+            ---------------
         end if;
     end process add_sub;
 ------------------------------------------------------------------------
-    make_pipeline : process(simulator_clock) is
-    begin
-        if rising_edge(simulator_clock) then
-            instr_pipeline <= get_ram_data(ram_read_out(4)) 
-                              & instr_pipeline(0 to instr_pipeline'high-1);
-        end if;
-    end process make_pipeline;
-------------------------------------------------------------------------
-    ram_write_in <= pim_ram_write 
-                    and add_sub_ram_write
-                    ;
+    ram_read_in <= pim_read_in and sub_read_in;
+    ram_write_in <= pim_ram_write and add_sub_ram_write ;
 
     u_mpram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)
