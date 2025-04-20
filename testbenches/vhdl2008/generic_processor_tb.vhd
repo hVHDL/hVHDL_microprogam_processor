@@ -40,16 +40,24 @@ architecture vunit_simulation of generic_processor_tb is
     signal ram_write_in : ram_write_in_record;
 
     constant test_program : ram_array :=(
-        7    => op(sub, 103, 101,102)
-        ,8   => op(sub, 104, 102,101)
+        7   => op(sub, 100, 101,102)
+        ,8  => op(sub, 99, 102,101)
+        ,9  => op(add, 98, 103,104)
+        ,10 => op(add, 97, 104,103)
+
         ,101 => to_fixed(1.5, 32, 14)
         ,102 => to_fixed(0.5, 32, 14)
+        ,103 => to_fixed(-1.5, 32, 14)
+        ,104 => to_fixed(-0.5, 32, 14)
 
         , others => op(program_end));
 
 
     signal command : t_command :=(program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+
+    signal pim_ram_write : ram_write_in_record;
+    signal add_sub_ram_write : ram_write_in_record;
 
 
 begin
@@ -59,8 +67,6 @@ begin
     begin
         test_runner_setup(runner, runner_cfg);
         wait for simtime_in_clocks*clock_period;
-        -- check(ram_was_read);
-        -- check(last_ram_index_was_read, "last index was not read");
         test_runner_cleanup(runner); -- Simulation ends here
         wait;
     end process simtime;	
@@ -76,7 +82,7 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             init_mp_ram_read(ram_read_in);
-            init_mp_write(ram_write_in);
+            init_mp_write(pim_ram_write);
 
             if simulation_counter < ram_array'high
             then
@@ -87,6 +93,13 @@ begin
                 command <= decode(get_ram_data(ram_read_out(4)));
 
                 CASE decode(get_ram_data(ram_read_out(4))) is
+                    WHEN add =>
+                        request_data_from_ram(ram_read_in(0)
+                        , get_arg1(get_ram_data(ram_read_out(4))));
+
+                        request_data_from_ram(ram_read_in(1)
+                        , get_arg2(get_ram_data(ram_read_out(4))));
+
                     WHEN sub =>
                         request_data_from_ram(ram_read_in(0)
                         , get_arg1(get_ram_data(ram_read_out(4))));
@@ -97,15 +110,26 @@ begin
                 end CASE;
             end if;
 
+        end if; -- rising_edge
+    end process stimulus;	
+------------------------------------------------------------------------
+    add_sub : process(simulator_clock) is
+    begin
+        if rising_edge(simulator_clock) then
+            init_mp_write(add_sub_ram_write);
+
             CASE decode(instr_pipeline(2)) is
+                WHEN add =>
+                    write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
+                        std_logic_vector(signed(get_ram_data(ram_read_out(0))) + signed(get_ram_data(ram_read_out(1)))));
                 WHEN sub =>
-                    write_data_to_ram(ram_write_in, get_dest(instr_pipeline(2)), 
+                    write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
                         std_logic_vector(signed(get_ram_data(ram_read_out(0))) - signed(get_ram_data(ram_read_out(1)))));
                 WHEN others => -- do nothing
             end CASE;
 
-        end if; -- rising_edge
-    end process stimulus;	
+        end if;
+    end process add_sub;
 ------------------------------------------------------------------------
     make_pipeline : process(simulator_clock) is
     begin
@@ -115,6 +139,10 @@ begin
         end if;
     end process make_pipeline;
 ------------------------------------------------------------------------
+    ram_write_in <= pim_ram_write 
+                    and add_sub_ram_write
+                    ;
+
     u_mpram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)
     port map(
