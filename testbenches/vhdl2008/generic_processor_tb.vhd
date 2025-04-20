@@ -1,4 +1,26 @@
 
+-- LIBRARY ieee  ; 
+--     USE ieee.NUMERIC_STD.all  ; 
+--     USE ieee.std_logic_1164.all  ; 
+--     use ieee.math_real.all;
+--
+-- entity add_sub_mpy is
+--     generic(
+--         package microinstruction_pkg is new work.generic_microinstruction_pkg 
+--         ;package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
+--        );
+--     port(
+--         clock : in std_logic
+--     );
+-- end entity add_sub_mpy;
+--
+-- architecture rtl of add_sub_mpy is
+--
+-- begin
+--
+-- end rtl;
+
+--------------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -133,7 +155,7 @@ begin
     end process make_pipeline;
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-    add_sub : process(simulator_clock) is
+    mpy_add_sub : process(simulator_clock) is
     begin
         if rising_edge(simulator_clock) then
             init_mp_ram_read(sub_read_in);
@@ -143,14 +165,14 @@ begin
             if ram_read_is_ready(ram_read_out(4)) then
                 CASE decode(get_ram_data(ram_read_out(4))) is
                     WHEN add =>
-                        request_data_from_ram(sub_read_in(0)
+                        request_data_from_ram(sub_read_in(2)
                         , get_arg1(get_ram_data(ram_read_out(4))));
 
                         request_data_from_ram(sub_read_in(1)
                         , get_arg2(get_ram_data(ram_read_out(4))));
 
                     WHEN sub =>
-                        request_data_from_ram(sub_read_in(0)
+                        request_data_from_ram(sub_read_in(2)
                         , get_arg1(get_ram_data(ram_read_out(4))));
 
                         request_data_from_ram(sub_read_in(1)
@@ -170,33 +192,36 @@ begin
                 end CASE;
             end if;
             ---------------
-            --
             mpy_res <= a * b + resize(shift_left(c , 14) , 63);
-            --
 
             CASE decode(instr_pipeline(2)) is
                 WHEN add =>
-                    write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
-                        std_logic_vector(signed(get_ram_data(ram_read_out(0))) + signed(get_ram_data(ram_read_out(1)))));
+                    a <= to_fixed(1.0, 32, 14);
+                    b <= signed(get_ram_data(ram_read_out(1)));
+                    c <= signed(get_ram_data(ram_read_out(2)));
 
                 WHEN sub =>
-                    write_data_to_ram(add_sub_ram_write, get_dest(instr_pipeline(2)), 
-                        std_logic_vector(signed(get_ram_data(ram_read_out(0))) - signed(get_ram_data(ram_read_out(1)))));
+                    a <= to_fixed(1.0, 32, 14);
+                    b <=  signed(get_ram_data(ram_read_out(1)));
+                    c <= -signed(get_ram_data(ram_read_out(2)));
 
                 WHEN mpy_add =>
-                        a <= signed(get_ram_data(ram_read_out(0)));
-                        b <= signed(get_ram_data(ram_read_out(1)));
-                        c <= signed(get_ram_data(ram_read_out(2)));
+                    a <= signed(get_ram_data(ram_read_out(0)));
+                    b <= signed(get_ram_data(ram_read_out(1)));
+                    c <= signed(get_ram_data(ram_read_out(2)));
+
                 WHEN others => -- do nothing
             end CASE;
             ---------------
             CASE decode(instr_pipeline(4)) is
-                WHEN mpy_add =>
+                WHEN add | sub | mpy_add =>
                     write_data_to_ram(add_sub_ram_write , get_dest(instr_pipeline(4)), std_logic_vector(mpy_res(14+31 downto 14)));
                 WHEN others => -- do nothing
             end CASE;
+            ---------------
+
         end if;
-    end process add_sub;
+    end process mpy_add_sub;
 ------------------------------------------------------------------------
     ram_read_in <= pim_read_in and sub_read_in;
     ram_write_in <= pim_ram_write and add_sub_ram_write ;
