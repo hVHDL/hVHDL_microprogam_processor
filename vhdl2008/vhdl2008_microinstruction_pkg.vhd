@@ -4,18 +4,17 @@ library ieee;
     use ieee.numeric_std.all;
 
 package generic_microinstruction_pkg is
-    generic(g_ram_bit_width             : natural := 32
+    generic(g_ram_bit_width              : natural := 32
             ;g_instruction_bit_width     : natural := g_ram_bit_width
             ;g_register_bit_width        : natural := g_ram_bit_width
             ;g_number_of_registers       : natural := 5
             ;g_number_of_pipeline_stages : natural := 10
-
     );
 
-    alias ram_bit_width is g_ram_bit_width;
-    alias instruction_bit_width is g_instruction_bit_width    ;
-    alias register_bit_width is g_register_bit_width       ;
-    alias number_of_registers is g_number_of_registers      ;
+    alias ram_bit_width             is g_ram_bit_width;
+    alias instruction_bit_width     is g_instruction_bit_width    ;
+    alias register_bit_width        is g_register_bit_width       ;
+    alias number_of_registers       is g_number_of_registers      ;
     alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
     type t_command is (
@@ -55,17 +54,17 @@ package generic_microinstruction_pkg is
         return variable_array;
 
 ------------------------------------------------------------------------
-    function write_instruction ( command : in t_command)
+    function op ( command : in t_command)
         return t_instruction;
 ------------------------------------------------------------------------
-    function write_instruction (
+    function op (
         command     : in t_command;
         destination : in natural ;
         argument1   : in natural ;
         argument2   : in natural )
     return t_instruction;
 ----------------
-    function write_instruction (
+    function op (
         command     : in t_command;
         destination : in natural ;
         argument1   : in natural ;
@@ -73,13 +72,13 @@ package generic_microinstruction_pkg is
         argument3   : in natural )
     return t_instruction;
 ----------------
-    function write_instruction (
+    function op (
         command     : in t_command;
         long_argument : in natural)
     return t_instruction;
 
 ------------------------------------------------------------------------
-    function write_instruction (
+    function op (
         command     : in t_command;
         destination : in natural ;
         argument1   : in natural)
@@ -133,7 +132,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
 
-    function write_instruction
+    function op
     (
         command     : in t_command;
         destination : in natural ;
@@ -154,9 +153,9 @@ package body generic_microinstruction_pkg is
 
         return instruction;
         
-    end write_instruction;
+    end op;
 ------------------------------------------------------------------------
-    function write_instruction
+    function op
     (
         command     : in t_command;
         destination : in natural ;
@@ -175,10 +174,10 @@ package body generic_microinstruction_pkg is
 
         return instruction;
         
-    end write_instruction;
+    end op;
 
 ------------------------------------------------------------------------
-    function write_instruction
+    function op
     (
         command     : in t_command;
         destination : in natural ;
@@ -195,9 +194,9 @@ package body generic_microinstruction_pkg is
 
         return instruction;
         
-    end write_instruction;
+    end op;
 ------------------------------------------------------------------------
-    function write_instruction
+    function op
     (
         command     : in t_command;
         long_argument : in natural
@@ -212,9 +211,9 @@ package body generic_microinstruction_pkg is
 
         return instruction;
         
-    end write_instruction;
+    end op;
 ------------------------------------------------------------------------
-    function write_instruction
+    function op
     (
         command : in t_command
     )
@@ -223,9 +222,9 @@ package body generic_microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        return write_instruction(command, 3,0,1);
+        return op(command, 3,0,1);
         
-    end write_instruction;
+    end op;
 ------------------------------------------------------------------------
     function get_dest
     (
@@ -356,7 +355,7 @@ package body generic_microinstruction_pkg is
     )
     return program_array
     is
-        variable retval : program_array(0 to number_of_pipeline_stages-1) := (others => write_instruction(nop));
+        variable retval : program_array(0 to number_of_pipeline_stages-1) := (others => op(nop));
     begin
 
         if program'length < retval'length then

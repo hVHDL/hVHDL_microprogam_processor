@@ -3,10 +3,6 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-    -- use work.microinstruction_pkg.all;
-    -- use work.multi_port_ram_pkg.all;
-    -- use work.processor_configuration_pkg.all;
-
 package microprogram_processor_pkg is
     generic(
         package mpram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
@@ -81,7 +77,7 @@ package body microprogram_processor_pkg is
         init_mp_ram(ram_read_in, ram_write_port);
     ------------------------------------------------------------------------
         self.is_ready <= false;
-        used_instruction := write_instruction(nop);
+        used_instruction := op(nop);
         if self.processor_enabled then
             request_data_from_ram(ram_read_instruction_in, self.program_counter);
 
@@ -115,7 +111,7 @@ package body microprogram_processor_pkg is
         -- init_mp_ram(ram_read_instruction_in, ram_read_data_in, ram_write_port);
     ------------------------------------------------------------------------
         self.is_ready <= false;
-        used_instruction := write_instruction(nop);
+        used_instruction := op(nop);
         if self.processor_enabled then
             request_data_from_ram(ram_read_instruction_in, self.program_counter);
 
