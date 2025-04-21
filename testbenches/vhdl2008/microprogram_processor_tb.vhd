@@ -13,7 +13,6 @@ end;
 
 architecture vunit_simulation of microprogram_processor_tb is
 
-
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 1500;
     
@@ -50,14 +49,25 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 12 => op(mpy_add , 95  , 102 , 104  , 102)
         , 13 => op(program_end)
 
-        , 16 => op(sub, 96, 101,101)
-        , 17 => op(sub     , 100 , 101 , 102)
-        , 18 => op(sub     , 99  , 102 , 101)
-        , 19 => op(add     , 98  , 103 , 104)
-        , 20 => op(add     , 97  , 104 , 103)
-        , 21 => op(mpy_add , 96  , 101 , 104  , 105)
-        , 22 => op(mpy_add , 95  , 102 , 104  , 102)
+        , 16 => op(sub          , 96  , 101 , 101)
+        , 17 => op(sub          , 100 , 101 , 102)
+        , 18 => op(sub          , 99  , 102 , 101)
+        , 19 => op(add          , 98  , 103 , 104)
+        , 20 => op(add          , 97  , 104 , 103)
+        , 21 => op(mpy_add      , 96  , 101 , 104  , 105)
+        , 22 => op(mpy_add      , 95  , 102 , 104  , 102)
         , 23 => op(program_end)
+
+        , 25 => op(set_rpt, 5)
+        , 26 => op(sub          , 96  , 101 , 101)
+        , 27 => op(sub          , 100 , 101 , 102)
+        , 28 => op(sub          , 99  , 102 , 101)
+        , 29 => op(add          , 98  , 103 , 104)
+        , 30 => op(jump, 26)
+        , 31 => op(add          , 97  , 104 , 103)
+        , 32 => op(mpy_add      , 96  , 101 , 104  , 105)
+        , 33 => op(mpy_add      , 95  , 102 , 104  , 102)
+        , 34 => op(program_end)
 
         , 101 => to_fixed(1.5   , 32 , used_radix)
         , 102 => to_fixed(0.5   , 32 , used_radix)
@@ -99,6 +109,10 @@ begin
                 WHEN 25 =>
                     calculate <= true;
                     start_address <= 8;
+
+                WHEN 50 =>
+                    calculate <= true;
+                    start_address <= 25;
                 WHEN others => -- do nothing
             end CASE;
 

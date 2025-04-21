@@ -26,14 +26,14 @@ package generic_microinstruction_pkg is
         ,mpy_add     
         ,neg_mpy_add 
         ,mpy_sub     
-        ,save        
-        ,load
-        ,res1
+        ,set_rpt
+        ,jump
         ,res2
         ,res3
         ,res4
         ,res5
         ,res6
+        ,res7
     );
 
     subtype comm is std_logic_vector(31 downto 28);

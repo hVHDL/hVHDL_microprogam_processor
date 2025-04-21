@@ -26,8 +26,8 @@ end;
 
 architecture rtl of microprogram_sequencer is
 
-    -- signal processor_enabled : boolean := true;
-    signal program_counter   : natural range 0 to 1023 := 0;
+    signal program_counter : natural range 0 to 1023 := 0;
+    signal rpt_counter     : natural range 0 to 15   := 0;
 
 begin
 
@@ -63,9 +63,23 @@ begin
                 end if;
             end if;
 
+            ------------ jump instruction ----------------
+            if ram_read_is_ready(ram_read_out(0)) and processor_enabled 
+            then
+                CASE decode(get_ram_data(ram_read_out(0))) is
+                    when jump =>
+                        if rpt_counter > 0 then
+                            rpt_counter <= rpt_counter - 1;
+                            program_counter <= get_single_argument(get_ram_data(ram_read_out(0)));
+                        end if;
+                    WHEN set_rpt =>
+                        rpt_counter <= get_single_argument(get_ram_data(ram_read_out(0)));
+                    when others => --do nothing
+                end CASE;
+            end if;
+            ----------------------------------------------
+
         end if; -- rising_edge
     end process make_program_counter;	
 ------------------------------------------------------------------------
-
 end rtl;
----------------------------------------------
