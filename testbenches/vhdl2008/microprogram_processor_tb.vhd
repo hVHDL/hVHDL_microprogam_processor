@@ -13,7 +13,6 @@ end;
 
 architecture vunit_simulation of microprogram_processor_tb is
 
-    use work.real_to_fixed_pkg.all;
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 1500;
@@ -22,6 +21,9 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
+
+    use work.real_to_fixed_pkg.all;
+
     signal calculate : boolean := false;
     signal start_address : natural := 6;
     signal output1 : signed(31 downto 0) := (others => '0');
@@ -29,6 +31,37 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal test1 : real := 0.0;
 
     constant used_radix : natural := 25;
+
+    package microinstruction_pkg is new work.generic_microinstruction_pkg 
+        generic map(g_number_of_pipeline_stages => 6);
+        use microinstruction_pkg.all;
+
+    package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
+        generic map(
+        g_ram_bit_width   => microinstruction_pkg.ram_bit_width
+        ,g_ram_depth_pow2 => 10);
+        use mp_ram_pkg.all;
+
+
+    constant test_program : ram_array :=(
+        6   => op(sub, 96, 101,101)
+
+        , 7  => op(sub     , 100 , 101 , 102)
+        , 8  => op(sub     , 99  , 102 , 101)
+        , 9  => op(add     , 98  , 103 , 104)
+        , 10 => op(add     , 97  , 104 , 103)
+        , 11 => op(mpy_add , 96  , 101 , 104  , 105)
+        , 12 => op(mpy_add , 95  , 102 , 104  , 102)
+        , 13 => op(program_end)
+
+        , 101 => to_fixed(1.5  , 32 , used_radix)
+        , 102 => to_fixed(0.5  , 32 , used_radix)
+        , 103 => to_fixed(-2.5 , 32 , used_radix)
+        , 104 => to_fixed(-0.65 , 32 , used_radix)
+        , 105 => to_fixed(-1.0 , 32 , used_radix)
+
+        , others => op(nop));
+
 
 begin
 
@@ -55,7 +88,7 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
-    generic map(used_radix)
+    generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program)
     port map(simulator_clock, calculate, start_address, output1, o1_ready);
 ------------------------------------------------------------------------
 end vunit_simulation;

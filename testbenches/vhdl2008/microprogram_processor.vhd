@@ -3,19 +3,22 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
 
 entity microprogram_processor is
-    generic(g_used_radix : natural);
+    generic(
+            package processor_microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+            ;package processor_mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
+            ;g_used_radix : natural
+            ;g_program : processor_mp_ram_pkg.ram_array
+           );
     port(
         clock : in std_logic
-        ;calculate : in boolean := false
+        ;calculate     : in boolean := false
         ;start_address : in natural := 0
-        ;output1 : out signed(31 downto 0)
-        ;o1_ready : out boolean
+        ;output1       : out signed(31 downto 0)
+        ;o1_ready      : out boolean
     );
 end microprogram_processor;
 
 architecture rtl of microprogram_processor is
-
-    use work.real_to_fixed_pkg.all;
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(g_number_of_pipeline_stages => 6);
@@ -25,44 +28,37 @@ architecture rtl of microprogram_processor is
         generic map(
         g_ram_bit_width   => microinstruction_pkg.ram_bit_width
         ,g_ram_depth_pow2 => 10);
+        use mp_ram_pkg.all;
 
-    use mp_ram_pkg.all;
-
-    signal ram_read_in  : ram_read_in_array(0 to 4);
-
+    signal ram_read_in : ram_read_in_array(0 to 4);
     signal pc_read_in  : ram_read_in_array(0 to 4);
-    signal sub_read_in  : ram_read_in_array(0 to 4);
+    signal sub_read_in : ram_read_in_array(0 to 4);
+
+    signal ram_write_in      : ram_write_in_record;
+    signal pim_ram_write     : ram_write_in_record;
+    signal add_sub_ram_write : ram_write_in_record;
 
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
-    signal ram_write_in : ram_write_in_record;
 
     constant used_radix : natural := g_used_radix;
 
-    constant test_program : ram_array :=(
-        6   => op(sub, 96, 101,101)
+    use work.real_to_fixed_pkg.all;
 
-        , 7  => op(sub     , 100 , 101 , 102)
-        , 8  => op(sub     , 99  , 102 , 101)
-        , 9  => op(add     , 98  , 103 , 104)
-        , 10 => op(add     , 97  , 104 , 103)
-        , 11 => op(mpy_add , 96  , 101 , 104  , 105)
-        , 12 => op(mpy_add , 95  , 102 , 104  , 102)
-        , 13 => op(program_end)
+    function pimpom(a : processor_mp_ram_pkg.ram_array) return mp_ram_pkg.ram_array is
+        variable retval : mp_ram_pkg.ram_array;
+    begin
+        for i in a'range loop
+            retval(i) := a(i);
+        end loop;
 
-        , 101 => to_fixed(1.5  , 32 , used_radix)
-        , 102 => to_fixed(0.5  , 32 , used_radix)
-        , 103 => to_fixed(-1.5 , 32 , used_radix)
-        , 104 => to_fixed(-0.5 , 32 , used_radix)
-        , 105 => to_fixed(-1.0 , 32 , used_radix)
+        return retval;
+    end pimpom;
 
-        , others => op(nop));
-
+    constant test_program : mp_ram_pkg.ram_array := pimpom(g_program);
 
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
-    signal pim_ram_write     : ram_write_in_record;
-    signal add_sub_ram_write : ram_write_in_record;
     --
     signal processor_enabled : boolean := false;
     --
@@ -113,6 +109,5 @@ begin
         ,ram_read_in  => ram_read_in
         ,ram_read_out => ram_read_out
         ,ram_write_in => ram_write_in);
-
-end rtl;
 ---------------------------------------
+end rtl;
