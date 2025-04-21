@@ -51,6 +51,15 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 12 => op(mpy_add , 95  , 102 , 104  , 102)
         , 13 => op(program_end)
 
+        , 16   => op(sub, 96, 101,101)
+        , 17  => op(sub     , 100 , 101 , 102)
+        , 18  => op(sub     , 99  , 102 , 101)
+        , 19  => op(add     , 98  , 103 , 104)
+        , 20 => op(add     , 97  , 104 , 103)
+        , 21 => op(mpy_add , 96  , 101 , 104  , 105)
+        , 22 => op(mpy_add , 95  , 102 , 104  , 102)
+        , 23 => op(program_end)
+
         , 101 => to_fixed(1.5   , 32 , used_radix)
         , 102 => to_fixed(0.5   , 32 , used_radix)
         , 103 => to_fixed(-2.5  , 32 , used_radix)
@@ -83,7 +92,16 @@ begin
                 test1 <= to_real(output1, used_radix);
             end if;
 
-            calculate <= simulation_counter = 5;
+            calculate <= false;
+            CASE simulation_counter is
+                WHEN 5 =>
+                    calculate <= true;
+                    start_address <= 22;
+                WHEN 25 =>
+                    calculate <= true;
+                    start_address <= 8;
+                WHEN others => -- do nothing
+            end CASE;
 
         end if; -- rising_edge
     end process stimulus;	
