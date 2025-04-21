@@ -29,9 +29,19 @@ architecture rtl of microprogram_sequencer is
     signal program_counter : natural range 0 to 1023 := 0;
     signal rpt_counter     : natural range 0 to 15   := 0;
 
+
 begin
 
     make_program_counter : process(clock)
+
+        -- impure function get_pc(pc : natural) return natural is
+        --     variable retval : natural := pc;
+        -- begin
+        --     if processor_enabled
+        --     then
+        --         retval := retval + 1;
+        --     return retval;
+        -- end function;
     begin
         if rising_edge(clock) then
             init_mp_ram_read(ram_read_in);
@@ -51,8 +61,8 @@ begin
             for i in instr_pipeline'high downto 1 loop
                 instr_pipeline(i) <= instr_pipeline(i-1);
             end loop;
-
             instr_pipeline(0) <= op(nop);
+
             if ram_read_is_ready(ram_read_out(0))
             then
                 if processor_enabled and decode(get_ram_data(ram_read_out(0))) /= program_end

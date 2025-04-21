@@ -77,7 +77,7 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         , others => op(nop));
 
-    signal calculate : boolean := false;
+    signal calculate     : boolean := false;
     signal start_address : natural := 6;
 
 begin
