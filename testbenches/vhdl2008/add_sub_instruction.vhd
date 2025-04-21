@@ -10,7 +10,7 @@ entity instruction is
         ;arg1_mem : natural := 1
         ;arg2_mem : natural := 2
         ;arg3_mem : natural := 3
-        ;inst_mem : natural := 4
+        ;inst_mem : natural := 0
         ;radix    : natural := 14
        );
     port(

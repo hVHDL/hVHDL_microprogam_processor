@@ -95,9 +95,11 @@ v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microprogram_processor_pkg.vhd")
 
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/generic_processor_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_processor_tb.vhd")
 # refactor these
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/add_sub_instruction.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_processor.vhd")
 
 # VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
 VU.set_sim_option("nvc.sim_flags", ["-w"])
