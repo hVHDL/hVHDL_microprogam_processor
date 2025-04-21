@@ -27,6 +27,9 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal output1 : signed(31 downto 0) := (others => '0');
     signal o1_ready : boolean := false;
     signal test1 : real := 0.0;
+
+
+    constant used_radix : natural := 25;
 begin
 
 ------------------------------------------------------------------------
@@ -45,13 +48,14 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
             if o1_ready then
-                test1 <= to_real(output1, 14);
+                test1 <= to_real(output1, used_radix);
             end if;
 
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
+    generic map(used_radix)
     port map(simulator_clock, calculate, start_address, output1, o1_ready);
 ------------------------------------------------------------------------
 end vunit_simulation;

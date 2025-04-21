@@ -3,6 +3,7 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
 
 entity microprogram_processor is
+    generic(g_used_radix : natural);
     port(
         clock : in std_logic
         ;calculate : in boolean := false
@@ -35,7 +36,7 @@ architecture rtl of microprogram_processor is
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
     signal ram_write_in : ram_write_in_record;
 
-    constant used_radix : natural := 14;
+    constant used_radix : natural := g_used_radix;
 
     constant test_program : ram_array :=(
         6   => op(sub, 96, 101,101)
