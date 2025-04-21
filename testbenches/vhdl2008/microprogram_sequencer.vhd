@@ -16,6 +16,8 @@ entity microprogram_sequencer is
         ;ram_write_in : out mp_ram_pkg.ram_write_in_record
         ;processor_enabled : out boolean := true
         ;instr_pipeline : out microinstruction_pkg.instruction_pipeline_array
+        ;calculate : in boolean := true
+        ;start_address : in natural := 0
     );
     use microinstruction_pkg.all;
     use mp_ram_pkg.all;
