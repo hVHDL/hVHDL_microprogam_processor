@@ -28,8 +28,8 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal o1_ready : boolean := false;
     signal test1 : real := 0.0;
 
-
     constant used_radix : natural := 25;
+
 begin
 
 ------------------------------------------------------------------------
