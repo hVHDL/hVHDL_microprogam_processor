@@ -42,20 +42,23 @@ architecture vunit_simulation of generic_processor_tb is
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
     signal ram_write_in : ram_write_in_record;
 
+    constant used_radix : natural := 14;
+
     constant test_program : ram_array :=(
         6   => op(sub, 96, 101,101)
 
-         , 7  => op(sub     , 100 , 101 , 102)
-         , 8  => op(sub     , 99  , 102 , 101)
-         , 9  => op(add     , 98  , 103 , 104)
-         , 10 => op(add     , 97  , 104 , 103)
-         , 11 => op(mpy_add , 96  , 101 , 104, 105)
+        , 7  => op(sub     , 100 , 101 , 102)
+        , 8  => op(sub     , 99  , 102 , 101)
+        , 9  => op(add     , 98  , 103 , 104)
+        , 10 => op(add     , 97  , 104 , 103)
+        , 11 => op(mpy_add , 96  , 101 , 104  , 105)
+        , 12 => op(mpy_add , 95  , 102 , 104  , 102)
 
-        , 101 => to_fixed(1.5  , 32 , 14)
-        , 102 => to_fixed(0.5  , 32 , 14)
-        , 103 => to_fixed(-1.5 , 32 , 14)
-        , 104 => to_fixed(-0.5 , 32 , 14)
-        , 105 => to_fixed(-1.0 , 32 , 14)
+        , 101 => to_fixed(1.5  , 32 , used_radix)
+        , 102 => to_fixed(0.5  , 32 , used_radix)
+        , 103 => to_fixed(-1.5 , 32 , used_radix)
+        , 104 => to_fixed(-0.5 , 32 , used_radix)
+        , 105 => to_fixed(-1.0 , 32 , used_radix)
 
         , others => op(program_end));
 
@@ -68,11 +71,8 @@ architecture vunit_simulation of generic_processor_tb is
 
     --
     signal processor_enabled : boolean := true;
-    signal program_counter : natural range 0 to 1023 := 0;
+    signal program_counter   : natural range 0 to 1023 := 0;
     --
-
-    signal a, b, c: signed(31 downto 0);
-    signal mpy_res : signed(63 downto 0);
 
 begin
 
@@ -90,8 +90,8 @@ begin
 ------------------------------------------------------------------------
     debug : process(all) is
     begin
-        if ram_read_is_ready(ram_read_out(4)) then
-            command <= decode(get_ram_data(ram_read_out(4)));
+        if ram_read_is_ready(ram_read_out(0)) then
+            command <= decode(get_ram_data(ram_read_out(0)));
         end if;
     end process debug;
 ------------------------------------------------------------------------
@@ -106,7 +106,7 @@ begin
             if processor_enabled
             then
                 program_counter <= program_counter + 1;
-                request_data_from_ram(pim_read_in(4), program_counter);
+                request_data_from_ram(pim_read_in(0), program_counter);
 
                 if program_counter > 150
                 then
@@ -125,7 +125,7 @@ begin
 
             if processor_enabled 
             then
-                instr_pipeline(0) <= get_ram_data(ram_read_out(4));
+                instr_pipeline(0) <= get_ram_data(ram_read_out(0));
             end if;
 
         end if;
@@ -133,11 +133,11 @@ begin
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, mp_ram_pkg)
+    generic map(microinstruction_pkg, mp_ram_pkg, inst_mem => 0, radix => used_radix)
     port map(simulator_clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
 ------------------------------------------------------------------------
-    ram_read_in <= pim_read_in and sub_read_in;
-    ram_write_in <= pim_ram_write and add_sub_ram_write ;
+    ram_read_in  <= pim_read_in   and sub_read_in;
+    ram_write_in <= pim_ram_write and add_sub_ram_write;
 
     u_mpram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)
