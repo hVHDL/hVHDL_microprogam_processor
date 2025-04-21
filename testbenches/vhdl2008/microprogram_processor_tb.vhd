@@ -24,12 +24,6 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     use work.real_to_fixed_pkg.all;
 
-    signal output1 : signed(31 downto 0) := (others => '0');
-    signal o1_ready : boolean := false;
-    signal test1 : real := 0.0;
-
-    constant used_radix : natural := 25;
-
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
@@ -40,6 +34,11 @@ architecture vunit_simulation of microprogram_processor_tb is
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
 
+    signal output1 : signed(31 downto 0) := (others => '0');
+    signal o1_ready : boolean := false;
+    signal test1 : real := 0.0;
+
+    constant used_radix : natural := 20;
 
     constant test_program : ram_array :=(
         6   => op(sub, 96, 101,101)
@@ -51,10 +50,10 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 12 => op(mpy_add , 95  , 102 , 104  , 102)
         , 13 => op(program_end)
 
-        , 16   => op(sub, 96, 101,101)
-        , 17  => op(sub     , 100 , 101 , 102)
-        , 18  => op(sub     , 99  , 102 , 101)
-        , 19  => op(add     , 98  , 103 , 104)
+        , 16 => op(sub, 96, 101,101)
+        , 17 => op(sub     , 100 , 101 , 102)
+        , 18 => op(sub     , 99  , 102 , 101)
+        , 19 => op(add     , 98  , 103 , 104)
         , 20 => op(add     , 97  , 104 , 103)
         , 21 => op(mpy_add , 96  , 101 , 104  , 105)
         , 22 => op(mpy_add , 95  , 102 , 104  , 102)
