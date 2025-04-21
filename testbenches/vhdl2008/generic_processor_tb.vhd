@@ -3,6 +3,64 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
     use ieee.math_real.all;
 
+entity microprogram_sequencer is
+    generic(
+        package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+        ;package mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
+        ;arg1_mem : natural := 1
+        ;arg2_mem : natural := 2
+        ;arg3_mem : natural := 3
+        ;inst_mem : natural := 4
+        ;radix    : natural := 14
+       );
+    port(
+        clock : in std_logic
+        ;ram_read_in  : out mp_ram_pkg.ram_read_in_array
+        ;ram_read_out : in mp_ram_pkg.ram_read_out_array
+        ;ram_write_in : out mp_ram_pkg.ram_write_in_record
+        ;processor_enabled : out boolean := true
+    );
+    use microinstruction_pkg.all;
+    use mp_ram_pkg.all;
+    use work.real_to_fixed_pkg.all;
+end;
+
+
+architecture rtl of microprogram_sequencer is
+
+    -- signal processor_enabled : boolean := true;
+    signal program_counter   : natural range 0 to 1023 := 0;
+
+begin
+
+    make_program_counter : process(clock)
+    begin
+        if rising_edge(clock) then
+            init_mp_ram_read(ram_read_in);
+            init_mp_write(ram_write_in);
+
+            if processor_enabled
+            then
+                if program_counter >= 150
+                then
+                    processor_enabled <= false;
+                else
+                    program_counter <= program_counter + 1;
+                    request_data_from_ram(ram_read_in(0), program_counter);
+                end if;
+            end if;
+
+        end if; -- rising_edge
+    end process make_program_counter;	
+    -----
+
+end rtl;
+---------------------------------------------
+LIBRARY ieee  ; 
+    USE ieee.NUMERIC_STD.all  ; 
+    USE ieee.std_logic_1164.all  ; 
+    use ieee.math_real.all;
+
 library vunit_lib;
 context vunit_lib.vunit_context;
 
@@ -70,9 +128,8 @@ architecture vunit_simulation of generic_processor_tb is
     signal add_sub_ram_write : ram_write_in_record;
 
     --
-    signal processor_enabled : boolean := true;
-    signal program_counter   : natural range 0 to 1023 := 0;
     --
+    signal processor_enabled : boolean := true;
 
 begin
 
@@ -100,23 +157,13 @@ begin
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-            init_mp_ram_read(pim_read_in);
-            init_mp_write(pim_ram_write);
-
-            if processor_enabled
-            then
-                program_counter <= program_counter + 1;
-                request_data_from_ram(pim_read_in(0), program_counter);
-
-                if program_counter > 150
-                then
-                    processor_enabled <= false;
-                end if;
-            end if;
-
         end if; -- rising_edge
     end process stimulus;	
-    -----
+----------------------------------------------------------
+    u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(microinstruction_pkg, mp_ram_pkg, inst_mem => 0, radix => used_radix)
+    port map(simulator_clock , pim_read_in , ram_read_out , pim_ram_write , processor_enabled);
+----------------------------------------------------------
     make_pipeline : process(simulator_clock) is
     begin
         if rising_edge(simulator_clock) then
@@ -135,6 +182,7 @@ begin
     add_sub_mpy : entity work.instruction
     generic map(microinstruction_pkg, mp_ram_pkg, inst_mem => 0, radix => used_radix)
     port map(simulator_clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
     ram_read_in  <= pim_read_in   and sub_read_in;
     ram_write_in <= pim_ram_write and add_sub_ram_write;
