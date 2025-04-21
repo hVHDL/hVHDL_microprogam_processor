@@ -78,6 +78,7 @@ begin
     begin
         if rising_edge(clock)
         then
+            o1_ready <= false;
             if write_requested(ram_write_in) then
                 if get_address(ram_write_in) >= 95
                     and get_address(ram_write_in) <= 100 
@@ -92,7 +93,9 @@ begin
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(microinstruction_pkg, mp_ram_pkg)
-    port map(clock , pc_read_in , ram_read_out , pim_ram_write , processor_enabled, instr_pipeline, calculate);
+    port map(clock , pc_read_in , ram_read_out , pim_ram_write , processor_enabled, instr_pipeline
+    , calculate => calculate
+    , start_address =>start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)

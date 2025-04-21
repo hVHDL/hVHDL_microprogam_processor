@@ -14,7 +14,7 @@ entity microprogram_sequencer is
         ;ram_read_in  : out mp_ram_pkg.ram_read_in_array
         ;ram_read_out : in mp_ram_pkg.ram_read_out_array
         ;ram_write_in : out mp_ram_pkg.ram_write_in_record
-        ;processor_enabled : out boolean := true
+        ;processor_enabled : out boolean
         ;instr_pipeline : out microinstruction_pkg.instruction_pipeline_array
         ;calculate : in boolean := true
         ;start_address : in natural := 0
@@ -39,35 +39,32 @@ begin
 
             if processor_enabled
             then
-                if program_counter >= 150
+                program_counter <= program_counter + 1;
+                request_data_from_ram(ram_read_in(inst_mem), program_counter);
+            else
+                if calculate then
+                    program_counter   <= start_address;
+                    processor_enabled <= true;
+                end if;
+            end if;
+        -----
+            for i in instr_pipeline'high downto 1 loop
+                instr_pipeline(i) <= instr_pipeline(i-1);
+            end loop;
+
+            instr_pipeline(0) <= op(nop);
+            if ram_read_is_ready(ram_read_out(0))
+            then
+                if processor_enabled and decode(get_ram_data(ram_read_out(0))) /= program_end
                 then
-                    processor_enabled <= false;
+                    instr_pipeline(0) <= get_ram_data(ram_read_out(0));
                 else
-                    program_counter <= program_counter + 1;
-                    request_data_from_ram(ram_read_in(inst_mem), program_counter);
+                    processor_enabled <= false;
                 end if;
             end if;
 
         end if; -- rising_edge
     end process make_program_counter;	
-    -----
-    make_pipeline : process(clock) is
-    begin
-        if rising_edge(clock) then
-
-            for i in instr_pipeline'high downto 1 loop
-                instr_pipeline(i) <= instr_pipeline(i-1);
-            end loop;
-
-            if processor_enabled 
-            then
-                instr_pipeline(0) <= get_ram_data(ram_read_out(0));
-            else
-                instr_pipeline(0) <= op(nop);
-            end if;
-
-        end if;
-    end process make_pipeline;
 ------------------------------------------------------------------------
 
 end rtl;

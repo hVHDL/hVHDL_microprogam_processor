@@ -24,8 +24,6 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     use work.real_to_fixed_pkg.all;
 
-    signal calculate : boolean := false;
-    signal start_address : natural := 6;
     signal output1 : signed(31 downto 0) := (others => '0');
     signal o1_ready : boolean := false;
     signal test1 : real := 0.0;
@@ -45,7 +43,6 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     constant test_program : ram_array :=(
         6   => op(sub, 96, 101,101)
-
         , 7  => op(sub     , 100 , 101 , 102)
         , 8  => op(sub     , 99  , 102 , 101)
         , 9  => op(add     , 98  , 103 , 104)
@@ -54,14 +51,16 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 12 => op(mpy_add , 95  , 102 , 104  , 102)
         , 13 => op(program_end)
 
-        , 101 => to_fixed(1.5  , 32 , used_radix)
-        , 102 => to_fixed(0.5  , 32 , used_radix)
-        , 103 => to_fixed(-2.5 , 32 , used_radix)
+        , 101 => to_fixed(1.5   , 32 , used_radix)
+        , 102 => to_fixed(0.5   , 32 , used_radix)
+        , 103 => to_fixed(-2.5  , 32 , used_radix)
         , 104 => to_fixed(-0.65 , 32 , used_radix)
-        , 105 => to_fixed(-1.0 , 32 , used_radix)
+        , 105 => to_fixed(-1.0  , 32 , used_radix)
 
         , others => op(nop));
 
+    signal calculate : boolean := false;
+    signal start_address : natural := 6;
 
 begin
 
@@ -83,6 +82,8 @@ begin
             if o1_ready then
                 test1 <= to_real(output1, used_radix);
             end if;
+
+            calculate <= simulation_counter = 5;
 
         end if; -- rising_edge
     end process stimulus;	
