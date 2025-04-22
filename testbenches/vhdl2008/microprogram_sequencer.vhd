@@ -16,7 +16,7 @@ entity microprogram_sequencer is
         ;ram_write_in : out mp_ram_pkg.ram_write_in_record
         ;processor_enabled : out boolean
         ;instr_pipeline : out microinstruction_pkg.instruction_pipeline_array
-        ;calculate : in boolean := true
+        ;processor_requested : in boolean := true
         ;start_address : in natural := 0
     );
     use microinstruction_pkg.all;
@@ -29,49 +29,54 @@ architecture rtl of microprogram_sequencer is
     signal program_counter : natural range 0 to 1023 := 0;
     signal rpt_counter     : natural range 0 to 15   := 0;
 
+    type t_processor_states is (halted, running);
+    signal processor_state : t_processor_states := halted;
+
 
 begin
 
     make_program_counter : process(clock)
 
-        -- impure function get_pc(pc : natural) return natural is
-        --     variable retval : natural := pc;
-        -- begin
-        --     if processor_enabled
-        --     then
-        --         retval := retval + 1;
-        --     return retval;
-        -- end function;
     begin
         if rising_edge(clock) then
             init_mp_ram_read(ram_read_in);
             init_mp_write(ram_write_in);
 
-            if processor_enabled
-            then
-                program_counter <= program_counter + 1;
-                request_data_from_ram(ram_read_in(inst_mem), program_counter);
-            else
-                if calculate then
-                    program_counter   <= start_address;
-                    processor_enabled <= true;
-                end if;
-            end if;
-        -----
+            -------- instruction pipeline --------
             for i in instr_pipeline'high downto 1 loop
                 instr_pipeline(i) <= instr_pipeline(i-1);
             end loop;
             instr_pipeline(0) <= op(nop);
+            --------------------------------------
+            CASE processor_state is
+                WHEN halted =>
 
-            if ram_read_is_ready(ram_read_out(0))
-            then
-                if processor_enabled and decode(get_ram_data(ram_read_out(0))) /= program_end
-                then
-                    instr_pipeline(0) <= get_ram_data(ram_read_out(0));
-                else
-                    processor_enabled <= false;
-                end if;
-            end if;
+                    if processor_requested 
+                    then
+                        program_counter <= start_address;
+                        processor_state <= running;
+                    end if;
+
+                WHEN running =>
+
+                    request_data_from_ram(ram_read_in(inst_mem), program_counter);
+                    program_counter <= program_counter + 1;
+
+                    ---
+                    if ram_read_is_ready( ram_read_out(0) )
+                        and decode(get_ram_data(ram_read_out(0))) = program_end
+                    then
+                        processor_state <= halted;
+                    end if;
+
+                    ---
+                    if ram_read_is_ready(ram_read_out(0))
+                        and decode(get_ram_data(ram_read_out(0))) /= program_end
+                    then
+                            instr_pipeline(0) <= get_ram_data(ram_read_out(0));
+                    end if;
+                    ---
+            end CASE;
 
             ------------ jump instruction ----------------
             if ram_read_is_ready(ram_read_out(0)) and processor_enabled 

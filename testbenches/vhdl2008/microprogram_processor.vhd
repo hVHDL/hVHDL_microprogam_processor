@@ -94,8 +94,8 @@ begin
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(microinstruction_pkg, mp_ram_pkg)
     port map(clock , pc_read_in , ram_read_out , pim_ram_write , processor_enabled, instr_pipeline
-    , calculate => calculate
-    , start_address =>start_address);
+    , calculate
+    , start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)
