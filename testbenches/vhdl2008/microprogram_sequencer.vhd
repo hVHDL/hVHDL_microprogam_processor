@@ -11,13 +11,13 @@ entity microprogram_sequencer is
        );
     port(
         clock : in std_logic
-        ;ram_read_in  : out mp_ram_pkg.ram_read_in_array
-        ;ram_read_out : in mp_ram_pkg.ram_read_out_array
-        ;ram_write_in : out mp_ram_pkg.ram_write_in_record
-        ;processor_enabled : out boolean
-        ;instr_pipeline : out microinstruction_pkg.instruction_pipeline_array
+        ;ram_read_in         : out mp_ram_pkg.ram_read_in_array
+        ;ram_read_out        : in mp_ram_pkg.ram_read_out_array
+        ;ram_write_in        : out mp_ram_pkg.ram_write_in_record
+        ;processor_enabled   : out boolean
+        ;instr_pipeline      : out microinstruction_pkg.instruction_pipeline_array
         ;processor_requested : in boolean := true
-        ;start_address : in natural := 0
+        ;start_address       : in natural := 0
     );
     use microinstruction_pkg.all;
     use mp_ram_pkg.all;
@@ -32,8 +32,9 @@ architecture rtl of microprogram_sequencer is
     type t_processor_states is (halted, running);
     signal processor_state : t_processor_states := halted;
 
-
 begin
+
+    processor_enabled <= (processor_state = running);
 
     make_program_counter : process(clock)
 
@@ -79,7 +80,7 @@ begin
             end CASE;
 
             ------------ jump instruction ----------------
-            if ram_read_is_ready(ram_read_out(0)) and processor_enabled 
+            if processor_enabled and ram_read_is_ready(ram_read_out(0)) 
             then
                 CASE decode(get_ram_data(ram_read_out(0))) is
                     when jump =>
