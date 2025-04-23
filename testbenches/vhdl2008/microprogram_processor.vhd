@@ -14,15 +14,14 @@ entity microprogram_processor is
         clock : in std_logic
         ;calculate     : in boolean := false
         ;start_address : in natural := 0
-        ;output1       : out signed(31 downto 0)
-        ;o1_ready      : out boolean
+        ;mc_output     : out processor_mp_ram_pkg.ram_write_in_record
     );
 end microprogram_processor;
 
 architecture rtl of microprogram_processor is
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
+        generic map(g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
         use microinstruction_pkg.all;
 
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
@@ -81,13 +80,12 @@ begin
     begin
         if rising_edge(clock)
         then
-            o1_ready <= false;
+            processor_mp_ram_pkg.init_mp_write(mc_output);
             if write_requested(ram_write_in) then
-                if get_address(ram_write_in) = 5
-                    -- and get_address(ram_write_in) <= 10 
+                if get_address(ram_write_in) >= 50
+                    and get_address(ram_write_in) <= 59 
                 then
-                    output1  <= signed(get_data(ram_write_in));
-                    o1_ready <= true;
+                    processor_mp_ram_pkg.write_data_to_ram(mc_output,get_address(ram_write_in), get_data(ram_write_in));
                 end if;
             end if;
         end if;

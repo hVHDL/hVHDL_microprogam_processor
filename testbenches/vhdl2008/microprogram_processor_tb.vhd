@@ -33,15 +33,16 @@ architecture vunit_simulation of microprogram_processor_tb is
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
 
-    signal output1 : signed(31 downto 0) := (others => '0');
-    signal o1_ready : boolean := false;
     signal test1 : real := 0.0;
+    signal test2 : real := 0.0;
+    signal test3 : real := 0.0;
+    signal test4 : real := 0.0;
 
     constant used_radix : natural := 20;
 
-    constant y : natural := 5;
-    constant u : natural := 17;
-    constant g : natural := 16;
+    constant y : natural := 50;
+    constant u : natural := 60;
+    constant g : natural := 70;
 
     constant program_data : ram_array :=(
           11 => to_fixed(1.5   , 32 , used_radix)
@@ -50,8 +51,17 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 13 => to_fixed(-2.5       , 32 , used_radix)
         , 14 => to_fixed(-0.65      , 32 , used_radix)
         , 15 => to_fixed(-1.0       , 32 , used_radix)
-        , 16 => to_fixed(1.0/7.6359 , 32 , used_radix)
+        , g => to_fixed(1.0/7.6359 , 32 , used_radix)
+        , g+1 => to_fixed(1.0/6.6359 , 32 , used_radix)
+        , g+2 => to_fixed(1.0/5.6359 , 32 , used_radix)
+        , g+3 => to_fixed(1.0/4.6359 , 32 , used_radix)
+        , g+4 => to_fixed(1.0/3.6359 , 32 , used_radix)
         , u => to_fixed(20.0 , 32 , used_radix)
+        , u+1 => to_fixed(7.0 , 32 , used_radix)
+        , u+2 => to_fixed(39.0 , 32 , used_radix)
+        , u+3 => to_fixed(1.0 , 32 , used_radix)
+        , u+4 => to_fixed(9.0 , 32 , used_radix)
+        , y => to_fixed(0.0 , 32 , used_radix)
         , others => (others => '0')
     );
 
@@ -73,14 +83,22 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 23 => op(program_end)
 
         , 25 => op(set_rpt, 100)
-        , 26 => op(a_sub_b_mpy_c , y,  u , y , g)
-        , 30 => op(jump, 26)
+
+        , 26 => op(a_sub_b_mpy_c , y   , u+0, y   , g)
+        , 27 => op(a_sub_b_mpy_c , y+1 , u+1, y+1 , g+1)
+        , 28 => op(a_sub_b_mpy_c , y+2 , u+2, y+2 , g+2)
+        , 29 => op(a_sub_b_mpy_c , y+3 , u+3, y+3 , g+3)
+        , 30 => op(a_sub_b_mpy_c , y+4 , u+4, y+4 , g+4)
+
+        , 31 => op(jump, 26)
         , 35 => op(program_end)
 
         , others => op(nop));
 
     signal calculate     : boolean := false;
     signal start_address : natural := 6;
+
+    signal mc_output : mp_ram_pkg.ram_write_in_record;
 
 begin
 
@@ -99,8 +117,17 @@ begin
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-            if o1_ready then
-                test1 <= to_real(output1, used_radix);
+            if write_requested(mc_output,50) then
+                test1 <= to_real(signed(get_data(mc_output)), used_radix);
+            end if;
+            if write_requested(mc_output,51) then
+                test2 <= to_real(signed(get_data(mc_output)), used_radix);
+            end if;
+            if write_requested(mc_output,52) then
+                test3 <= to_real(signed(get_data(mc_output)), used_radix);
+            end if;
+            if write_requested(mc_output,53) then
+                test4 <= to_real(signed(get_data(mc_output)), used_radix);
             end if;
 
             calculate <= false;
@@ -123,6 +150,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, calculate, start_address, output1, o1_ready);
+    port map(simulator_clock, calculate, start_address, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;
