@@ -83,10 +83,10 @@ begin
         then
             o1_ready <= false;
             if write_requested(ram_write_in) then
-                if get_address(ram_write_in) >= 95
-                    and get_address(ram_write_in) <= 100 
+                if get_address(ram_write_in) = 5
+                    -- and get_address(ram_write_in) <= 10 
                 then
-                    output1 <= signed(get_data(ram_write_in));
+                    output1  <= signed(get_data(ram_write_in));
                     o1_ready <= true;
                 end if;
             end if;

@@ -66,6 +66,17 @@ begin
                         request_data_from_ram(ram_read_in(arg2_mem)
                         , get_arg3(get_ram_data(ram_read_out(inst_mem))));
 
+                    WHEN a_sub_b_mpy_c =>
+                        request_data_from_ram(ram_read_in(arg1_mem)
+                        , get_arg1(get_ram_data(ram_read_out(inst_mem))));
+
+                        request_data_from_ram(ram_read_in(arg3_mem)
+                        , get_arg2(get_ram_data(ram_read_out(inst_mem))));
+
+                        request_data_from_ram(ram_read_in(arg2_mem)
+                        , get_arg3(get_ram_data(ram_read_out(inst_mem))));
+
+
                     WHEN others => -- do nothing
                 end CASE;
             end if;
@@ -91,11 +102,17 @@ begin
                     b <= signed(get_ram_data(ram_read_out(arg3_mem)));
                     c <= signed(get_ram_data(ram_read_out(arg2_mem)));
 
+                WHEN a_sub_b_mpy_c =>
+                    a <= signed(get_ram_data(ram_read_out(arg1_mem)))
+                         - signed(get_ram_data(ram_read_out(arg3_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    c <= signed(get_ram_data(ram_read_out(arg3_mem)));
+
                 WHEN others => -- do nothing
             end CASE;
             ---------------
             CASE decode(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)) is
-                WHEN add | sub | mpy_add =>
+                WHEN add | sub | mpy_add | a_sub_b_mpy_c =>
                     write_data_to_ram(ram_write_in , get_dest(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)), std_logic_vector(mpy_res(radix+31 downto radix)));
                 WHEN others => -- do nothing
             end CASE;

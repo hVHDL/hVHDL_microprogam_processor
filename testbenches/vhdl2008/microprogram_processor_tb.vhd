@@ -39,47 +39,45 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     constant used_radix : natural := 20;
 
-    constant test_program : ram_array :=(
-        6   => op(sub, 96, 101,101)
-        , 7  => op(sub     , 100 , 101 , 102)
-        , 8  => op(sub     , 99  , 102 , 101)
-        , 9  => op(add     , 98  , 103 , 104)
-        , 10 => op(add     , 97  , 104 , 103)
-        , 11 => op(mpy_add , 96  , 101 , 104  , 105)
-        , 12 => op(mpy_add , 95  , 102 , 104  , 102)
-        , 13 => op(program_end)
-
-        , 16 => op(sub          , 96  , 101 , 101)
-        , 17 => op(sub          , 100 , 101 , 102)
-        , 18 => op(sub          , 99  , 102 , 101)
-        , 19 => op(add          , 98  , 103 , 104)
-        , 20 => op(add          , 97  , 104 , 103)
-        , 21 => op(mpy_add      , 96  , 101 , 104  , 105)
-        , 22 => op(mpy_add      , 95  , 102 , 104  , 102)
-        , 23 => op(program_end)
-
-        , 25 => op(set_rpt, 5)
-        , 26 => op(sub          , 96  , 101 , 101)
-        , 27 => op(sub          , 100 , 101 , 102)
-        , 28 => op(sub          , 99  , 102 , 101)
-        , 29 => op(add          , 98  , 103 , 104)
-        , 30 => op(jump, 26)
-        , 31 => op(add          , 97  , 104 , 103)
-        , 32 => op(mpy_add      , 96  , 101 , 104  , 105)
-        , 33 => op(mpy_add      , 95  , 102 , 104  , 102)
-        , 34 => op(program_end)
-
-        , others => op(nop));
+    constant y : natural := 5;
+    constant u : natural := 17;
+    constant g : natural := 16;
 
     constant program_data : ram_array :=(
-         101 => to_fixed(1.5   , 32 , used_radix)
-        , 102 => to_fixed(0.5   , 32 , used_radix)
-        , 103 => to_fixed(-2.5  , 32 , used_radix)
-        , 104 => to_fixed(-0.65 , 32 , used_radix)
-        , 105 => to_fixed(-1.0  , 32 , used_radix)
-        ,others => (others => '0')
+          11 => to_fixed(1.5   , 32 , used_radix)
+
+        , 12 => to_fixed(0.5        , 32 , used_radix)
+        , 13 => to_fixed(-2.5       , 32 , used_radix)
+        , 14 => to_fixed(-0.65      , 32 , used_radix)
+        , 15 => to_fixed(-1.0       , 32 , used_radix)
+        , 16 => to_fixed(1.0/7.6359 , 32 , used_radix)
+        , u => to_fixed(20.0 , 32 , used_radix)
+        , others => (others => '0')
     );
 
+    constant test_program : ram_array :=(
+        6   => op(sub, 6, 11,11)
+        , 7  => op(sub     , 10 , 11 , 12)
+        , 8  => op(sub     , 9  , 12 , 11)
+        , 9  => op(add     , 8  , 13 , 14)
+        , 10 => op(add     , 7  , 14 , 13)
+        , 11 => op(mpy_add , 6  , 11 , 14  , 15)
+        , 13 => op(program_end)
+
+        , 16 => op(sub          , 6  , 11 , 11)
+        , 17 => op(sub          , 10 , 11 , 12)
+        , 18 => op(sub          , 9  , 12 , 11)
+        , 19 => op(add          , 8  , 13 , 14)
+        , 20 => op(add          , 7  , 14 , 13)
+        , 21 => op(mpy_add      , 6  , 11 , 14  , 15)
+        , 23 => op(program_end)
+
+        , 25 => op(set_rpt, 100)
+        , 26 => op(a_sub_b_mpy_c , y,  u , y , g)
+        , 30 => op(jump, 26)
+        , 35 => op(program_end)
+
+        , others => op(nop));
 
     signal calculate     : boolean := false;
     signal start_address : natural := 6;

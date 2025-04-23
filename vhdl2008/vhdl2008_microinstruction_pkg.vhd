@@ -28,7 +28,7 @@ package generic_microinstruction_pkg is
         ,mpy_sub     
         ,set_rpt
         ,jump
-        ,res2
+        ,a_sub_b_mpy_c
         ,res3
         ,res4
         ,res5
