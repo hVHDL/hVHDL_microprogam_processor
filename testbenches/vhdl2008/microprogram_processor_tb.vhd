@@ -37,6 +37,7 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal test2 : real := 0.0;
     signal test3 : real := 0.0;
     signal test4 : real := 0.0;
+    signal test5 : real := 0.0;
 
     constant used_radix : natural := 20;
 
@@ -86,11 +87,11 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         , 26 => op(a_sub_b_mpy_c , y   , u+0, y   , g)
         , 27 => op(a_sub_b_mpy_c , y+1 , u+1, y+1 , g+1)
-        , 28 => op(a_sub_b_mpy_c , y+2 , u+2, y+2 , g+2)
-        , 29 => op(a_sub_b_mpy_c , y+3 , u+3, y+3 , g+3)
-        , 30 => op(a_sub_b_mpy_c , y+4 , u+4, y+4 , g+4)
+        , 28 => op(jump, 26)
+        , 29 => op(a_sub_b_mpy_c , y+2 , u+2, y+2 , g+2)
+        , 30 => op(a_sub_b_mpy_c , y+3 , u+3, y+3 , g+3)
+        , 31 => op(a_sub_b_mpy_c , y+4 , u+4, y+4 , g+4)
 
-        , 31 => op(jump, 26)
         , 35 => op(program_end)
 
         , others => op(nop));
@@ -99,6 +100,24 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal start_address : natural := 6;
 
     signal mc_output : mp_ram_pkg.ram_write_in_record;
+
+    function generic_op 
+        generic (
+            type t_lista
+            ;function get_pos(a : t_lista) return natural is <>
+        )
+        parameter (x : t_lista) return natural is
+    begin
+        return get_pos(x);
+    end generic_op;
+
+    type test_list is (eka, toka, kolmas, neljas);
+    function ttt(a : test_list) return natural is
+    begin
+        return test_list'pos(a);
+    end ttt;
+
+    function op is new generic_op generic map(t_lista => test_list, get_pos => ttt);
 
 begin
 
@@ -128,6 +147,9 @@ begin
             end if;
             if write_requested(mc_output,53) then
                 test4 <= to_real(signed(get_data(mc_output)), used_radix);
+            end if;
+            if write_requested(mc_output,54) then
+                test5 <= to_real(signed(get_data(mc_output)), used_radix);
             end if;
 
             calculate <= false;
