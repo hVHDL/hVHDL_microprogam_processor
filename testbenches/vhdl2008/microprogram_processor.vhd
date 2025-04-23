@@ -8,6 +8,7 @@ entity microprogram_processor is
             ;package processor_mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
             ;g_used_radix : natural
             ;g_program : processor_mp_ram_pkg.ram_array
+            ;g_data : processor_mp_ram_pkg.ram_array
            );
     port(
         clock : in std_logic
@@ -37,6 +38,8 @@ architecture rtl of microprogram_processor is
     signal ram_write_in      : ram_write_in_record;
     signal pim_ram_write     : ram_write_in_record;
     signal add_sub_ram_write : ram_write_in_record;
+
+    signal ram_write_in1      : ram_write_in_record;
 
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
 
@@ -105,12 +108,20 @@ begin
     ram_read_in  <= pc_read_in   and sub_read_in;
     ram_write_in <= pim_ram_write and add_sub_ram_write;
 
-    u_mpram : entity work.multi_port_ram
+    u_program_ram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)
     port map(
         clock => clock
-        ,ram_read_in  => ram_read_in
-        ,ram_read_out => ram_read_out
+        ,ram_read_in  => ram_read_in(0 to 0)
+        ,ram_read_out => ram_read_out(0 to 0)
+        ,ram_write_in => ram_write_in1);
+---------------------------------------
+    u_data_ram : entity work.multi_port_ram
+    generic map(mp_ram_pkg, g_data)
+    port map(
+        clock => clock
+        ,ram_read_in  => ram_read_in(1 to ram_read_in'high)
+        ,ram_read_out => ram_read_out(1 to ram_read_in'high)
         ,ram_write_in => ram_write_in);
 ---------------------------------------
 end rtl;

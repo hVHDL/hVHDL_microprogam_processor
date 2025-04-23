@@ -69,13 +69,17 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 33 => op(mpy_add      , 95  , 102 , 104  , 102)
         , 34 => op(program_end)
 
-        , 101 => to_fixed(1.5   , 32 , used_radix)
+        , others => op(nop));
+
+    constant program_data : ram_array :=(
+         101 => to_fixed(1.5   , 32 , used_radix)
         , 102 => to_fixed(0.5   , 32 , used_radix)
         , 103 => to_fixed(-2.5  , 32 , used_radix)
         , 104 => to_fixed(-0.65 , 32 , used_radix)
         , 105 => to_fixed(-1.0  , 32 , used_radix)
+        ,others => (others => '0')
+    );
 
-        , others => op(nop));
 
     signal calculate     : boolean := false;
     signal start_address : natural := 6;
@@ -120,7 +124,7 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
-    generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program)
+    generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
     port map(simulator_clock, calculate, start_address, output1, o1_ready);
 ------------------------------------------------------------------------
 end vunit_simulation;
