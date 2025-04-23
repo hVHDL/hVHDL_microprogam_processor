@@ -75,7 +75,6 @@ begin
         end if;
     end process debug;
 ------------------------------------------------------------------------
-
     process(clock) is
     begin
         if rising_edge(clock)
@@ -103,9 +102,10 @@ begin
     port map(clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-    ram_read_in  <= pc_read_in   and sub_read_in;
+----
+    ram_read_in  <= pc_read_in    and sub_read_in;
     ram_write_in <= pim_ram_write and add_sub_ram_write;
-
+----
     u_program_ram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)
     port map(
@@ -113,7 +113,7 @@ begin
         ,ram_read_in  => ram_read_in(0 to 0)
         ,ram_read_out => ram_read_out(0 to 0)
         ,ram_write_in => ram_write_in1);
----------------------------------------
+----
     u_data_ram : entity work.multi_port_ram
     generic map(mp_ram_pkg, g_data)
     port map(
