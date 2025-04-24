@@ -11,9 +11,11 @@ entity microprogram_processor is
             ;g_data : processor_mp_ram_pkg.ram_array
            );
     port(
-        clock : in std_logic
+        clock          : in std_logic
         ;calculate     : in boolean := false
         ;start_address : in natural := 0
+        ;mc_read_in    : out processor_mp_ram_pkg.ram_read_in_record
+        ;mc_read_out   : in processor_mp_ram_pkg.ram_read_out_record
         ;mc_output     : out processor_mp_ram_pkg.ram_write_in_record
     );
 end microprogram_processor;
@@ -103,8 +105,11 @@ begin
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ----
-    ram_read_in  <= pc_read_in    and sub_read_in;
-    ram_write_in <= pim_ram_write and add_sub_ram_write;
+    process(all) is
+    begin
+        ram_read_in  <= combine((0 => pc_read_in    , 1 => sub_read_in));
+        ram_write_in <= combine((0 => pim_ram_write , 1 => add_sub_ram_write));
+    end process;
 ----
     u_program_ram : entity work.multi_port_ram
     generic map(mp_ram_pkg, test_program)

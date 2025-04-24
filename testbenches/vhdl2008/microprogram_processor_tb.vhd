@@ -99,7 +99,6 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal calculate     : boolean := false;
     signal start_address : natural := 6;
 
-    signal mc_output : mp_ram_pkg.ram_write_in_record;
 
     function generic_op 
         generic (
@@ -118,6 +117,11 @@ architecture vunit_simulation of microprogram_processor_tb is
     end ttt;
 
     function op is new generic_op generic map(t_lista => test_list, get_pos => ttt);
+    ----
+    signal mc_read_in  : ram_read_in_record;
+    signal mc_read_out : ram_read_out_record;
+    signal mc_output   : ram_write_in_record;
+    ----
 
 begin
 
@@ -172,6 +176,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, calculate, start_address, mc_output);
+    port map(simulator_clock, calculate, start_address, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;
