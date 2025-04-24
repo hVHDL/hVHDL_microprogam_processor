@@ -91,7 +91,6 @@ begin
             end if;
         end if;
     end process;
-
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(microinstruction_pkg, mp_ram_pkg)
@@ -100,7 +99,7 @@ begin
     , start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)
+    generic map(microinstruction_pkg , mp_ram_pkg , radix => used_radix)
     port map(clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
