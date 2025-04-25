@@ -180,13 +180,14 @@ begin
                 if read_requested(mc_read_in(i), 120) then
                     mc_read_out_buf(i).data <= to_fixed(-22.351, 32, used_radix);
                     mc_read_out_buf(i).data_is_ready <= '1';
+                    testisignaali <= not testisignaali;
                 else
                     mc_read_out_buf(i).data <= (others => '0');
                     mc_read_out_buf(i).data_is_ready <= '0';
                 end if;
             end loop;
-            mc_read_out <= mc_read_out_buf;
 
+            mc_read_out <= mc_read_out_buf;
 
         end if; -- rising_edge
     end process stimulus;	

@@ -44,7 +44,7 @@ architecture rtl of microprogram_processor is
     signal ram_write_in1      : ram_write_in_record;
 
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
-    signal data_ram_read_out : ram_read_out_array(1 to ram_read_in'high);
+    signal data_ram_read_out : ram_read_out_array(ram_read_in'range);
 
     constant used_radix : natural := g_used_radix;
 
@@ -96,13 +96,13 @@ begin
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(microinstruction_pkg, mp_ram_pkg)
-    port map(clock , pc_read_in , ram_read_out , pim_ram_write , processor_enabled, instr_pipeline
+    port map(clock , pc_read_in , data_ram_read_out , pim_ram_write , processor_enabled, instr_pipeline
     , calculate
     , start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(microinstruction_pkg , mp_ram_pkg , radix => used_radix)
-    port map(clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
+    port map(clock , sub_read_in , data_ram_read_out , add_sub_ram_write , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ----
