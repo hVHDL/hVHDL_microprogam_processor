@@ -43,6 +43,7 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     constant y : natural := 50;
     constant u : natural := 60;
+    constant uext : natural := 120;
     constant g : natural := 70;
 
     constant program_data : ram_array :=(
@@ -85,7 +86,7 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         , 25 => op(set_rpt, 100)
 
-        , 26 => op(a_sub_b_mpy_c , y   , u+0, y   , g)
+        , 26 => op(a_sub_b_mpy_c , y   , uext, y   , g)
         , 27 => op(a_sub_b_mpy_c , y+1 , u+1, y+1 , g+1)
         , 28 => op(jump, 26)
         , 29 => op(a_sub_b_mpy_c , y+2 , u+2, y+2 , g+2)
@@ -118,10 +119,14 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     function op is new generic_op generic map(t_lista => test_list, get_pos => ttt);
     ----
-    signal mc_read_in  : ram_read_in_record;
-    signal mc_read_out : ram_read_out_record;
+    signal mc_read_in  : ram_read_in_array(0 to 3);
+    signal mc_read_out : ram_read_out_array(0 to 3);
     signal mc_output   : ram_write_in_record;
     ----
+    signal mc_read_in_buf  : ram_read_in_array(0 to 3);
+    signal mc_read_out_buf : ram_read_out_array(0 to 3);
+
+    signal testisignaali : boolean := false;
 
 begin
 
@@ -171,9 +176,22 @@ begin
                 WHEN others => -- do nothing
             end CASE;
 
+            for i in mc_read_in'range loop
+                if read_requested(mc_read_in(i), 120) then
+                    mc_read_out_buf(i).data <= to_fixed(-22.351, 32, used_radix);
+                    mc_read_out_buf(i).data_is_ready <= '1';
+                else
+                    mc_read_out_buf(i).data <= (others => '0');
+                    mc_read_out_buf(i).data_is_ready <= '0';
+                end if;
+            end loop;
+            mc_read_out <= mc_read_out_buf;
+
+
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
+
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
     port map(simulator_clock, calculate, start_address, mc_read_in, mc_read_out, mc_output);

@@ -14,8 +14,8 @@ entity microprogram_processor is
         clock          : in std_logic
         ;calculate     : in boolean := false
         ;start_address : in natural := 0
-        ;mc_read_in    : out processor_mp_ram_pkg.ram_read_in_record
-        ;mc_read_out   : in processor_mp_ram_pkg.ram_read_out_record
+        ;mc_read_in    : out processor_mp_ram_pkg.ram_read_in_array(0 to 3)
+        ;mc_read_out   : in processor_mp_ram_pkg.ram_read_out_array(0 to 3)
         ;mc_output     : out processor_mp_ram_pkg.ram_write_in_record
     );
 end microprogram_processor;
@@ -32,9 +32,10 @@ architecture rtl of microprogram_processor is
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
 
-    signal ram_read_in : ram_read_in_array(0 to 4);
-    signal pc_read_in  : ram_read_in_array(0 to 4);
-    signal sub_read_in : ram_read_in_array(0 to 4);
+    signal ram_read_in : ram_read_in_array(0 to 3);
+    signal pc_read_in  : ram_read_in_array(0 to 3);
+    signal sub_read_in : ram_read_in_array(0 to 3);
+    signal ext_read_in : ram_read_in_array(0 to 3);
 
     signal ram_write_in      : ram_write_in_record;
     signal pim_ram_write     : ram_write_in_record;
@@ -43,6 +44,7 @@ architecture rtl of microprogram_processor is
     signal ram_write_in1      : ram_write_in_record;
 
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
+    signal data_ram_read_out : ram_read_out_array(1 to ram_read_in'high);
 
     constant used_radix : natural := g_used_radix;
 
@@ -106,7 +108,23 @@ begin
 ----
     process(all) is
     begin
-        ram_read_in  <= combine((0 => pc_read_in    , 1 => sub_read_in));
+
+        for i in ext_read_in'range loop
+            mc_read_in(i).address        <= ext_read_in(i).address;
+            mc_read_in(i).read_requested <= ext_read_in(i).read_requested;
+        end loop;
+
+        for i in data_ram_read_out'range loop
+            if mc_read_out(i).data_is_ready then
+                data_ram_read_out(i).data          <= mc_read_out(i).data;
+                data_ram_read_out(i).data_is_ready <= mc_read_out(i).data_is_ready;
+            else
+                data_ram_read_out(i) <= ram_read_out(i);
+            end if;
+        end loop;
+
+        ext_read_in  <= combine((0 => pc_read_in    , 1 => sub_read_in)         , no_map_range_hi => 119);
+        ram_read_in  <= combine((0 => pc_read_in    , 1 => sub_read_in)         , no_map_range_low => 119);
         ram_write_in <= combine((0 => pim_ram_write , 1 => add_sub_ram_write));
     end process;
 ----
