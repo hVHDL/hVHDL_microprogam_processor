@@ -47,7 +47,9 @@ architecture vunit_simulation of microprogram_processor_tb is
     constant g : natural := 70;
 
     constant program_data : ram_array :=(
-          11 => to_fixed(1.5   , 32 , used_radix)
+           0 => to_fixed(0.0   , 32 , used_radix)
+        ,  1 => to_fixed(1.0   , 32 , used_radix)
+        , 11 => to_fixed(1.5   , 32 , used_radix)
 
         , 12  => to_fixed(0.5        , 32 , used_radix)
         , 13  => to_fixed(-2.5       , 32 , used_radix)
@@ -84,16 +86,18 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 21 => op(mpy_add      , 6  , 11 , 14  , 15)
         , 23 => op(program_end)
 
-        , 25 => op(set_rpt, 200)
+        , 118 => op(set_rpt, 200)
 
-        , 26 => op(a_sub_b_mpy_c , y   , u, y   , g)
-        , 27 => op(a_sub_b_mpy_c , y+1 , u+1, y+1 , g+1)
-        , 28 => op(jump, 26)
-        , 29 => op(a_sub_b_mpy_c , y+2 , uext, y+2 , g+2)
-        , 30 => op(a_sub_b_mpy_c , y+3 , u+3, y+3 , g+3)
-        , 31 => op(a_sub_b_mpy_c , y+4 , u+4, y+4 , g+4)
+        , 119 => op(a_sub_b_mpy_c , y    , u   , y   , g)
+        , 120 => op(a_sub_b_mpy_c , y+1  , u+1 , y+1 , g+1)
+        , 121 => op(jump          , 119)
+        , 122 => op(a_sub_b_mpy_c , y+2 , uext , y+2 , g+2)
+        , 123 => op(a_sub_b_mpy_c , y+3 , u+3  , y+3 , g+3)
+        , 124 => op(a_sub_b_mpy_c , y+4 , u+4  , y+4 , g+4)
 
-        , 35 => op(program_end)
+        , 125 => op(mpy_add , y+4 , 0  , 0 , 0)
+        , 126 => op(mpy_add , y+4 , 1  , y+4 , 0)
+        , 127 => op(program_end)
 
         , others => op(nop));
 
@@ -174,7 +178,7 @@ begin
 
                 WHEN 50 =>
                     calculate <= true;
-                    start_address <= 25;
+                    start_address <= 118;
                 WHEN others => -- do nothing
             end CASE;
 
