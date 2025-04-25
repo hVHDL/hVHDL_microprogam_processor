@@ -53,7 +53,7 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 13  => to_fixed(-2.5       , 32 , used_radix)
         , 14  => to_fixed(-0.65      , 32 , used_radix)
         , 15  => to_fixed(-1.0       , 32 , used_radix)
-        , g   => to_fixed(1.0/7.6359 , 32 , used_radix)
+        , g   => to_fixed(1.0/20.6359 , 32 , used_radix)
         , g+1 => to_fixed(1.0/6.6359 , 32 , used_radix)
         , g+2 => to_fixed(1.0/5.6359 , 32 , used_radix)
         , g+3 => to_fixed(1.0/4.6359 , 32 , used_radix)
@@ -84,12 +84,12 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 21 => op(mpy_add      , 6  , 11 , 14  , 15)
         , 23 => op(program_end)
 
-        , 25 => op(set_rpt, 100)
+        , 25 => op(set_rpt, 200)
 
-        , 26 => op(a_sub_b_mpy_c , y   , uext, y   , g)
+        , 26 => op(a_sub_b_mpy_c , y   , u, y   , g)
         , 27 => op(a_sub_b_mpy_c , y+1 , u+1, y+1 , g+1)
         , 28 => op(jump, 26)
-        , 29 => op(a_sub_b_mpy_c , y+2 , u+2, y+2 , g+2)
+        , 29 => op(a_sub_b_mpy_c , y+2 , uext, y+2 , g+2)
         , 30 => op(a_sub_b_mpy_c , y+3 , u+3, y+3 , g+3)
         , 31 => op(a_sub_b_mpy_c , y+4 , u+4, y+4 , g+4)
 
@@ -127,6 +127,8 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal mc_read_out_buf : ram_read_out_array(0 to 3);
 
     signal testisignaali : boolean := false;
+
+    signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
 
 begin
 
@@ -178,7 +180,7 @@ begin
 
             for i in mc_read_in'range loop
                 if read_requested(mc_read_in(i), 120) then
-                    mc_read_out_buf(i).data <= to_fixed(-22.351, 32, used_radix);
+                    mc_read_out_buf(i).data <= ext_input;
                     mc_read_out_buf(i).data_is_ready <= '1';
                     testisignaali <= not testisignaali;
                 else

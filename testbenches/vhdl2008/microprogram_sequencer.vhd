@@ -27,7 +27,7 @@ end;
 architecture rtl of microprogram_sequencer is
 
     signal program_counter : natural range 0 to 1023 := 0;
-    signal rpt_counter     : natural range 0 to 127   := 0;
+    signal rpt_counter     : natural range 0 to 2**20  := 0;
 
     type t_processor_states is (halted, running);
     signal processor_state : t_processor_states := halted;
