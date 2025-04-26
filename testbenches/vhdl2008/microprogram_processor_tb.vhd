@@ -67,14 +67,14 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 15  => to_fixed(-1.0       , 32 , used_radix)
 
 
-        , duty             => to_fixed(0.5                , 32 , used_radix)
-        , inductor_current => to_fixed(0.0                , 32 , used_radix)
-        , cap_voltage      => to_fixed(0.0                , 32 , used_radix)
-        , ind_res          => to_fixed(1.5                , 32 , used_radix)
-        , load             => to_fixed(0.5                , 32 , used_radix)
-        , current_gain     => to_fixed(1.0/1.0e-6*1.0e-6 , 32 , used_radix)
-        , voltage_gain     => to_fixed(1.0/1.0e-6*1.0e-6 , 32 , used_radix)
-        , input_voltage    => to_fixed(10.0               , 32 , used_radix)
+        , duty             => to_fixed(0.5              , 32 , used_radix)
+        , inductor_current => to_fixed(0.0               , 32 , used_radix)
+        , cap_voltage      => to_fixed(0.0               , 32 , used_radix)
+        , ind_res          => to_fixed(0.5               , 32 , used_radix)
+        , load             => to_fixed(0.0               , 32 , used_radix)
+        , current_gain     => to_fixed(1.0/5.0e-6*1.0e-6 , 32 , used_radix)
+        , voltage_gain     => to_fixed(1.0/3.0e-6*1.0e-6 , 32 , used_radix)
+        , input_voltage    => to_fixed(10.0              , 32 , used_radix)
         , inductor_voltage => to_fixed(0.0               , 32 , used_radix)
 
 
@@ -125,11 +125,11 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         -- lc filter
         , 128 => op(set_rpt       , 200)
-        , 129 => op(mpy_add       , inductor_voltage , duty             , input_voltage    , cap_voltage)
+        , 129 => op(mpy_sub       , inductor_voltage , duty             , input_voltage    , cap_voltage)
         , 130 => op(a_sub_b_mpy_c , cap_voltage      , inductor_current , load             , voltage_gain)
         , 137 => op(neg_mpy_add   , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
-        , 138 => op(jump          , 129)
-        , 141 => op(mpy_add       , inductor_current , inductor_voltage , current_gain     , inductor_current)
+        , 145 => op(mpy_add       , inductor_current , inductor_voltage , current_gain     , inductor_current)
+        , 152 => op(jump          , 129)
 
         , others => op(nop));
 
