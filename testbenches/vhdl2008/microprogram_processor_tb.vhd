@@ -175,20 +175,6 @@ begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
-            connect_ram_write_to_address(50, mc_output, test1);
-
-            if write_requested(mc_output,51) then
-                test2 <= to_real(signed(get_data(mc_output)), used_radix);
-            end if;
-            if write_requested(mc_output,52) then
-                test3 <= to_real(signed(get_data(mc_output)), used_radix);
-            end if;
-            if write_requested(mc_output,53) then
-                test4 <= to_real(signed(get_data(mc_output)), used_radix);
-            end if;
-            if write_requested(mc_output,54) then
-                test5 <= to_real(signed(get_data(mc_output)), used_radix);
-            end if;
 
             calculate <= false;
             CASE simulation_counter is
@@ -207,6 +193,12 @@ begin
 
             init_ram_connector(ram_connector);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
+
+            connect_ram_write_to_address(50, mc_output, test1);
+            connect_ram_write_to_address(51, mc_output, test2);
+            connect_ram_write_to_address(52, mc_output, test3);
+            connect_ram_write_to_address(53, mc_output, test4);
+            connect_ram_write_to_address(54, mc_output, test5);
 
         end if; -- rising_edge
     end process stimulus;	
