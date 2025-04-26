@@ -1,3 +1,61 @@
+LIBRARY ieee  ; 
+    USE ieee.NUMERIC_STD.all  ; 
+    USE ieee.std_logic_1164.all  ; 
+    use ieee.math_real.all;
+
+package generic_ram_connector_pkg is
+    generic(
+            package connector_mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
+            );
+    use connector_mp_ram_pkg.all;
+
+    type ram_connector_record is record
+        read_in  : ram_read_in_array;
+        read_out : ram_read_out_array;
+    end record;
+
+    procedure init_ram_connector(signal self : inout ram_connector_record);
+    procedure connect_data_to_ram_bus(
+                     signal self : inout ram_connector_record
+                     ; ram_port_in : in ram_read_in_array
+                     ; signal ram_port_out : out ram_read_out_array
+                     ; address : in natural
+                     ; data : in ramtype);
+
+end package generic_ram_connector_pkg;
+
+package body generic_ram_connector_pkg is
+
+    procedure init_ram_connector(signal self : inout ram_connector_record) is
+    begin
+        for i in self.read_out'range loop
+                self.read_out(i).data <= (others => '0');
+                self.read_out(i).data_is_ready <= '0';
+        end loop;
+    end init_ram_connector;
+
+    procedure connect_data_to_ram_bus(
+                     signal self : inout ram_connector_record
+                     ; ram_port_in : in ram_read_in_array
+                     ; signal ram_port_out : out ram_read_out_array
+                     ; address : in natural
+                     ; data : in ramtype
+                 ) is
+    begin
+        for i in ram_port_in'range loop
+            if read_requested(ram_port_in(i), address) then
+                self.read_out(i).data <= data;
+                self.read_out(i).data_is_ready <= '1';
+            end if;
+        end loop;
+
+        ram_port_out <= self.read_out;
+
+    end connect_data_to_ram_bus;
+
+end package body generic_ram_connector_pkg;
+
+----------------------------
 
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
@@ -130,39 +188,10 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal mc_read_out : ram_read_out_array(0 to 3);
     signal mc_output   : ram_write_in_record;
     ----
-    type ram_connector_record is record
-        read_in_buf  : ram_read_in_array(0 to 3);
-        read_out_buf : ram_read_out_array(0 to 3);
-    end record;
+    package ram_connector_pkg is new work.generic_ram_connector_pkg generic map(mp_ram_pkg);
+        use ram_connector_pkg.all;
 
-    signal memory_connector : ram_connector_record;
-
-    procedure init_memory_connector(signal self : inout ram_connector_record) is
-    begin
-        for i in self.read_out_buf'range loop
-                self.read_out_buf(i).data <= (others => '0');
-                self.read_out_buf(i).data_is_ready <= '0';
-        end loop;
-    end init_memory_connector;
-
-    procedure connect_data_to_ram_bus(
-                     signal self : inout ram_connector_record
-                     ; ram_port_in : in ram_read_in_array
-                     ; signal ram_port_out : out ram_read_out_array
-                     ; address : in natural
-                     ; data : in ramtype
-                 ) is
-    begin
-        for i in ram_port_in'range loop
-            if read_requested(ram_port_in(i), address) then
-                self.read_out_buf(i).data <= data;
-                self.read_out_buf(i).data_is_ready <= '1';
-            end if;
-        end loop;
-
-        ram_port_out <= self.read_out_buf;
-
-    end connect_data_to_ram_bus;
+    signal ram_connector : ram_connector_record(read_in(0 to 3), read_out(0 to 3));
 
     signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
 
@@ -214,8 +243,8 @@ begin
                 WHEN others => -- do nothing
             end CASE;
 
-            init_memory_connector(memory_connector);
-            connect_data_to_ram_bus(memory_connector, mc_read_in, mc_read_out, 120, ext_input);
+            init_ram_connector(ram_connector);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
 
         end if; -- rising_edge
     end process stimulus;	
