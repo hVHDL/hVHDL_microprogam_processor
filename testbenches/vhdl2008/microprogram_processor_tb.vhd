@@ -45,6 +45,17 @@ architecture vunit_simulation of microprogram_processor_tb is
     constant uext : natural := 120;
     constant g : natural := 70;
 
+    constant duty             : natural := 21;
+    constant inductor_current : natural := 22;
+    constant cap_voltage      : natural := 23;
+    constant ind_res          : natural := 24;
+    constant load             : natural := 25;
+    constant current_gain     : natural := 26;
+    constant voltage_gain     : natural := 27;
+    constant input_voltage    : natural := 28;
+    constant inductor_voltage : natural := 29;
+    constant rxi : natural := 29;
+
     constant program_data : ram_array :=(
            0 => to_fixed(0.0   , 32 , used_radix)
         ,  1 => to_fixed(1.0   , 32 , used_radix)
@@ -54,6 +65,19 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 13  => to_fixed(-2.5       , 32 , used_radix)
         , 14  => to_fixed(-0.65      , 32 , used_radix)
         , 15  => to_fixed(-1.0       , 32 , used_radix)
+
+
+        , duty             => to_fixed(0.5                , 32 , used_radix)
+        , inductor_current => to_fixed(0.0                , 32 , used_radix)
+        , cap_voltage      => to_fixed(0.0                , 32 , used_radix)
+        , ind_res          => to_fixed(0.5                , 32 , used_radix)
+        , load             => to_fixed(0.5                , 32 , used_radix)
+        , current_gain     => to_fixed(1.0/10.0e-6*1.0e-6 , 32 , used_radix)
+        , voltage_gain     => to_fixed(1.0/10.0e-6*1.0e-6 , 32 , used_radix)
+        , input_voltage    => to_fixed(10.0               , 32 , used_radix)
+        , inductor_voltage => to_fixed(0.0               , 32 , used_radix)
+
+
         , g   => to_fixed(1.0/20.6359 , 32 , used_radix)
         , g+1 => to_fixed(1.0/6.6359 , 32 , used_radix)
         , g+2 => to_fixed(1.0/5.6359 , 32 , used_radix)
@@ -87,16 +111,23 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         , 118 => op(set_rpt, 200)
 
-        , 119 => op(a_sub_b_mpy_c , y    , u   , y   , g)
-        , 120 => op(a_sub_b_mpy_c , y+1  , u+1 , y+1 , g+1)
+        , 119 => op(lp_filter , y    , u   , y   , g)
+        , 120 => op(lp_filter , y+1  , u+1 , y+1 , g+1)
+
         , 121 => op(jump          , 119)
-        , 122 => op(a_sub_b_mpy_c , y+2 , uext , y+2 , g+2)
-        , 123 => op(a_sub_b_mpy_c , y+3 , u+3  , y+3 , g+3)
-        , 124 => op(a_sub_b_mpy_c , y+4 , u+4  , y+4 , g+4)
+        , 122 => op(lp_filter , y+2 , uext , y+2 , g+2)
+        , 123 => op(lp_filter , y+3 , u+3  , y+3 , g+3)
+        , 124 => op(lp_filter , y+4 , u+4  , y+4 , g+4)
 
         , 125 => op(mpy_add , y+4 , 0  , 0 , 0)
         , 126 => op(mpy_add , y+4 , 1  , y+4 , 0)
         , 127 => op(program_end)
+
+        -- lc filter
+        , 128 => op(mpy_sub , inductor_voltage , duty  , input_voltage , cap_voltage)
+        , 129 => op(mpy_add , rxi , ind_res  , inductor_current , 0)
+        , 130 => op(a_sub_b_mpy_c , cap_voltage , inductor_current  , load , voltage_gain)
+        -- , 135 => op(
 
         , others => op(nop));
 
@@ -135,6 +166,7 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal ram_connector : ram_connector_record(read_in(0 to 3), read_out(0 to 3));
 
     signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
+
     procedure generic_connect_ram_write_to_address
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)

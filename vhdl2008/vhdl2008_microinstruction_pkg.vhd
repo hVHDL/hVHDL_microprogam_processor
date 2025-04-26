@@ -29,7 +29,7 @@ package generic_microinstruction_pkg is
         ,set_rpt
         ,jump
         ,a_sub_b_mpy_c
-        ,res3
+        ,lp_filter
         ,res4
         ,res5
         ,res6

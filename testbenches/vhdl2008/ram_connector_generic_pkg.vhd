@@ -30,7 +30,7 @@ package generic_ram_connector_pkg is
         address : in natural
         ; write_in : in ram_write_in_record
         ; signal data : out return_type
-    );
+    ) ;
 
     -------------------------------------------
     procedure connect_ram_write_to_address
@@ -83,7 +83,8 @@ package body generic_ram_connector_pkg is
         address : in natural
         ; write_in : in ram_write_in_record
         ; signal data : out return_type
-    ) is
+    ) 
+    is
     begin
         if write_requested(write_in,address) then
             data <= conv(get_data(write_in));
