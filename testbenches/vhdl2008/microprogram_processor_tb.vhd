@@ -54,7 +54,7 @@ architecture vunit_simulation of microprogram_processor_tb is
     constant voltage_gain     : natural := 27;
     constant input_voltage    : natural := 28;
     constant inductor_voltage : natural := 29;
-    constant rxi : natural := 29;
+    constant rxi              : natural := 30;
 
     constant program_data : ram_array :=(
            0 => to_fixed(0.0   , 32 , used_radix)
@@ -78,7 +78,7 @@ architecture vunit_simulation of microprogram_processor_tb is
         , inductor_voltage => to_fixed(0.0               , 32 , used_radix)
 
 
-        , g   => to_fixed(1.0/20.6359 , 32 , used_radix)
+        , g   => to_fixed(1.0/10.6359 , 32 , used_radix)
         , g+1 => to_fixed(1.0/6.6359 , 32 , used_radix)
         , g+2 => to_fixed(1.0/5.6359 , 32 , used_radix)
         , g+3 => to_fixed(1.0/4.6359 , 32 , used_radix)
@@ -109,7 +109,7 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 21 => op(mpy_add      , 6  , 11 , 14  , 15)
         , 23 => op(program_end)
 
-        , 118 => op(set_rpt, 200)
+        , 118 => op(set_rpt, 80)
 
         , 119 => op(lp_filter , y    , u   , y   , g)
         , 120 => op(lp_filter , y+1  , u+1 , y+1 , g+1)
@@ -124,10 +124,12 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 127 => op(program_end)
 
         -- lc filter
-        , 128 => op(mpy_sub , inductor_voltage , duty  , input_voltage , cap_voltage)
-        , 129 => op(mpy_add , rxi , ind_res  , inductor_current , 0)
-        , 130 => op(a_sub_b_mpy_c , cap_voltage , inductor_current  , load , voltage_gain)
-        -- , 135 => op(
+        , 128 => op(set_rpt       , 200)
+        , 129 => op(mpy_sub       , inductor_voltage , duty             , input_voltage    , cap_voltage)
+        , 130 => op(a_sub_b_mpy_c , cap_voltage      , inductor_current , load             , voltage_gain)
+        , 137 => op(neg_mpy_add   , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
+        , 138 => op(jump          , 129)
+        , 141 => op(mpy_add       , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
         , others => op(nop));
 
@@ -181,6 +183,10 @@ architecture vunit_simulation of microprogram_processor_tb is
         end if;
     end generic_connect_ram_write_to_address;
 
+
+    signal current : real := 0.0;
+    signal voltage : real := 0.0;
+
 begin
 
 ------------------------------------------------------------------------
@@ -220,6 +226,9 @@ begin
                 WHEN 50 =>
                     calculate <= true;
                     start_address <= 118;
+                WHEN 600 =>
+                    calculate <= true;
+                    start_address <= 128;
                 WHEN others => -- do nothing
             end CASE;
 
@@ -231,6 +240,8 @@ begin
             connect_ram_write_to_address(52, mc_output, test3);
             connect_ram_write_to_address(53, mc_output, test4);
             connect_ram_write_to_address(54, mc_output, test5);
+            connect_ram_write_to_address(inductor_voltage, mc_output, current);
+            connect_ram_write_to_address(cap_voltage, mc_output, voltage);
 
         end if; -- rising_edge
     end process stimulus;	
