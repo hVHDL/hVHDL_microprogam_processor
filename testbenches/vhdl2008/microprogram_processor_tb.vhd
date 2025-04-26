@@ -104,7 +104,7 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal calculate     : boolean := false;
     signal start_address : natural := 6;
 
-
+    --------------------
     function generic_op 
         generic (
             type t_lista
@@ -114,8 +114,11 @@ architecture vunit_simulation of microprogram_processor_tb is
     begin
         return get_pos(x);
     end generic_op;
+    --------------------
 
     type test_list is (eka, toka, kolmas, neljas);
+
+    --------------------
     function ttt(a : test_list) return natural is
     begin
         return test_list'pos(a);
@@ -127,10 +130,39 @@ architecture vunit_simulation of microprogram_processor_tb is
     signal mc_read_out : ram_read_out_array(0 to 3);
     signal mc_output   : ram_write_in_record;
     ----
-    signal mc_read_in_buf  : ram_read_in_array(0 to 3);
-    signal mc_read_out_buf : ram_read_out_array(0 to 3);
+    type ram_connector_record is record
+        read_in_buf  : ram_read_in_array(0 to 3);
+        read_out_buf : ram_read_out_array(0 to 3);
+    end record;
 
-    signal testisignaali : boolean := false;
+    signal memory_connector : ram_connector_record;
+
+    procedure init_memory_connector(signal self : inout ram_connector_record) is
+    begin
+        for i in self.read_out_buf'range loop
+                self.read_out_buf(i).data <= (others => '0');
+                self.read_out_buf(i).data_is_ready <= '0';
+        end loop;
+    end init_memory_connector;
+
+    procedure connect_data_to_ram_bus(
+                     signal self : inout ram_connector_record
+                     ; ram_port_in : in ram_read_in_array
+                     ; signal ram_port_out : out ram_read_out_array
+                     ; address : in natural
+                     ; data : in ramtype
+                 ) is
+    begin
+        for i in ram_port_in'range loop
+            if read_requested(ram_port_in(i), address) then
+                self.read_out_buf(i).data <= data;
+                self.read_out_buf(i).data_is_ready <= '1';
+            end if;
+        end loop;
+
+        ram_port_out <= self.read_out_buf;
+
+    end connect_data_to_ram_bus;
 
     signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
 
@@ -182,23 +214,12 @@ begin
                 WHEN others => -- do nothing
             end CASE;
 
-            for i in mc_read_in'range loop
-                if read_requested(mc_read_in(i), 120) then
-                    mc_read_out_buf(i).data <= ext_input;
-                    mc_read_out_buf(i).data_is_ready <= '1';
-                    testisignaali <= not testisignaali;
-                else
-                    mc_read_out_buf(i).data <= (others => '0');
-                    mc_read_out_buf(i).data_is_ready <= '0';
-                end if;
-            end loop;
-
-            mc_read_out <= mc_read_out_buf;
+            init_memory_connector(memory_connector);
+            connect_data_to_ram_bus(memory_connector, mc_read_in, mc_read_out, 120, ext_input);
 
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
     port map(simulator_clock, calculate, start_address, mc_read_in, mc_read_out, mc_output);
