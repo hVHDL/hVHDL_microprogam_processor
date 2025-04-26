@@ -107,7 +107,6 @@ begin
                     b <= signed(get_ram_data(ram_read_out(arg2_mem)));
                     c <= (others => '0');
 
-
                 WHEN lp_filter =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)))
                          - signed(get_ram_data(ram_read_out(arg3_mem)));

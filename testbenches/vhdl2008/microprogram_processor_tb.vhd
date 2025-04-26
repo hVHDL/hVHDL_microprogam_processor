@@ -40,10 +40,10 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     constant used_radix : natural := 20;
 
-    constant y : natural := 50;
-    constant u : natural := 60;
+    constant y    : natural := 50;
+    constant u    : natural := 60;
     constant uext : natural := 120;
-    constant g : natural := 70;
+    constant g    : natural := 70;
 
     constant duty             : natural := 21;
     constant inductor_current : natural := 22;
@@ -70,10 +70,10 @@ architecture vunit_simulation of microprogram_processor_tb is
         , duty             => to_fixed(0.5                , 32 , used_radix)
         , inductor_current => to_fixed(0.0                , 32 , used_radix)
         , cap_voltage      => to_fixed(0.0                , 32 , used_radix)
-        , ind_res          => to_fixed(0.5                , 32 , used_radix)
+        , ind_res          => to_fixed(1.5                , 32 , used_radix)
         , load             => to_fixed(0.5                , 32 , used_radix)
-        , current_gain     => to_fixed(1.0/10.0e-6*1.0e-6 , 32 , used_radix)
-        , voltage_gain     => to_fixed(1.0/10.0e-6*1.0e-6 , 32 , used_radix)
+        , current_gain     => to_fixed(1.0/1.0e-6*1.0e-6 , 32 , used_radix)
+        , voltage_gain     => to_fixed(1.0/1.0e-6*1.0e-6 , 32 , used_radix)
         , input_voltage    => to_fixed(10.0               , 32 , used_radix)
         , inductor_voltage => to_fixed(0.0               , 32 , used_radix)
 
@@ -125,7 +125,7 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         -- lc filter
         , 128 => op(set_rpt       , 200)
-        , 129 => op(mpy_sub       , inductor_voltage , duty             , input_voltage    , cap_voltage)
+        , 129 => op(mpy_add       , inductor_voltage , duty             , input_voltage    , cap_voltage)
         , 130 => op(a_sub_b_mpy_c , cap_voltage      , inductor_current , load             , voltage_gain)
         , 137 => op(neg_mpy_add   , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
         , 138 => op(jump          , 129)
@@ -240,8 +240,9 @@ begin
             connect_ram_write_to_address(52, mc_output, test3);
             connect_ram_write_to_address(53, mc_output, test4);
             connect_ram_write_to_address(54, mc_output, test5);
-            connect_ram_write_to_address(inductor_voltage, mc_output, current);
-            connect_ram_write_to_address(cap_voltage, mc_output, voltage);
+
+            connect_ram_write_to_address(inductor_current , mc_output , current);
+            connect_ram_write_to_address(cap_voltage      , mc_output , voltage);
 
         end if; -- rising_edge
     end process stimulus;	

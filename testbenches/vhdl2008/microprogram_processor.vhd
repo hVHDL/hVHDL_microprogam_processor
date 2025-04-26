@@ -85,11 +85,11 @@ begin
         then
             processor_mp_ram_pkg.init_mp_write(mc_output);
             if write_requested(ram_write_in) then
-                if get_address(ram_write_in) >= 50
-                    and get_address(ram_write_in) <= 59 
-                then
+                -- if get_address(ram_write_in) >= 50
+                --     and get_address(ram_write_in) <= 59 
+                -- then
                     processor_mp_ram_pkg.write_data_to_ram(mc_output,get_address(ram_write_in), get_data(ram_write_in));
-                end if;
+                -- end if;
             end if;
         end if;
     end process;
