@@ -209,12 +209,28 @@ begin
     simulator_clock <= not simulator_clock after clock_period/2.0;
 ------------------------------------------------------------------------
     stimulus : process(simulator_clock)
+
+        function convert(data_in : std_logic_vector) return real is
+        begin
+            return to_real(signed(data_in), used_radix);
+        end convert;
+
+        procedure connect_ram_write_to_address(address : in natural; write_in : in ram_write_in_record; signal data : out real) 
+        is
+        begin
+            if write_requested(mc_output,address) then
+                data <= convert(get_data(write_in));
+            end if;
+        end connect_ram_write_to_address;
+
+        -- procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address(convert);
+
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-            if write_requested(mc_output,50) then
-                test1 <= to_real(signed(get_data(mc_output)), used_radix);
-            end if;
+
+            connect_ram_write_to_address(50, mc_output, test1);
+
             if write_requested(mc_output,51) then
                 test2 <= to_real(signed(get_data(mc_output)), used_radix);
             end if;
