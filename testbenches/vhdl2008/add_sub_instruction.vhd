@@ -42,7 +42,7 @@ begin
             ---------------
             if ram_read_is_ready(ram_read_out(inst_mem)) then
                 CASE decode(get_ram_data(ram_read_out(inst_mem))) is
-                    WHEN add | sub | mpy_add | mpy_sub |neg_mpy_add | lp_filter | a_sub_b_mpy_c =>
+                    WHEN add | sub | mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_sub_b_mpy_c | lp_filter =>
                         request_data_from_ram(ram_read_in(arg1_mem)
                         , get_arg1(get_ram_data(ram_read_out(inst_mem))));
 
@@ -78,14 +78,19 @@ begin
                     c <= signed(get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN neg_mpy_add =>
-                    a <= -signed(get_ram_data(ram_read_out(arg1_mem)));
+                    a <= signed( not get_ram_data(ram_read_out(arg1_mem)));
                     b <= signed(get_ram_data(ram_read_out(arg2_mem)));
                     c <= signed(get_ram_data(ram_read_out(arg3_mem)));
+
+                WHEN neg_mpy_sub =>
+                    a <= signed( not get_ram_data(ram_read_out(arg1_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    c <= signed( not get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN mpy_sub =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)));
                     b <= signed(get_ram_data(ram_read_out(arg2_mem)));
-                    c <= -signed(get_ram_data(ram_read_out(arg3_mem)));
+                    c <= signed( not get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN a_sub_b_mpy_c =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)))
@@ -103,7 +108,7 @@ begin
             end CASE;
             ---------------
             CASE decode(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)) is
-                WHEN add | sub | mpy_add | neg_mpy_add | mpy_sub | a_sub_b_mpy_c | lp_filter =>
+                WHEN add | sub | mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_sub_b_mpy_c | lp_filter =>
                     write_data_to_ram(ram_write_in , get_dest(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)), std_logic_vector(mpy_res(radix+31 downto radix)));
                 WHEN others => -- do nothing
             end CASE;

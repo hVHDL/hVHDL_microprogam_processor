@@ -25,12 +25,12 @@ package generic_microinstruction_pkg is
         ,mpy         
         ,mpy_add     
         ,neg_mpy_add 
+        ,neg_mpy_sub
         ,mpy_sub     
-        ,set_rpt
-        ,jump
         ,a_sub_b_mpy_c
         ,lp_filter
-        ,res4
+        ,set_rpt
+        ,jump
         ,res5
         ,res6
         ,res7

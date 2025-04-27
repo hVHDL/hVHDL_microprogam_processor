@@ -71,12 +71,12 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 15  => to_fixed(-1.0       , 32 , used_radix)
 
 
-        , duty             => to_fixed(0.5              , 32 , used_radix)
+        , duty             => to_fixed(0.5               , 32 , used_radix)
         , inductor_current => to_fixed(0.0               , 32 , used_radix)
         , cap_voltage      => to_fixed(0.0               , 32 , used_radix)
-        , ind_res          => to_fixed(1.5               , 32 , used_radix)
+        , ind_res          => to_fixed(0.9               , 32 , used_radix)
         , load             => to_fixed(0.0               , 32 , used_radix)
-        , current_gain     => to_fixed(1.0/4.0e-6*1.0e-6 , 32 , used_radix)
+        , current_gain     => to_fixed(1.0/2.0e-6*1.0e-6 , 32 , used_radix)
         , voltage_gain     => to_fixed(1.0/3.0e-6*1.0e-6 , 32 , used_radix)
         , input_voltage    => to_fixed(10.0              , 32 , used_radix)
         , inductor_voltage => to_fixed(0.0               , 32 , used_radix)
@@ -123,14 +123,14 @@ architecture vunit_simulation of microprogram_processor_tb is
         , 123 => op(lp_filter , y+3 , u+3  , y+3 , g+3)
         , 124 => op(lp_filter , y+4 , u+4  , y+4 , g+4)
 
-        , 125 => op(sub , y+4 , 1  , 2, 0)
+        , 125 => op(neg_mpy_sub , y+4 , 1  , 2, 1)
         , 126 => op(lp_filter , y+4 , u+4  , y+4 , g+4)
         , 127 => op(program_end)
 
         -- lc filter
         , 128 => op(set_rpt     , 200)
-        , 129 => op(mpy_sub     , inductor_voltage , duty             , input_voltage    , cap_voltage)
-        , 130 => op(sub         , cap_current      , inductor_current , load)
+        , 129 => op(neg_mpy_add , inductor_voltage , duty             , cap_voltage      , input_voltage)
+        , 130 => op(mpy_sub     , cap_current      , duty             , inductor_current , load)
         , 136 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
         , 137 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
         , 140 => op(jump        , 129)
@@ -254,10 +254,11 @@ begin
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
 
             CASE simulation_counter is
-                when 1200 => 
-                    lc_duty <= to_fixed(0.3);
+                when 0 => lc_duty <= to_fixed(0.9);
+                    lc_load <= to_fixed(2.3);
+                when 1400 => lc_duty <= to_fixed(0.6);
                 when 1600 => 
-                    lc_load <= to_fixed(1.3);
+                    -- lc_load <= to_fixed(1.3);
                 WHEN others => --do nothing
             end CASE;
 
