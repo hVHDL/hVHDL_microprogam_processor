@@ -13,7 +13,7 @@ end;
 architecture vunit_simulation of microprogram_processor_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1500;
+    constant simtime_in_clocks : integer := 2200;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -45,14 +45,15 @@ architecture vunit_simulation of microprogram_processor_tb is
     constant uext : natural := 120;
     constant g    : natural := 70;
 
-    constant duty             : natural := 21;
+    constant load             : natural := 121;
+    constant duty             : natural := 122;
+    constant input_voltage    : natural := 123;
+
     constant inductor_current : natural := 22;
     constant cap_voltage      : natural := 23;
     constant ind_res          : natural := 24;
-    constant load             : natural := 25;
     constant current_gain     : natural := 26;
     constant voltage_gain     : natural := 27;
-    constant input_voltage    : natural := 28;
     constant inductor_voltage : natural := 29;
     constant rxi              : natural := 30;
     constant cap_current      : natural := 31;
@@ -173,6 +174,7 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
 
+
     procedure generic_connect_ram_write_to_address
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)
@@ -190,6 +192,10 @@ architecture vunit_simulation of microprogram_processor_tb is
 
     signal current : real := 0.0;
     signal voltage : real := 0.0;
+
+    signal lc_load : std_logic_vector(31 downto 0) := to_fixed(0.0, 32, used_radix);
+    signal lc_duty : std_logic_vector(31 downto 0) := to_fixed(0.5, 32, used_radix);
+    signal lc_input_voltage : std_logic_vector(31 downto 0) := to_fixed(10.0, 32, used_radix);
 
 begin
 
@@ -212,6 +218,11 @@ begin
         end convert;
 
         procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
+
+        function to_fixed(a : real) return std_logic_vector is
+        begin
+            return to_fixed(a, 32, used_radix); 
+        end to_fixed;
 
     begin
         if rising_edge(simulator_clock) then
@@ -238,6 +249,17 @@ begin
 
             init_ram_connector(ram_connector);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
+
+            CASE simulation_counter is
+                when 1200 => 
+                    lc_duty <= to_fixed(0.3);
+                when 1600 => 
+                    lc_load <= to_fixed(1.3);
+                WHEN others => --do nothing
+            end CASE;
 
             connect_ram_write_to_address(50, mc_output, test1);
             connect_ram_write_to_address(51, mc_output, test2);
