@@ -42,28 +42,14 @@ begin
             ---------------
             if ram_read_is_ready(ram_read_out(inst_mem)) then
                 CASE decode(get_ram_data(ram_read_out(inst_mem))) is
-                    WHEN add =>
-                        request_data_from_ram(ram_read_in(arg2_mem)
-                        , get_arg1(get_ram_data(ram_read_out(inst_mem))));
-
-                        request_data_from_ram(ram_read_in(arg3_mem)
-                        , get_arg2(get_ram_data(ram_read_out(inst_mem))));
-
-                    WHEN sub =>
-                        request_data_from_ram(ram_read_in(arg2_mem)
-                        , get_arg1(get_ram_data(ram_read_out(inst_mem))));
-
-                        request_data_from_ram(ram_read_in(arg3_mem)
-                        , get_arg2(get_ram_data(ram_read_out(inst_mem))));
-
-                    WHEN mpy_add | neg_mpy_add | lp_filter | a_sub_b_mpy_c =>
+                    WHEN add | sub | mpy_add | mpy_sub |neg_mpy_add | lp_filter | a_sub_b_mpy_c =>
                         request_data_from_ram(ram_read_in(arg1_mem)
                         , get_arg1(get_ram_data(ram_read_out(inst_mem))));
 
-                        request_data_from_ram(ram_read_in(arg3_mem)
+                        request_data_from_ram(ram_read_in(arg2_mem)
                         , get_arg2(get_ram_data(ram_read_out(inst_mem))));
 
-                        request_data_from_ram(ram_read_in(arg2_mem)
+                        request_data_from_ram(ram_read_in(arg3_mem)
                         , get_arg3(get_ram_data(ram_read_out(inst_mem))));
 
                     WHEN others => -- do nothing
@@ -78,40 +64,40 @@ begin
             CASE decode(instr_pipeline(mp_ram_pkg.read_pipeline_delay)) is
                 WHEN add =>
                     a <= to_fixed(1.0, a'length, radix);
-                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg1_mem)));
                     c <= signed(get_ram_data(ram_read_out(arg2_mem)));
 
                 WHEN sub =>
                     a <= to_fixed(1.0, a'length, radix);
-                    b <=  signed(get_ram_data(ram_read_out(arg3_mem)));
+                    b <=  signed(get_ram_data(ram_read_out(arg1_mem)));
                     c <= -signed(get_ram_data(ram_read_out(arg2_mem)));
 
                 WHEN mpy_add =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    c <= signed(get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN neg_mpy_add =>
                     a <= -signed(get_ram_data(ram_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    c <= signed(get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN mpy_sub =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
-                    c <= -signed(get_ram_data(ram_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                    c <= -signed(get_ram_data(ram_read_out(arg3_mem)));
 
                 WHEN a_sub_b_mpy_c =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)))
-                         - signed(get_ram_data(ram_read_out(arg3_mem)));
-                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
+                         - signed(get_ram_data(ram_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
                     c <= (others => '0');
 
                 WHEN lp_filter =>
                     a <= signed(get_ram_data(ram_read_out(arg1_mem)))
-                         - signed(get_ram_data(ram_read_out(arg3_mem)));
-                    b <= signed(get_ram_data(ram_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(ram_read_out(arg3_mem)));
+                         - signed(get_ram_data(ram_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(ram_read_out(arg3_mem)));
+                    c <= signed(get_ram_data(ram_read_out(arg2_mem)));
 
                 WHEN others => -- do nothing
             end CASE;
