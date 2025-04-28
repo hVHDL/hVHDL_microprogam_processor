@@ -82,13 +82,27 @@ architecture vunit_simulation of mproc_test_modeling_tb is
         , others => (others => '0')
     );
 
+    function sub(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_sub, dest, 1, a, b);
+    end sub;
+
+    function add(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_add, dest, 1, a, b);
+    end add;
+
+    function mpy(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_add, dest, a, b, 0);
+    end mpy;
+
     constant test_program : ram_array :=(
-        6    => op(sub, 6, 11,11)
-        , 7  => op(sub     , 10 , 11 , 12)
-        , 8  => op(sub     , 9  , 12 , 11)
-        , 9  => op(add     , 8  , 13 , 14)
-        , 10 => op(add     , 7  , 14 , 13)
-        , 11 => op(mpy_add , 6  , 11 , 14  , 15)
+        6    => sub(5, 1, 1)
+        , 7  => add(6, 1, 1)
+        , 8  => mpy(7, 2, 2)
+        , 9  => op(mpy_add,8, 2, 2, 1)
+        , 10  => op(mpy_sub,9, 2, 2, 1)
         , 13 => op(program_end)
 
         -- lc filter
@@ -166,34 +180,35 @@ begin
             simulation_counter <= simulation_counter + 1;
 
 
-            calculate <= false;
-            CASE simulation_counter is
-                WHEN 0 =>
-                    calculate <= true;
-                    start_address <= 128;
-                WHEN others => -- do nothing
-            end CASE;
-
             init_ram_connector(ram_connector);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
 
+            calculate <= false;
             CASE simulation_counter is
-                when 0 => lc_duty <= to_fixed(0.9);
+                when 0 =>
+                    calculate     <= true;
+                    start_address <= 6;
+
+                when 50 => 
                     lc_load <= to_fixed(2.3);
+                    lc_duty <= to_fixed(0.9);
+                    calculate     <= true;
+                    start_address <= 128;
+
                 when 800 => lc_duty <= to_fixed(0.6);
                 when 1600 => 
                     -- lc_load <= to_fixed(1.3);
                 WHEN others => --do nothing
             end CASE;
 
-            connect_ram_write_to_address(50, mc_output, test1);
-            connect_ram_write_to_address(51, mc_output, test2);
-            connect_ram_write_to_address(52, mc_output, test3);
-            connect_ram_write_to_address(53, mc_output, test4);
-            connect_ram_write_to_address(54, mc_output, test5);
+            connect_ram_write_to_address(5, mc_output, test1);
+            connect_ram_write_to_address(6, mc_output, test2);
+            connect_ram_write_to_address(7, mc_output, test3);
+            connect_ram_write_to_address(8, mc_output, test4);
+            connect_ram_write_to_address(9, mc_output, test5);
 
             connect_ram_write_to_address(inductor_current , mc_output , current);
             connect_ram_write_to_address(cap_voltage      , mc_output , voltage);

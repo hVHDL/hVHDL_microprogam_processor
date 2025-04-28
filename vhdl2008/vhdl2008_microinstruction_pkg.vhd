@@ -24,9 +24,9 @@ package generic_microinstruction_pkg is
         ,sub         
         ,mpy         
         ,mpy_add     
+        ,mpy_sub     
         ,neg_mpy_add 
         ,neg_mpy_sub
-        ,mpy_sub     
         ,a_sub_b_mpy_c
         ,lp_filter
         ,set_rpt
