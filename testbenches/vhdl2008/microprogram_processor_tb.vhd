@@ -97,19 +97,19 @@ architecture vunit_simulation of microprogram_processor_tb is
     );
 
     constant test_program : ram_array :=(
-        6   => op(sub, 6, 11,11)
-        , 7  => op(sub     , 10 , 11 , 12)
-        , 8  => op(sub     , 9  , 12 , 11)
-        , 9  => op(add     , 8  , 13 , 14)
-        , 10 => op(add     , 7  , 14 , 13)
+        6   => sub( 6, 11,11)
+        , 7  => sub( 10 , 11 , 12)
+        , 8  => sub( 9  , 12 , 11)
+        , 9  => add( 8  , 13 , 14)
+        , 10 => add( 7  , 14 , 13)
         , 11 => op(mpy_add , 6  , 11 , 14  , 15)
         , 13 => op(program_end)
 
-        , 16 => op(sub          , 6  , 11 , 11)
-        , 17 => op(sub          , 10 , 11 , 12)
-        , 18 => op(sub          , 9  , 12 , 11)
-        , 19 => op(add          , 8  , 13 , 14)
-        , 20 => op(add          , 7  , 14 , 13)
+        , 16 => sub(6  , 11 , 11)
+        , 17 => sub(10 , 11 , 12)
+        , 18 => sub(9  , 12 , 11)
+        , 19 => add(8  , 13 , 14)
+        , 20 => add(7  , 14 , 13)
         , 21 => op(mpy_add      , 6  , 11 , 14  , 15)
         , 23 => op(program_end)
 

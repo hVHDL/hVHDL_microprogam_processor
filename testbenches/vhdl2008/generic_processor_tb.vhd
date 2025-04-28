@@ -45,12 +45,12 @@ architecture vunit_simulation of generic_processor_tb is
     constant used_radix : natural := 14;
 
     constant test_program : ram_array :=(
-        6   => op(sub, 96, 101,101)
+        6   => sub( 96, 101,101)
 
-        , 7  => op(sub     , 100 , 101 , 102)
-        , 8  => op(sub     , 99  , 102 , 101)
-        , 9  => op(add     , 98  , 103 , 104)
-        , 10 => op(add     , 97  , 104 , 103)
+        , 7  => sub( 100 , 101 , 102)
+        , 8  => sub( 99  , 102 , 101)
+        , 9  => add( 98  , 103 , 104)
+        , 10 => add( 97  , 104 , 103)
         , 11 => op(mpy_add , 96  , 101 , 104  , 105)
         , 12 => op(mpy_add , 95  , 102 , 104  , 102)
 

@@ -20,9 +20,6 @@ package generic_microinstruction_pkg is
     type t_command is (
         program_end 
         ,nop         
-        ,add         
-        ,sub         
-        ,mpy         
         ,mpy_add     
         ,mpy_sub     
         ,neg_mpy_add 
@@ -34,7 +31,14 @@ package generic_microinstruction_pkg is
         ,res5
         ,res6
         ,res7
+        ,res8
+        ,res9
+        ,res10
     );
+    function get(instr : t_command) return std_logic_vector;
+    function sub(dest, a, b : natural) return std_logic_vector;
+    function add(dest, a, b : natural) return std_logic_vector;
+    function mpy(dest, a, b : natural) return std_logic_vector;
 
     subtype comm is std_logic_vector(31 downto 28);
     subtype dest is std_logic_vector(27 downto 21);
@@ -137,11 +141,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
 
-    function get(instr : t_command) return std_logic_vector is
-    begin
-        return std_logic_vector(to_unsigned(t_command'pos(instr) , comm'length));
-    end get;
-
+    ---------------
     function op
     (
         command     : in t_command;
@@ -419,4 +419,30 @@ package body generic_microinstruction_pkg is
         
     end init_variables;
 ------------------------------------------------------------------------
+    -- move these out of here
+    --
+    function get(instr : t_command) return std_logic_vector is
+    begin
+        return std_logic_vector(to_unsigned(t_command'pos(instr) , comm'length));
+    end get;
+    --
+    function sub(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_sub, dest, 1, a, b);
+    end sub;
+
+    --
+    function add(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_add, dest, 1, a, b);
+    end add;
+
+    --
+    function mpy(dest, a, b : natural) return std_logic_vector is
+    begin
+        return op(mpy_add, dest, a, b, 0);
+    end mpy;
+
+
+
 end package body generic_microinstruction_pkg;

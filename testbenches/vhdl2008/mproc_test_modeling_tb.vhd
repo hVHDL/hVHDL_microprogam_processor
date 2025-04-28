@@ -82,21 +82,6 @@ architecture vunit_simulation of mproc_test_modeling_tb is
         , others => (others => '0')
     );
 
-    function sub(dest, a, b : natural) return std_logic_vector is
-    begin
-        return op(mpy_sub, dest, 1, a, b);
-    end sub;
-
-    function add(dest, a, b : natural) return std_logic_vector is
-    begin
-        return op(mpy_add, dest, 1, a, b);
-    end add;
-
-    function mpy(dest, a, b : natural) return std_logic_vector is
-    begin
-        return op(mpy_add, dest, a, b, 0);
-    end mpy;
-
     constant test_program : ram_array :=(
         6    => sub(5, 1, 1)
         , 7  => add(6, 1, 1)
