@@ -13,27 +13,29 @@ end;
 architecture vunit_simulation of mproc_test_modeling_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 2200;
+    constant simtime_in_clocks : integer := 1500;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-
-    use work.real_to_fixed_pkg.all;
     constant used_radix : natural := 20;
+
+    --
+    use work.real_to_fixed_pkg.all;
     function to_fixed is new generic_to_fixed 
         generic map(word_length => 32, used_radix => used_radix);
-
+    --
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
-
+    --
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
         generic map(
         g_ram_bit_width   => microinstruction_pkg.ram_bit_width
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
+    --
 
     signal test1 : real := 0.0;
     signal test2 : real := 0.0;
@@ -59,6 +61,8 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     constant rxi              : natural := 30;
     constant cap_current      : natural := 31;
 
+    constant sampletime : real := 1.0e-6;
+
     constant program_data : ram_array :=(
            0 => to_fixed(0.0)
         ,  1 => to_fixed(1.0)
@@ -70,28 +74,16 @@ architecture vunit_simulation of mproc_test_modeling_tb is
         , cap_voltage      => to_fixed(0.0)
         , ind_res          => to_fixed(0.9)
         , load             => to_fixed(0.0)
-        , current_gain     => to_fixed(1.0/2.0e-6*1.0e-6)
-        , voltage_gain     => to_fixed(1.0/3.0e-6*1.0e-6)
+        , current_gain     => to_fixed(sampletime*1.0/2.0e-6)
+        , voltage_gain     => to_fixed(sampletime*1.0/3.0e-6)
         , input_voltage    => to_fixed(10.0)
         , inductor_voltage => to_fixed(0.0)
 
-
-        , g   => to_fixed(1.0/10.6359)
-        , g+1 => to_fixed(1.0/6.6359)
-        , g+2 => to_fixed(1.0/5.6359)
-        , g+3 => to_fixed(1.0/4.6359)
-        , g+4 => to_fixed(1.0/3.6359)
-        , u   => to_fixed(20.0)
-        , u+1 => to_fixed(7.0)
-        , u+2 => to_fixed(39.0)
-        , u+3 => to_fixed(1.0)
-        , u+4 => to_fixed(9.0)
-        , y   => to_fixed(0.0)
         , others => (others => '0')
     );
 
     constant test_program : ram_array :=(
-        6   => op(sub, 6, 11,11)
+        6    => op(sub, 6, 11,11)
         , 7  => op(sub     , 10 , 11 , 12)
         , 8  => op(sub     , 9  , 12 , 11)
         , 9  => op(add     , 8  , 13 , 14)
@@ -176,17 +168,7 @@ begin
 
             calculate <= false;
             CASE simulation_counter is
-                WHEN 5 =>
-                    calculate <= true;
-                    start_address <= 22;
-                WHEN 25 =>
-                    calculate <= true;
-                    start_address <= 8;
-
-                WHEN 50 =>
-                    calculate <= true;
-                    start_address <= 118;
-                WHEN 600 =>
+                WHEN 0 =>
                     calculate <= true;
                     start_address <= 128;
                 WHEN others => -- do nothing
@@ -201,7 +183,7 @@ begin
             CASE simulation_counter is
                 when 0 => lc_duty <= to_fixed(0.9);
                     lc_load <= to_fixed(2.3);
-                when 1400 => lc_duty <= to_fixed(0.6);
+                when 800 => lc_duty <= to_fixed(0.6);
                 when 1600 => 
                     -- lc_load <= to_fixed(1.3);
                 WHEN others => --do nothing
