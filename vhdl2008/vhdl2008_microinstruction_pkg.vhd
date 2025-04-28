@@ -137,6 +137,11 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
 
+    function get(instr : t_command) return std_logic_vector is
+    begin
+        return std_logic_vector(to_unsigned(t_command'pos(instr) , comm'length));
+    end get;
+
     function op
     (
         command     : in t_command;
@@ -150,7 +155,7 @@ package body generic_microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(comm'range) := get(command);
         instruction(dest'range) := std_logic_vector(to_unsigned(destination            , dest'length));
         instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , arg1'length));
         instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , arg2'length));
@@ -172,7 +177,7 @@ package body generic_microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(comm'range) := get(command);
         instruction(dest'range) := std_logic_vector(to_unsigned(destination            , dest'length));
         instruction(arg1'range) := std_logic_vector(to_unsigned(argument1              , arg1'length));
         instruction(arg2'range) := std_logic_vector(to_unsigned(argument2              , arg2'length));
@@ -193,7 +198,7 @@ package body generic_microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range)        := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(comm'range)        := get(command);
         instruction(dest'range)        := std_logic_vector(to_unsigned(destination            , dest'length));
         instruction(dest'low-1 downto 0) := std_logic_vector(to_unsigned(argument1            , ref'length));
 
@@ -211,7 +216,7 @@ package body generic_microinstruction_pkg is
         variable instruction : t_instruction := (others=>'0');
     begin
 
-        instruction(comm'range) := std_logic_vector(to_unsigned(t_command'pos(command) , comm'length));
+        instruction(comm'range) := get(command);
         instruction(long_arg'range) := std_logic_vector(to_unsigned(long_argument, long_arg'length));
 
         return instruction;
