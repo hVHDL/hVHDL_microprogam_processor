@@ -19,7 +19,7 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    constant used_radix : natural := 20;
+    constant used_radix : natural := 22;
 
     --
     use work.real_to_fixed_pkg.all;
