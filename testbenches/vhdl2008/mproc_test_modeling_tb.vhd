@@ -19,7 +19,7 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    constant word_length : natural := 32;
+    constant word_length : natural := 40;
     constant used_radix : natural := 22;
 
     --

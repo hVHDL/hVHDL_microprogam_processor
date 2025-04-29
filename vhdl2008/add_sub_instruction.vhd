@@ -99,7 +99,9 @@ begin
             ---------------
             CASE decode(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)) is
                 WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_sub_b_mpy_c | lp_filter =>
-                    write_data_to_ram(ram_write_in , get_dest(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3)), std_logic_vector(mpy_res(radix+31 downto radix)));
+                    write_data_to_ram(ram_write_in 
+                    , get_dest(instr_pipeline(mp_ram_pkg.read_pipeline_delay + 3))
+                    , std_logic_vector(mpy_res(radix+mp_ram_pkg.ram_bit_width-1 downto radix)));
                 WHEN others => -- do nothing
             end CASE;
             ---------------

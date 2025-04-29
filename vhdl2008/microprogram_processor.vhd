@@ -23,7 +23,11 @@ end microprogram_processor;
 architecture rtl of microprogram_processor is
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
+        generic map(
+                    g_ram_bit_width              => processor_microinstruction_pkg.ram_bit_width
+                    ,g_instruction_bit_width     => processor_microinstruction_pkg.instruction_bit_width
+                    ,g_register_bit_width        => processor_microinstruction_pkg.register_bit_width
+                    ,  g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
         use microinstruction_pkg.all;
 
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
