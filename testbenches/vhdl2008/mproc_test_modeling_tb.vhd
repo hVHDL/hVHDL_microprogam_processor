@@ -19,15 +19,16 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
+    constant word_length : natural := 32;
     constant used_radix : natural := 22;
 
     --
     use work.real_to_fixed_pkg.all;
     function to_fixed is new generic_to_fixed 
-        generic map(word_length => 32, used_radix => used_radix);
+        generic map(word_length => word_length, used_radix => used_radix);
     --
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
+        generic map(g_ram_bit_width => word_length, g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
     --
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
@@ -114,7 +115,7 @@ architecture vunit_simulation of mproc_test_modeling_tb is
 
     signal ram_connector : ram_connector_record(read_in(0 to 3), read_out(0 to 3));
 
-    signal ext_input : std_logic_vector(31 downto 0) := to_fixed(-22.351, 32, used_radix);
+    signal ext_input : std_logic_vector(word_length-1 downto 0) := to_fixed(-22.351);
 
     procedure generic_connect_ram_write_to_address
     generic( type return_type
@@ -133,9 +134,9 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal current : real := 0.0;
     signal voltage : real := 0.0;
 
-    signal lc_load : std_logic_vector(31 downto 0)          := to_fixed(0.0);
-    signal lc_duty : std_logic_vector(31 downto 0)          := to_fixed(0.5);
-    signal lc_input_voltage : std_logic_vector(31 downto 0) := to_fixed(10.0);
+    signal lc_load : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
+    signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
+    signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
 
 begin
 
