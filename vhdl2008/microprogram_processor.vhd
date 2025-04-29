@@ -24,15 +24,14 @@ architecture rtl of microprogram_processor is
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(
-                    g_ram_bit_width              => processor_microinstruction_pkg.ram_bit_width
-                    ,g_instruction_bit_width     => processor_microinstruction_pkg.instruction_bit_width
-                    ,g_register_bit_width        => processor_microinstruction_pkg.register_bit_width
-                    ,  g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
+                    g_instruction_bit_width     => processor_microinstruction_pkg.instruction_bit_width
+                    ,g_data_bit_width            => processor_microinstruction_pkg.data_bit_width
+                    ,g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
         use microinstruction_pkg.all;
 
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
         generic map(
-        g_ram_bit_width   => microinstruction_pkg.ram_bit_width
+        g_ram_bit_width   => microinstruction_pkg.data_bit_width
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
 

@@ -27,9 +27,9 @@ end;
 
 architecture add_sub_mpy of instruction is
 
-    signal a, b, c , cbuf: signed(register_bit_width-1 downto 0);
-    signal mpy_res : signed(2*register_bit_width-1 downto 0);
-    signal mpy_res2 : signed(2*register_bit_width-1 downto 0);
+    signal a, b, c , cbuf: signed(data_bit_width-1 downto 0);
+    signal mpy_res : signed(2*data_bit_width-1 downto 0);
+    signal mpy_res2 : signed(2*data_bit_width-1 downto 0);
 
 begin
 

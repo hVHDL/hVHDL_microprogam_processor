@@ -4,16 +4,16 @@ library ieee;
     use ieee.numeric_std.all;
 
 package generic_microinstruction_pkg is
-    generic(g_ram_bit_width              : natural := 32
-            ;g_instruction_bit_width     : natural := g_ram_bit_width
-            ;g_register_bit_width        : natural := g_ram_bit_width
+    generic(
+            g_instruction_bit_width     : natural := 32
+            ;g_data_bit_width            : natural := g_instruction_bit_width
             ;g_number_of_registers       : natural := 5
             ;g_number_of_pipeline_stages : natural := 10
     );
 
-    alias ram_bit_width             is g_ram_bit_width;
+
     alias instruction_bit_width     is g_instruction_bit_width    ;
-    alias register_bit_width        is g_register_bit_width       ;
+    alias data_bit_width        is g_data_bit_width       ;
     alias number_of_registers       is g_number_of_registers      ;
     alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
@@ -47,7 +47,7 @@ package generic_microinstruction_pkg is
     subtype arg3 is std_logic_vector(6 downto 0);
     subtype long_arg is std_logic_vector(27 downto 0);
 
-    type reg_array                  is array (integer range 0 to number_of_registers-1) of std_logic_vector(register_bit_width-1 downto 0);
+    type reg_array                  is array (integer range 0 to number_of_registers-1) of std_logic_vector(data_bit_width-1 downto 0);
     subtype t_instruction           is std_logic_vector(instruction_bit_width-1 downto 0);
     type instruction_pipeline_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array              is array (natural range <>) of t_instruction;

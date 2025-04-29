@@ -29,7 +29,7 @@ architecture vunit_simulation of generic_processor_tb is
 
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
         generic map(
-        g_ram_bit_width   => microinstruction_pkg.ram_bit_width
+        g_ram_bit_width   => microinstruction_pkg.data_bit_width
         ,g_ram_depth_pow2 => 10);
 
     use mp_ram_pkg.all;

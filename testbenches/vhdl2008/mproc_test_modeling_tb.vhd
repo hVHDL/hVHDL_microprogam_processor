@@ -19,6 +19,7 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
+    constant instruction_length : natural := 40;
     constant word_length : natural := 40;
     constant used_radix : natural := 30;
 
@@ -29,13 +30,14 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     --
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(
-           g_ram_bit_width => word_length
-            , g_number_of_pipeline_stages => 6);
+           g_instruction_bit_width => instruction_length
+           ,g_data_bit_width   => word_length
+           ,g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
     --
     package mp_ram_pkg is new work.generic_multi_port_ram_pkg 
         generic map(
-        g_ram_bit_width   => microinstruction_pkg.ram_bit_width
+        g_ram_bit_width   => microinstruction_pkg.data_bit_width
         ,g_ram_depth_pow2 => 10);
         use mp_ram_pkg.all;
     --
