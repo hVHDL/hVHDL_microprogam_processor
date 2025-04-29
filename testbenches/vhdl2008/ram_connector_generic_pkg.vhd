@@ -27,16 +27,16 @@ package generic_ram_connector_pkg is
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out return_type
     ) ;
 
     -------------------------------------------
     procedure connect_ram_write_to_address
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out std_logic_vector
     );
     -------------------------------------------
@@ -80,8 +80,8 @@ package body generic_ram_connector_pkg is
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out return_type
     ) 
     is
@@ -94,8 +94,8 @@ package body generic_ram_connector_pkg is
     -------------------------------------------
     procedure connect_ram_write_to_address
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out std_logic_vector
     ) is
     begin

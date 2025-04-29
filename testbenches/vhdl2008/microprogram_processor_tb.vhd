@@ -179,8 +179,8 @@ architecture vunit_simulation of microprogram_processor_tb is
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out return_type
     ) is
     begin
@@ -219,10 +219,7 @@ begin
 
         procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
 
-        function to_fixed(a : real) return std_logic_vector is
-        begin
-            return to_fixed(a, 32, used_radix); 
-        end to_fixed;
+        function to_fixed is new generic_to_fixed generic map (32, used_radix);
 
     begin
         if rising_edge(simulator_clock) then
@@ -262,14 +259,14 @@ begin
                 WHEN others => --do nothing
             end CASE;
 
-            connect_ram_write_to_address(50, mc_output, test1);
-            connect_ram_write_to_address(51, mc_output, test2);
-            connect_ram_write_to_address(52, mc_output, test3);
-            connect_ram_write_to_address(53, mc_output, test4);
-            connect_ram_write_to_address(54, mc_output, test5);
+            connect_ram_write_to_address(mc_output, 50, test1);
+            connect_ram_write_to_address(mc_output, 51, test2);
+            connect_ram_write_to_address(mc_output, 52, test3);
+            connect_ram_write_to_address(mc_output, 53, test4);
+            connect_ram_write_to_address(mc_output, 54, test5);
 
-            connect_ram_write_to_address(inductor_current , mc_output , current);
-            connect_ram_write_to_address(cap_voltage      , mc_output , voltage);
+            connect_ram_write_to_address(mc_output , inductor_current , current);
+            connect_ram_write_to_address(mc_output , cap_voltage      , voltage);
 
         end if; -- rising_edge
     end process stimulus;	

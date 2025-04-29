@@ -120,8 +120,8 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)
     (
-        address : in natural
-        ; write_in : in ram_write_in_record
+        write_in : in ram_write_in_record
+        ; address : in natural
         ; signal data : out return_type
     ) is
     begin
@@ -189,14 +189,14 @@ begin
                 WHEN others => --do nothing
             end CASE;
 
-            connect_ram_write_to_address(5, mc_output, test1);
-            connect_ram_write_to_address(6, mc_output, test2);
-            connect_ram_write_to_address(7, mc_output, test3);
-            connect_ram_write_to_address(8, mc_output, test4);
-            connect_ram_write_to_address(9, mc_output, test5);
+            connect_ram_write_to_address(mc_output, 5, test1);
+            connect_ram_write_to_address(mc_output, 6, test2);
+            connect_ram_write_to_address(mc_output, 7, test3);
+            connect_ram_write_to_address(mc_output, 8, test4);
+            connect_ram_write_to_address(mc_output, 9, test5);
 
-            connect_ram_write_to_address(inductor_current , mc_output , current);
-            connect_ram_write_to_address(cap_voltage      , mc_output , voltage);
+            connect_ram_write_to_address(mc_output , inductor_current , current);
+            connect_ram_write_to_address(mc_output , cap_voltage      , voltage);
 
         end if; -- rising_edge
     end process stimulus;	
