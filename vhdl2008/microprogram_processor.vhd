@@ -49,6 +49,9 @@ architecture rtl of microprogram_processor is
     signal ram_read_out : ram_read_out_array(ram_read_in'range);
     signal data_ram_read_out : ram_read_out_array(ram_read_in'range);
 
+    signal program_ram_read_in : ram_read_in_array(0 to 0);
+    signal program_ram_read_out : ram_read_in_array(0 to 0);
+
     constant used_radix : natural := g_used_radix;
 
     use work.real_to_fixed_pkg.all;
@@ -74,38 +77,40 @@ architecture rtl of microprogram_processor is
 
 begin
 
-------------------------------------------------------------------------
-    debug : process(all) is
-    begin
-        if ram_read_is_ready(ram_read_out(0)) then
-            command <= decode(get_ram_data(ram_read_out(0)));
-        end if;
-    end process debug;
-------------------------------------------------------------------------
+----------------------------------------------------------
     process(clock) is
     begin
         if rising_edge(clock)
         then
             processor_mp_ram_pkg.init_mp_write(mc_output);
             if write_requested(ram_write_in) then
-                -- if get_address(ram_write_in) >= 50
-                --     and get_address(ram_write_in) <= 59 
-                -- then
-                    processor_mp_ram_pkg.write_data_to_ram(mc_output,get_address(ram_write_in), get_data(ram_write_in));
-                -- end if;
+                processor_mp_ram_pkg.write_data_to_ram(
+                    mc_output
+                    ,get_address(ram_write_in)
+                     get_data(ram_write_in) );
+
             end if;
         end if;
     end process;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(microinstruction_pkg, mp_ram_pkg)
-    port map(clock , pc_read_in , data_ram_read_out , pim_ram_write , processor_enabled, instr_pipeline
+    port map(clock 
+    , pc_read_in 
+    , data_ram_read_out 
+    , pim_ram_write 
+    , processor_enabled
+    , instr_pipeline
     , calculate
     , start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(microinstruction_pkg , mp_ram_pkg , radix => used_radix)
-    port map(clock , sub_read_in , data_ram_read_out , add_sub_ram_write , instr_pipeline);
+    port map(clock 
+    , sub_read_in 
+    , data_ram_read_out 
+    , add_sub_ram_write 
+    , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ----

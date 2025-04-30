@@ -11,9 +11,8 @@ package generic_microinstruction_pkg is
             ;g_number_of_pipeline_stages : natural := 10
     );
 
-
     alias instruction_bit_width     is g_instruction_bit_width    ;
-    alias data_bit_width        is g_data_bit_width       ;
+    alias data_bit_width            is g_data_bit_width       ;
     alias number_of_registers       is g_number_of_registers      ;
     alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
