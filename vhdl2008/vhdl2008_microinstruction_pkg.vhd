@@ -17,17 +17,17 @@ package generic_microinstruction_pkg is
     alias number_of_pipeline_stages is g_number_of_pipeline_stages;
 
     type t_command is (
-        program_end 
-        ,nop         
-        ,mpy_add     
+        mpy_add     
         ,mpy_sub     
         ,neg_mpy_add 
         ,neg_mpy_sub
+        ,a_add_b_mpy_c
         ,a_sub_b_mpy_c
         ,lp_filter
+        ,program_end 
+        ,nop         
         ,set_rpt
         ,jump
-        ,res5
         ,res6
         ,res7
         ,res8

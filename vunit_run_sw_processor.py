@@ -92,7 +92,6 @@ v2008.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/arc
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/generic_multi_port_ram_pkg.vhd")
 
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microprogram_processor_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/add_sub_instruction.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")

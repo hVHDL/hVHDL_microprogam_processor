@@ -138,9 +138,6 @@ architecture vunit_simulation of microprogram_processor_tb is
 
         , others => op(nop));
 
-    signal calculate     : boolean := false;
-    signal start_address : natural := 6;
-
     --------------------
     function generic_op 
         generic (
@@ -190,6 +187,10 @@ architecture vunit_simulation of microprogram_processor_tb is
     end generic_connect_ram_write_to_address;
 
 
+    use work.microprogram_processor_pkg.all;
+
+    signal mproc_in : microprogram_processor_in_record;
+
     signal current : real := 0.0;
     signal voltage : real := 0.0;
 
@@ -226,21 +227,17 @@ begin
             simulation_counter <= simulation_counter + 1;
 
 
-            calculate <= false;
+            init_mproc(mproc_in);
             CASE simulation_counter is
                 WHEN 5 =>
-                    calculate <= true;
-                    start_address <= 22;
+                    calculate(mproc_in, 22);
                 WHEN 25 =>
-                    calculate <= true;
-                    start_address <= 8;
+                    calculate(mproc_in, 8);
 
                 WHEN 50 =>
-                    calculate <= true;
-                    start_address <= 118;
+                    calculate(mproc_in, 118);
                 WHEN 600 =>
-                    calculate <= true;
-                    start_address <= 128;
+                    calculate(mproc_in, 128);
                 WHEN others => -- do nothing
             end CASE;
 
@@ -273,6 +270,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, calculate, start_address, mc_read_in, mc_read_out, mc_output);
+    port map(simulator_clock, mproc_in.processor_requested, mproc_in.start_address, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;

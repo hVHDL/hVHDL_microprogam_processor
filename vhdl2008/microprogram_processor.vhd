@@ -1,3 +1,42 @@
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+package microprogram_processor_pkg is
+
+    type microprogram_processor_in_record is record
+        processor_requested  : boolean;
+        start_address        : natural;
+    end record;
+
+    type microprogram_processor_out_record is record
+        is_busy : boolean;
+    end record;
+
+    procedure init_mproc (signal self_in : out microprogram_processor_in_record);
+    procedure calculate (signal self_in : out microprogram_processor_in_record; start_address : in natural);
+
+end package microprogram_processor_pkg;
+
+------------------
+
+package body microprogram_processor_pkg is
+
+    procedure init_mproc (signal self_in : out microprogram_processor_in_record) is
+    begin
+        self_in.processor_requested <= false;
+    end init_mproc;
+
+    procedure calculate (signal self_in : out microprogram_processor_in_record; start_address : in natural) is
+    begin
+        self_in.processor_requested <= true;
+        self_in.start_address <= start_address;
+    end calculate;
+
+
+end package body microprogram_processor_pkg;
+
+--------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -87,7 +126,7 @@ begin
                 processor_mp_ram_pkg.write_data_to_ram(
                     mc_output
                     ,get_address(ram_write_in)
-                     get_data(ram_write_in) );
+                    ,get_data(ram_write_in) );
 
             end if;
         end if;

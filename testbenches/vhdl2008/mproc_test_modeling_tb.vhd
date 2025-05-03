@@ -106,9 +106,6 @@ architecture vunit_simulation of mproc_test_modeling_tb is
 
         , others => op(nop));
 
-    signal calculate     : boolean := false;
-    signal start_address : natural := 6;
-
     ----
     signal mc_read_in  : ram_read_in_array(0 to 3);
     signal mc_read_out : ram_read_out_array(0 to 3);
@@ -141,6 +138,9 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     signal lc_load : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
     signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
     signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
+
+    use work.microprogram_processor_pkg.all;
+    signal mproc_in : microprogram_processor_in_record;
 
 begin
 
@@ -176,17 +176,15 @@ begin
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
 
-            calculate <= false;
+            init_mproc(mproc_in);
             CASE simulation_counter is
                 when 0 =>
-                    calculate     <= true;
-                    start_address <= 6;
+                    calculate(mproc_in, 6);
 
                 when 50 => 
                     lc_load <= to_fixed(2.3);
                     lc_duty <= to_fixed(0.9);
-                    calculate     <= true;
-                    start_address <= 128;
+                    calculate(mproc_in, 128);
 
                 when 800 => lc_duty <= to_fixed(0.6);
                 when 1600 => 
@@ -208,6 +206,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, calculate, start_address, mc_read_in, mc_read_out, mc_output);
+    port map(simulator_clock, mproc_in.processor_requested, mproc_in.start_address, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;
