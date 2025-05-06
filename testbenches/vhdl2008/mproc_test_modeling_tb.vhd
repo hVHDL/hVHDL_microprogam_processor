@@ -142,6 +142,10 @@ architecture vunit_simulation of mproc_test_modeling_tb is
     use work.microprogram_processor_pkg.all;
     signal mproc_in : microprogram_processor_in_record;
 
+    type testarray is array (natural range <>) of std_logic_vector;
+
+    constant testiii : testarray(0 to 7)(15 downto 0) :=(others => (others => '1'));
+
 begin
 
 ------------------------------------------------------------------------
@@ -206,6 +210,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, mp_ram_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, mproc_in.processor_requested, mproc_in.start_address, mc_read_in, mc_read_out, mc_output);
+    port map(simulator_clock, mproc_in, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;

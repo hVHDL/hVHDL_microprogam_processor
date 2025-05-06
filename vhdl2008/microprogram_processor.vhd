@@ -50,16 +50,18 @@ entity microprogram_processor is
             ;g_data : processor_mp_ram_pkg.ram_array
            );
     port(
-        clock          : in std_logic
-        ;calculate     : in boolean := false
-        ;start_address : in natural := 0
-        ;mc_read_in    : out processor_mp_ram_pkg.ram_read_in_array(0 to 3)
-        ;mc_read_out   : in processor_mp_ram_pkg.ram_read_out_array(0 to 3)
-        ;mc_output     : out processor_mp_ram_pkg.ram_write_in_record
+        clock        : in std_logic
+        ;mproc_in    : in work.microprogram_processor_pkg.microprogram_processor_in_record
+        ;mc_read_in  : out processor_mp_ram_pkg.ram_read_in_array(0 to 3)
+        ;mc_read_out : in processor_mp_ram_pkg.ram_read_out_array(0 to 3)
+        ;mc_output   : out processor_mp_ram_pkg.ram_write_in_record
     );
 end microprogram_processor;
 
 architecture rtl of microprogram_processor is
+
+    alias calculate is mproc_in.processor_requested;
+    alias start_address is mproc_in.start_address;
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(
