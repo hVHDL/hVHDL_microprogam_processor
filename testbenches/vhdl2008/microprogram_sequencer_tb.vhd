@@ -27,7 +27,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
         use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
-    constant datawidth : natural := 24;
+    constant datawidth : natural := 20;
     constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => datawidth);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
@@ -40,7 +40,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
 
     constant used_radix : natural := 14;
 
-    constant test_data : work.dual_port_ram_pkg.ram_array(0 to 2**10)(ref_subtype.data'range) := (
+    constant test_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
           101 => to_fixed(1.5  , datawidth , used_radix)
         , 102 => to_fixed(0.5  , datawidth , used_radix)
         , 103 => to_fixed(-1.5 , datawidth , used_radix)
@@ -49,7 +49,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
 
         , others => (others => '0'));
 
-    constant test_program : work.dual_port_ram_pkg.ram_array(0 to 2**8)(instr_ref_subtype.data'range) := (
+    constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
         6   => sub( 96, 101,101)
 
         , 7  => sub( 100 , 101 , 102)
@@ -118,6 +118,5 @@ begin
         ,ram_read_in  => ram_read_in
         ,ram_read_out => ram_read_out
         ,ram_write_in => ram_write_in);
-
 ------------------------------------------------------------------------
 end vunit_simulation;
