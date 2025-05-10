@@ -192,7 +192,7 @@ begin
 ----------------------------------------------------------
     -- u_microprogram_sequencer : entity work.microprogram_sequencer
     -- generic map(microinstruction_pkg)
-    -- port map(simulator_clock , pc_read_in , ram_read_out , pim_ram_write , processor_enabled, instr_pipeline);
+    -- port map(simulator_clock , instr_ram_read_in(0) , instr_ram_read_out(0) , processor_enabled => processor_enabled, instr_pipeline => instr_pipeline);
 -- ----------------------------------------------------------
 --     add_sub_mpy : entity work.instruction
 --     generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)
