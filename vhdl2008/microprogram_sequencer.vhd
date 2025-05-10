@@ -13,13 +13,13 @@ entity microprogram_sequencer is
         clock : in std_logic
 
         -- ;instruction_ram_read_in : out mp_ram_pkg.ram_read_in_array
-        ;ram_read_in            : out mp_ram_pkg.ram_read_in_array
-        ;ram_read_out           : in mp_ram_pkg.ram_read_out_array
-        ;ram_write_in           : out mp_ram_pkg.ram_write_in_record
-        ;processor_enabled       : out boolean
-        ;instr_pipeline          : out microinstruction_pkg.instruction_pipeline_array
-        ;processor_requested     : in boolean := true
-        ;start_address           : in natural := 0
+        ;ram_read_in                : out mp_ram_pkg.ram_read_in_array
+        ;ram_read_out               : in mp_ram_pkg.ram_read_out_array
+        ;ram_write_in               : out mp_ram_pkg.ram_write_in_record
+        ;processor_enabled          : out boolean
+        ;instr_pipeline             : out microinstruction_pkg.instruction_pipeline_array
+        ;processor_requested        : in boolean := true
+        ;start_address              : in natural := 0
     );
     use microinstruction_pkg.all;
     use mp_ram_pkg.all;
