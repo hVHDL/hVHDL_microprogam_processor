@@ -99,12 +99,12 @@ v2008.add_source_files(ROOT / "vhdl2008/ram_connector_generic_pkg.vhd")
 
 retry_w_unconstrained_ram = VU.add_library("retry_w_unconstrained_ram")
 
-# v2008.add_source_files(ROOT / "testbenches/vhdl2008/generic_processor_tb.vhd")
-# v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_processor_tb.vhd")
+retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/dp_ram_w_configurable_recrods.vhd")
+retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/mpram_w_configurable_records.vhd")
+
 retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
 retry_w_unconstrained_ram.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
-# refactor these
 
 # VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
 VU.set_sim_option("nvc.sim_flags", ["-w"])
