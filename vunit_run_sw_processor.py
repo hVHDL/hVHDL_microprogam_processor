@@ -103,6 +103,8 @@ retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/t
 retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/mpram_w_configurable_records.vhd")
 
 retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
+retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_addsub.vhd")
+retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_sequencer.vhd")
 retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
 retry_w_unconstrained_ram.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
 
