@@ -26,18 +26,21 @@ architecture vunit_simulation of microprogram_sequencer_tb is
         use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
-    constant datawidth : natural := 20;
+    constant datawidth  : natural := 27;
+    constant used_radix : natural := 17;
+
     constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => datawidth);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 8);
-    signal instr_ram_read_in  : instr_ref_subtype.ram_read_in'subtype;
-    signal instr_ram_read_out : instr_ref_subtype.ram_read_out'subtype;
-    signal instr_ram_write_in : instr_ref_subtype.ram_write_in'subtype;
+    signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
+    signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
+    signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
-    constant used_radix : natural := 14;
+    signal pim_ram_write     : ref_subtype.ram_write_in'subtype;
+    signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
 
     constant test_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
           101 => to_fixed(1.5  , datawidth , used_radix)
@@ -62,9 +65,6 @@ architecture vunit_simulation of microprogram_sequencer_tb is
 
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
-
-    -- signal pim_ram_write     : ram_write_in_record;
-    -- signal add_sub_ram_write : ram_write_in_record;
 
     signal processor_enabled : boolean := true;
     signal processor_requested : boolean := false;
