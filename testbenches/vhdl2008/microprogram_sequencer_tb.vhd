@@ -36,9 +36,11 @@ end;
 
 architecture add_sub_mpy of instruction is
 
-    signal a, b, c , cbuf : signed(data_bit_width-1 downto 0);
-    signal mpy_res        : signed(2*data_bit_width-1 downto 0);
-    signal mpy_res2       : signed(2*data_bit_width-1 downto 0);
+    constant datawidth : natural := data_read_out(data_read_out'left).data'length;
+
+    signal a, b, c , cbuf : signed(datawidth-1 downto 0);
+    signal mpy_res        : signed(2*datawidth-1 downto 0);
+    signal mpy_res2       : signed(2*datawidth-1 downto 0);
 
 begin
 
@@ -331,9 +333,14 @@ begin
     , processor_requested => processor_requested
     , start_address       => 0);
 -- ----------------------------------------------------------
---     add_sub_mpy : entity work.instruction
---     generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)
---     port map(simulator_clock , sub_read_in , ram_read_out , add_sub_ram_write , instr_pipeline);
+    add_sub_mpy : entity work.instruction
+    generic map(microinstruction_pkg, radix => used_radix)
+    port map(simulator_clock 
+    , instr_ram_read_out(0) 
+    , ram_read_in
+    , ram_read_out 
+    , ram_write_in 
+    , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     -- ram_read_in  <= pc_read_in   and sub_read_in;
