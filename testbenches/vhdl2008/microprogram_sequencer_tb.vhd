@@ -13,7 +13,7 @@ entity microprogram_sequencer is
         clock : in std_logic
 
         ;instruction_ram_read_in  : out ram_read_in_record
-        ;instruction_ram_read_out : out ram_read_out_record
+        ;instruction_ram_read_out : in ram_read_out_record
 
         ;processor_enabled   : out boolean
         ;instr_pipeline      : out microinstruction_pkg.instruction_pipeline_array
@@ -167,6 +167,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     -- signal add_sub_ram_write : ram_write_in_record;
 
     signal processor_enabled : boolean := true;
+    signal processor_requested : boolean := false;
 
 begin
 
@@ -190,9 +191,15 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ----------------------------------------------------------
-    -- u_microprogram_sequencer : entity work.microprogram_sequencer
-    -- generic map(microinstruction_pkg)
-    -- port map(simulator_clock , instr_ram_read_in(0) , instr_ram_read_out(0) , processor_enabled => processor_enabled, instr_pipeline => instr_pipeline);
+    u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(microinstruction_pkg)
+    port map(simulator_clock 
+    , instr_ram_read_in(0) 
+    , instr_ram_read_out(0) 
+    , processor_enabled => processor_enabled
+    , instr_pipeline => instr_pipeline
+    , processor_requested => processor_requested
+    , start_address => 0);
 -- ----------------------------------------------------------
 --     add_sub_mpy : entity work.instruction
 --     generic map(microinstruction_pkg, mp_ram_pkg, radix => used_radix)
