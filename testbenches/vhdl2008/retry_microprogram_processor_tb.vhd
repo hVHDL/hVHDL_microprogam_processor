@@ -124,24 +124,24 @@ begin
         end if;
     end process;
 ----------------------------------------------------------
---     u_microprogram_sequencer : entity work.microprogram_sequencer
---     generic map(microinstruction_pkg)
---     port map(clock 
---     , pc_read_in 
---     , data_ram_read_out 
---     , pim_ram_write 
---     , processor_enabled
---     , instr_pipeline
---     , calculate
---     , start_address);
+    u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(microinstruction_pkg)
+    port map(clock 
+    , instr_ram_read_in(0) 
+    , instr_ram_read_out(0) 
+    , processor_enabled   => processor_enabled
+    , instr_pipeline      => instr_pipeline
+    , processor_requested => calculate
+    , start_address       => 0);
 -- ----------------------------------------------------------
---     add_sub_mpy : entity work.instruction
---     generic map(microinstruction_pkg , radix => used_radix)
---     port map(clock 
---     , sub_read_in 
---     , data_ram_read_out 
---     , add_sub_ram_write 
---     , instr_pipeline);
+    add_sub_mpy : entity work.instruction
+    generic map(microinstruction_pkg, radix => used_radix)
+    port map(clock 
+    , instr_ram_read_out(0) 
+    , ram_read_in
+    , ram_read_out 
+    , ram_write_in 
+    , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ----
@@ -169,7 +169,7 @@ begin
     -- end process combine_ram_buses;
 ----
     u_program_ram : entity work.multi_port_ram
-    generic map(test_program)
+    generic map(g_program)
     port map(
         clock => clock
         ,ram_read_in  => instr_ram_read_in(0 to 0)

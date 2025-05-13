@@ -108,7 +108,7 @@ retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_mi
 retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
 retry_w_unconstrained_ram.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
 
-# retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
+retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 
 # VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
 # VU.set_sim_option("nvc.sim_flags", ["-w"])
