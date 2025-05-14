@@ -113,6 +113,6 @@ retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/micropro
 retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 
 # VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
-# VU.set_sim_option("nvc.sim_flags", ["-w"])
+VU.set_sim_option("nvc.sim_flags", ["-w"])
 
 VU.main()

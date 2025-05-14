@@ -136,7 +136,6 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         , 140 => op(jump        , 129)
         , 143 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
-        , 250 => op(program_end)
         , others => op(nop));
 
     ----
