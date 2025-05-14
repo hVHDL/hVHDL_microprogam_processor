@@ -74,23 +74,14 @@ architecture rtl of microprogram_processor is
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
     signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
-
     signal ram_read_in : ref_subtype.ram_read_in'subtype;
     signal pc_read_in  : ref_subtype.ram_read_in'subtype;
     signal sub_read_in : ref_subtype.ram_read_in'subtype;
 
     signal ram_write_in      : ref_subtype.ram_write_in'subtype;
-    signal pim_ram_write     : ref_subtype.ram_write_in'subtype;
     signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
 
-
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
-    signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
-
-    signal program_ram_read_in : instr_ref_subtype.ram_read_in'subtype;
-    signal program_ram_read_out : instr_ref_subtype.ram_read_out'subtype;
-
-    constant used_radix : natural := g_used_radix;
 
     use work.real_to_fixed_pkg.all;
 
@@ -130,7 +121,7 @@ begin
     , start_address       => mproc_in.start_address);
 -- ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, radix => used_radix)
+    generic map(microinstruction_pkg, radix => g_used_radix)
     port map(clock 
     , instr_ram_read_out(0) 
     , sub_read_in
@@ -139,24 +130,13 @@ begin
     , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-----
     combine_ram_buses : process(all) is
     begin
     --
-        for i in data_ram_read_out'range loop
-            if mc_read_out(i).data_is_ready then
-                data_ram_read_out(i).data          <= mc_read_out(i).data;
-                data_ram_read_out(i).data_is_ready <= mc_read_out(i).data_is_ready;
-            else
-                data_ram_read_out(i) <= ram_read_out(i);
-            end if;
-        end loop;
-        data_ram_read_out(0) <= ram_read_out(0);
-
-        mc_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_hi => 119);
+        mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_hi => 119);
         ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119);
-
         ram_write_in <= combine((0 => add_sub_ram_write));
+    --
     end process combine_ram_buses;
 ----
     u_program_ram : entity work.multi_port_ram
