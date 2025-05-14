@@ -15,15 +15,15 @@ end;
 architecture vunit_simulation of retry_microprogram_processor_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1500;
+    constant simtime_in_clocks : integer := 1000;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
     constant instruction_length : natural := 40;
-    constant word_length : natural := 40;
-    constant used_radix : natural := 30;
+    constant word_length : natural := 32;
+    constant used_radix : natural := 20;
 
     --
     use work.real_to_fixed_pkg.all;
@@ -37,23 +37,41 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
 
     use work.multi_port_ram_pkg.all;
 
-    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => word_length);
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 4, datawidth => word_length, addresswidth => 10);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 8);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 10);
 
     signal pim_ram_write     : ref_subtype.ram_write_in'subtype;
     signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
 
-    -- signal mc_read_in  : ram_read_in_array(0 to 3);
-    -- signal mc_read_out : ram_read_out_array(0 to 3);
-    -- signal mc_output   : ram_write_in_record;
+    signal mc_read_in  : ref_subtype.ram_read_in'subtype;
+    signal mc_read_out : ref_subtype.ram_read_out'subtype;
+    signal mc_output   : ref_subtype.ram_write_in'subtype;
     ----
     use work.ram_connector_pkg.all;
 
-    -- signal ram_connector : ram_connector_record(read_in(), read_out(0 to 3));
+    constant readports : natural := 4;
+    constant addresswidth : natural := 10;
+    constant datawidth : natural := word_length;
+    constant ram_connector_ref : ram_connector_record := (
+            read_in => (
+                0 to readports - 1 => (
+                    address        => (0 to addresswidth - 1 => '0'),
+                    read_requested => '0'
+                )
+            )
+
+            ,read_out => (
+                0 to readports - 1 => (
+                    data          => (datawidth - 1 downto 0 => '0'),
+                    data_is_ready => '0'
+                )
+            ));
+
+    signal ram_connector : ram_connector_ref'subtype;
 
 
     signal test1 : real := 0.0;
@@ -118,24 +136,25 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         , 140 => op(jump        , 129)
         , 143 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
+        , 250 => op(program_end)
         , others => op(nop));
 
     ----
     signal ext_input : std_logic_vector(word_length-1 downto 0) := to_fixed(-22.351);
 
-    -- procedure generic_connect_ram_write_to_address
-    -- generic( type return_type
-    --         ;function conv(a : std_logic_vector) return return_type is <>)
-    -- (
-    --     write_in : in ram_write_in_record
-    --     ; address : in natural
-    --     ; signal data : out return_type
-    -- ) is
-    -- begin
-    --     if write_requested(write_in,address) then
-    --         data <= conv(get_data(write_in));
-    --     end if;
-    -- end generic_connect_ram_write_to_address;
+    procedure generic_connect_ram_write_to_address
+    generic( type return_type
+            ;function conv(a : std_logic_vector) return return_type is <>)
+    (
+        write_in : in ram_write_in_record
+        ; address : in natural
+        ; signal data : out return_type
+    ) is
+    begin
+        if write_requested(write_in,address) then
+            data <= conv(get_data(write_in));
+        end if;
+    end generic_connect_ram_write_to_address;
 
     signal current : real := 0.0;
     signal voltage : real := 0.0;
@@ -144,8 +163,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
     signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
 
-    -- use work.microprogram_processor_pkg.all;
-    -- signal mproc_in : microprogram_processor_in_record;
+    signal mproc_in : microprogram_processor_in_record;
 
 begin
 
@@ -162,55 +180,54 @@ begin
 ------------------------------------------------------------------------
     stimulus : process(simulator_clock)
 
-        -- function convert(data_in : std_logic_vector) return real is
-        -- begin
-        --     return to_real(signed(data_in), used_radix);
-        -- end convert;
-        --
-        -- procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
+        function convert(data_in : std_logic_vector) return real is
+        begin
+            return to_real(signed(data_in), used_radix);
+        end convert;
+
+        procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
 
 
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
 
+            init_ram_connector(ram_connector);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
 
-            -- init_ram_connector(ram_connector);
-            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
-            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
-            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
-            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
-            --
-            -- init_mproc(mproc_in);
-            -- CASE simulation_counter is
-            --     when 0 =>
-            --         calculate(mproc_in, 6);
-            --
-            --     when 50 => 
-            --         lc_load <= to_fixed(2.3);
-            --         lc_duty <= to_fixed(0.9);
-            --         calculate(mproc_in, 128);
-            --
-            --     when 800 => lc_duty <= to_fixed(0.6);
-            --     when 1600 => 
-            --         -- lc_load <= to_fixed(1.3);
-            --     WHEN others => --do nothing
-            -- end CASE;
-            --
-            -- connect_ram_write_to_address(mc_output, 5, test1);
-            -- connect_ram_write_to_address(mc_output, 6, test2);
-            -- connect_ram_write_to_address(mc_output, 7, test3);
-            -- connect_ram_write_to_address(mc_output, 8, test4);
-            -- connect_ram_write_to_address(mc_output, 9, test5);
-            --
-            -- connect_ram_write_to_address(mc_output , inductor_current , current);
-            -- connect_ram_write_to_address(mc_output , cap_voltage      , voltage);
+            init_mproc(mproc_in);
+            CASE simulation_counter is
+                when 0 =>
+                    calculate(mproc_in, 6);
+
+                when 50 => 
+                    lc_load <= to_fixed(2.3);
+                    lc_duty <= to_fixed(0.9);
+                    calculate(mproc_in, 128);
+
+                when 800 => lc_duty <= to_fixed(0.6);
+                when 1600 => 
+                    -- lc_load <= to_fixed(1.3);
+                WHEN others => --do nothing
+            end CASE;
+
+            connect_ram_write_to_address(mc_output, 5, test1);
+            connect_ram_write_to_address(mc_output, 6, test2);
+            connect_ram_write_to_address(mc_output, 7, test3);
+            connect_ram_write_to_address(mc_output, 8, test4);
+            connect_ram_write_to_address(mc_output, 9, test5);
+
+            connect_ram_write_to_address(mc_output , inductor_current , current);
+            connect_ram_write_to_address(mc_output , cap_voltage      , voltage);
 
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    -- u_microprogram_processor : entity work.microprogram_processor
-    -- generic map(microinstruction_pkg, used_radix, test_program, program_data)
-    -- port map(simulator_clock, mproc_in, mc_read_in, mc_read_out, mc_output);
+    u_microprogram_processor : entity work.microprogram_processor
+    generic map(microinstruction_pkg, used_radix, test_program, program_data)
+    port map(simulator_clock, mproc_in, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;

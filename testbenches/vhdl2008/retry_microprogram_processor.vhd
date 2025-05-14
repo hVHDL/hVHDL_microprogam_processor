@@ -71,8 +71,8 @@ architecture rtl of microprogram_processor is
                     ,g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
         use microinstruction_pkg.all;
 
-    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 3, datawidth => 32);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 8);
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 4, datawidth => 32);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 10);
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
     -- signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
@@ -138,9 +138,9 @@ begin
     generic map(microinstruction_pkg, radix => used_radix)
     port map(clock 
     , instr_ram_read_out(0) 
-    , ram_read_in
+    , sub_read_in
     , ram_read_out 
-    , ram_write_in 
+    , add_sub_ram_write 
     , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
