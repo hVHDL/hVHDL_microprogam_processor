@@ -15,7 +15,7 @@ end;
 architecture vunit_simulation of retry_microprogram_processor_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1000;
+    constant simtime_in_clocks : integer := 1500;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -34,7 +34,6 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         generic map(g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
 
-
     use work.multi_port_ram_pkg.all;
 
     constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 4, datawidth => word_length, addresswidth => 10);
@@ -43,9 +42,6 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 10);
-
-    signal pim_ram_write     : ref_subtype.ram_write_in'subtype;
-    signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
 
     signal mc_read_in  : ref_subtype.ram_read_in'subtype;
     signal mc_read_out : ref_subtype.ram_read_out'subtype;
