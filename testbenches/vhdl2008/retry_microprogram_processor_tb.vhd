@@ -6,6 +6,8 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
+    use work.microprogram_processor_pkg.all;
+
 entity retry_microprogram_processor_tb is
   generic (runner_cfg : string);
 end;
@@ -19,55 +21,131 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    use work.real_to_fixed_pkg.all;
+    constant instruction_length : natural := 40;
+    constant word_length : natural := 40;
+    constant used_radix : natural := 30;
 
+    --
+    use work.real_to_fixed_pkg.all;
+    function to_fixed is new generic_to_fixed 
+        generic map(word_length => word_length, used_radix => used_radix);
+    --
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(g_number_of_pipeline_stages => 6);
         use microinstruction_pkg.all;
 
-    use work.multi_port_ram_pkg.all;
-    constant datawidth  : natural := 32;
-    constant used_radix : natural := 17;
 
-    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => datawidth);
+    use work.multi_port_ram_pkg.all;
+
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => word_length);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 8);
-    signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
-    signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
-    signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
     signal pim_ram_write     : ref_subtype.ram_write_in'subtype;
     signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
 
-    constant test_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
-          101 => to_fixed(1.5  , datawidth , used_radix)
-        , 102 => to_fixed(0.5  , datawidth , used_radix)
-        , 103 => to_fixed(-1.5 , datawidth , used_radix)
-        , 104 => to_fixed(-0.5 , datawidth , used_radix)
-        , 105 => to_fixed(-1.0 , datawidth , used_radix)
+    -- signal mc_read_in  : ram_read_in_array(0 to 3);
+    -- signal mc_read_out : ram_read_out_array(0 to 3);
+    -- signal mc_output   : ram_write_in_record;
+    ----
+    use work.ram_connector_pkg.all;
 
-        , others => (others => '0'));
+    -- signal ram_connector : ram_connector_record(read_in(), read_out(0 to 3));
+
+
+    signal test1 : real := 0.0;
+    signal test2 : real := 0.0;
+    signal test3 : real := 0.0;
+    signal test4 : real := 0.0;
+    signal test5 : real := 0.0;
+
+    constant y    : natural := 50;
+    constant u    : natural := 60;
+    constant uext : natural := 120;
+    constant g    : natural := 70;
+
+    constant load             : natural := 121;
+    constant duty             : natural := 122;
+    constant input_voltage    : natural := 123;
+
+    constant inductor_current : natural := 22;
+    constant cap_voltage      : natural := 23;
+    constant ind_res          : natural := 24;
+    constant current_gain     : natural := 26;
+    constant voltage_gain     : natural := 27;
+    constant inductor_voltage : natural := 29;
+    constant rxi              : natural := 30;
+    constant cap_current      : natural := 31;
+
+    constant sampletime : real := 1.0e-6;
+
+    constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
+           0 => to_fixed(0.0)
+        ,  1 => to_fixed(1.0)
+        ,  2 => to_fixed(2.0)
+        ,  3 => to_fixed(-3.0)
+
+        , duty             => to_fixed(0.5)
+        , inductor_current => to_fixed(0.0)
+        , cap_voltage      => to_fixed(0.0)
+        , ind_res          => to_fixed(0.9)
+        , load             => to_fixed(0.0)
+        , current_gain     => to_fixed(sampletime*1.0/2.0e-6)
+        , voltage_gain     => to_fixed(sampletime*1.0/3.0e-6)
+        , input_voltage    => to_fixed(10.0)
+        , inductor_voltage => to_fixed(0.0)
+
+        , others => (others => '0')
+    );
 
     constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
-        6   => sub( 96, 101,101)
+        6    => sub(5, 1, 1)
+        , 7  => add(6, 1, 1)
+        , 8  => mpy(7, 2, 2)
+        , 9  => op(mpy_add,8, 2, 2, 1)
+        , 10  => op(mpy_sub,9, 2, 2, 1)
+        , 13 => op(program_end)
 
-        , 7  => sub( 100 , 101 , 102)
-        , 8  => sub( 99  , 102 , 101)
-        , 9  => add( 98  , 103 , 104)
-        , 10 => add( 97  , 104 , 103)
-        , 11 => op(mpy_add , 96  , 101 , 104  , 105)
-        , 12 => op(mpy_add , 95  , 102 , 104  , 102)
+        -- lc filter
+        , 128 => op(set_rpt     , 200)
+        , 129 => op(neg_mpy_add , inductor_voltage , duty             , cap_voltage      , input_voltage)
+        , 130 => op(mpy_sub     , cap_current      , duty             , inductor_current , load)
+        , 136 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
+        , 137 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
+        , 140 => op(jump        , 129)
+        , 143 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
-        , others => op(program_end));
+        , others => op(nop));
 
-    signal command        : t_command                  := (program_end);
-    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+    ----
+    signal ext_input : std_logic_vector(word_length-1 downto 0) := to_fixed(-22.351);
 
-    signal processor_enabled : boolean := true;
-    signal processor_requested : boolean := false;
+    -- procedure generic_connect_ram_write_to_address
+    -- generic( type return_type
+    --         ;function conv(a : std_logic_vector) return return_type is <>)
+    -- (
+    --     write_in : in ram_write_in_record
+    --     ; address : in natural
+    --     ; signal data : out return_type
+    -- ) is
+    -- begin
+    --     if write_requested(write_in,address) then
+    --         data <= conv(get_data(write_in));
+    --     end if;
+    -- end generic_connect_ram_write_to_address;
+
+    signal current : real := 0.0;
+    signal voltage : real := 0.0;
+
+    signal lc_load : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
+    signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
+    signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
+
+    -- use work.microprogram_processor_pkg.all;
+    -- signal mproc_in : microprogram_processor_in_record;
 
 begin
 
@@ -81,53 +159,58 @@ begin
     end process simtime;	
 
     simulator_clock <= not simulator_clock after clock_period/2.0;
-
-------------------------------------------------------------------------
 ------------------------------------------------------------------------
     stimulus : process(simulator_clock)
+
+        -- function convert(data_in : std_logic_vector) return real is
+        -- begin
+        --     return to_real(signed(data_in), used_radix);
+        -- end convert;
+        --
+        -- procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
+
+
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
+
+
+            -- init_ram_connector(ram_connector);
+            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
+            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
+            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
+            -- connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
+            --
+            -- init_mproc(mproc_in);
+            -- CASE simulation_counter is
+            --     when 0 =>
+            --         calculate(mproc_in, 6);
+            --
+            --     when 50 => 
+            --         lc_load <= to_fixed(2.3);
+            --         lc_duty <= to_fixed(0.9);
+            --         calculate(mproc_in, 128);
+            --
+            --     when 800 => lc_duty <= to_fixed(0.6);
+            --     when 1600 => 
+            --         -- lc_load <= to_fixed(1.3);
+            --     WHEN others => --do nothing
+            -- end CASE;
+            --
+            -- connect_ram_write_to_address(mc_output, 5, test1);
+            -- connect_ram_write_to_address(mc_output, 6, test2);
+            -- connect_ram_write_to_address(mc_output, 7, test3);
+            -- connect_ram_write_to_address(mc_output, 8, test4);
+            -- connect_ram_write_to_address(mc_output, 9, test5);
+            --
+            -- connect_ram_write_to_address(mc_output , inductor_current , current);
+            -- connect_ram_write_to_address(mc_output , cap_voltage      , voltage);
+
         end if; -- rising_edge
     end process stimulus;	
-----------------------------------------------------------
-    u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(microinstruction_pkg)
-    port map(simulator_clock 
-    , instr_ram_read_in(0) 
-    , instr_ram_read_out(0) 
-    , processor_enabled   => processor_enabled
-    , instr_pipeline      => instr_pipeline
-    , processor_requested => processor_requested
-    , start_address       => 0);
--- ----------------------------------------------------------
-    add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, radix => used_radix)
-    port map(simulator_clock 
-    , instr_ram_read_out(0) 
-    , ram_read_in
-    , ram_read_out 
-    , ram_write_in 
-    , instr_pipeline);
 ------------------------------------------------------------------------
-------------------------------------------------------------------------
-    -- ram_read_in  <= pc_read_in   and sub_read_in;
-    -- ram_write_in <= pim_ram_write and add_sub_ram_write;
-
-    u_instruction_ram : entity work.multi_port_ram
-    generic map(test_program)
-    port map(
-        clock => simulator_clock
-        ,ram_read_in  => instr_ram_read_in
-        ,ram_read_out => instr_ram_read_out
-        ,ram_write_in => instr_ram_write_in);
-
-    u_dataram : entity work.multi_port_ram
-    generic map(test_data)
-    port map(
-        clock => simulator_clock
-        ,ram_read_in  => ram_read_in
-        ,ram_read_out => ram_read_out
-        ,ram_write_in => ram_write_in);
+    -- u_microprogram_processor : entity work.microprogram_processor
+    -- generic map(microinstruction_pkg, used_radix, test_program, program_data)
+    -- port map(simulator_clock, mproc_in, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;
