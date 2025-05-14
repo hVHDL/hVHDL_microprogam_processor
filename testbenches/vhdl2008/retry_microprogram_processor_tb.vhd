@@ -137,20 +137,6 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     ----
     signal ext_input : std_logic_vector(word_length-1 downto 0) := to_fixed(-22.351);
 
-    procedure generic_connect_ram_write_to_address
-    generic( type return_type
-            ;function conv(a : std_logic_vector) return return_type is <>)
-    (
-        write_in : in ram_write_in_record
-        ; address : in natural
-        ; signal data : out return_type
-    ) is
-    begin
-        if write_requested(write_in,address) then
-            data <= conv(get_data(write_in));
-        end if;
-    end generic_connect_ram_write_to_address;
-
     signal current : real := 0.0;
     signal voltage : real := 0.0;
 
@@ -158,7 +144,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
     signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
 
-    signal mproc_in : microprogram_processor_in_record;
+    signal mproc_in  : microprogram_processor_in_record;
     signal mproc_out : microprogram_processor_out_record;
 
 begin
