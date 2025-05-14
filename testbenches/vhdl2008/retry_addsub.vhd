@@ -9,10 +9,9 @@ LIBRARY ieee  ;
 entity instruction is
     generic(
         package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
-        ;arg1_mem      : natural := 1
-        ;arg2_mem      : natural := 2
-        ;arg3_mem      : natural := 3
-        ;inst_mem      : natural := 0
+        ;arg1_mem      : natural := 0
+        ;arg2_mem      : natural := 1
+        ;arg3_mem      : natural := 2
         ;radix         : natural := 14
         ------ instruction encodings -------
         ;g_mpy_add       : natural := 0

@@ -36,7 +36,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
 
     use work.multi_port_ram_pkg.all;
 
-    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 4, datawidth => word_length, addresswidth => 10);
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 3, datawidth => word_length, addresswidth => 10);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
@@ -49,7 +49,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     ----
     use work.ram_connector_pkg.all;
 
-    constant readports : natural := 4;
+    constant readports : natural := 3;
     constant addresswidth : natural := 10;
     constant datawidth : natural := word_length;
     constant ram_connector_ref : ram_connector_record := (
@@ -159,6 +159,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
 
     signal mproc_in : microprogram_processor_in_record;
+    signal mproc_out : microprogram_processor_out_record;
 
 begin
 
@@ -223,6 +224,6 @@ begin
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
     generic map(microinstruction_pkg, used_radix, test_program, program_data)
-    port map(simulator_clock, mproc_in, mc_read_in, mc_read_out, mc_output);
+    port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;
