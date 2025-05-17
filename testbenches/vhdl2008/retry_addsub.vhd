@@ -5,11 +5,11 @@ LIBRARY ieee  ;
     use ieee.math_real.all;
 
     use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
 
 entity instruction is
     generic(
-        package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
-        ;arg1_mem      : natural := 0
+        arg1_mem      : natural := 0
         ;arg2_mem      : natural := 1
         ;arg3_mem      : natural := 2
         ;radix         : natural := 14
@@ -29,9 +29,8 @@ entity instruction is
         ;data_read_in             : out ram_read_in_array
         ;data_read_out            : in ram_read_out_array
         ;ram_write_in             : out ram_write_in_record
-        ;instr_pipeline           : in microinstruction_pkg.instruction_pipeline_array
+        ;instr_pipeline           : in instruction_pipeline_array
     );
-    use microinstruction_pkg.all;
     use work.real_to_fixed_pkg.all;
 end;
 

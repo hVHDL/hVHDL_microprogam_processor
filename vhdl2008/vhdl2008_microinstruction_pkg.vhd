@@ -446,3 +446,6 @@ package body generic_microinstruction_pkg is
 
 
 end package body generic_microinstruction_pkg;
+
+package microinstruction_pkg is new work.generic_microinstruction_pkg 
+    generic map(g_number_of_pipeline_stages => 8);

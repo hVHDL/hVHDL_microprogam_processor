@@ -4,11 +4,9 @@ LIBRARY ieee  ;
     use ieee.math_real.all;
 
     use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
 
 entity microprogram_sequencer is
-    generic(
-        package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
-      );
     port(
         clock : in std_logic
 
@@ -16,7 +14,7 @@ entity microprogram_sequencer is
         ;instruction_ram_read_out : in ram_read_out_record
 
         ;processor_enabled   : out boolean
-        ;instr_pipeline      : out microinstruction_pkg.instruction_pipeline_array
+        ;instr_pipeline      : out instruction_pipeline_array
         ;processor_requested : in boolean := true
         ;start_address       : in natural := 0
     );
@@ -24,7 +22,6 @@ end entity microprogram_sequencer;
 
 architecture rtl of microprogram_sequencer is
 
-    use microinstruction_pkg.all;
     signal program_counter : natural range 0 to 1023 := 0;
     signal rpt_counter     : natural range 0 to 2**20  := 0;
 
