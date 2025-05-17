@@ -87,8 +87,7 @@ architecture rtl of microprogram_processor is
 
     use work.real_to_fixed_pkg.all;
 
-    signal command        : t_command                  := (program_end);
-    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+    signal instr_pipeline : instruction_pipeline_array := (others=> op(nop));
 
 begin
 
@@ -118,7 +117,7 @@ begin
     , start_address       => mproc_in.start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, radix => g_used_radix)
+    generic map(microinstruction_pkg, radix => g_used_radix, g_read_delays => 1)
     port map(clock 
     , instr_ram_read_out(0) 
     , sub_read_in
@@ -130,9 +129,12 @@ begin
 ----
     combine_ram_buses : process(all) is
     begin
-        mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_hi => 119);
-        ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119);
-        ram_write_in <= combine((0 => add_sub_ram_write));
+        if rising_edge(clock)
+        then
+            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_hi => 119);
+            ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119);
+        end if;
+            ram_write_in <= combine((0 => add_sub_ram_write));
     end process combine_ram_buses;
 ----
     u_program_ram : entity work.multi_port_ram

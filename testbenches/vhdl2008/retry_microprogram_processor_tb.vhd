@@ -31,7 +31,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         generic map(word_length => word_length, used_radix => used_radix);
     --
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
+        generic map(g_number_of_pipeline_stages => 8);
         use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
@@ -115,6 +115,7 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         , others => (others => '0')
     );
 
+    -- write delays add to nops, read delays add to pipelines
     constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
         6    => sub(5, 1, 1)
         , 7  => add(6, 1, 1)

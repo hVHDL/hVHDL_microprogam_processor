@@ -22,7 +22,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     use work.real_to_fixed_pkg.all;
 
     package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
+        generic map(g_number_of_pipeline_stages => 15);
         use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
