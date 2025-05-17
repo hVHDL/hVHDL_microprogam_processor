@@ -20,11 +20,11 @@ entity microprogram_sequencer is
         ;processor_requested : in boolean := true
         ;start_address       : in natural := 0
     );
-    use microinstruction_pkg.all;
 end entity microprogram_sequencer;
 
 architecture rtl of microprogram_sequencer is
 
+    use microinstruction_pkg.all;
     signal program_counter : natural range 0 to 1023 := 0;
     signal rpt_counter     : natural range 0 to 2**20  := 0;
 

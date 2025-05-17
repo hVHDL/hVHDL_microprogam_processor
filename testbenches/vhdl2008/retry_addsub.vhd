@@ -14,6 +14,7 @@ entity instruction is
         ;arg3_mem      : natural := 2
         ;radix         : natural := 14
         ------ instruction encodings -------
+        ;g_datawidth : natural := 32
         ;g_mpy_add       : natural := 0
         ;g_mpy_sub       : natural := 1
         ;g_neg_mpy_add   : natural := 2
@@ -36,11 +37,9 @@ end;
 
 architecture add_sub_mpy of instruction is
 
-    constant datawidth : natural := data_read_out(data_read_out'left).data'length;
-
-    signal a, b, c , cbuf : signed(datawidth-1 downto 0);
-    signal mpy_res        : signed(2*datawidth-1 downto 0);
-    signal mpy_res2       : signed(2*datawidth-1 downto 0);
+    signal a, b, c , cbuf : signed(g_datawidth-1 downto 0);
+    signal mpy_res        : signed(2*g_datawidth-1 downto 0);
+    signal mpy_res2       : signed(2*g_datawidth-1 downto 0);
 
 begin
 

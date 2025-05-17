@@ -6,15 +6,15 @@ library ieee;
 package generic_microinstruction_pkg is
     generic(
             g_instruction_bit_width     : natural := 32
-            ;g_data_bit_width            : natural := g_instruction_bit_width
+            ;g_data_bit_width            : natural := 32
             ;g_number_of_registers       : natural := 5
             ;g_number_of_pipeline_stages : natural := 10
     );
 
-    alias instruction_bit_width     is g_instruction_bit_width    ;
-    alias data_bit_width            is g_data_bit_width       ;
-    alias number_of_registers       is g_number_of_registers      ;
-    alias number_of_pipeline_stages is g_number_of_pipeline_stages;
+    constant instruction_bit_width     : natural := g_instruction_bit_width    ;
+    constant data_bit_width            : natural := g_data_bit_width       ;
+    constant number_of_registers       : natural := g_number_of_registers      ;
+    constant number_of_pipeline_stages : natural := g_number_of_pipeline_stages;
 
     type t_command is (
         mpy_add     
@@ -46,9 +46,10 @@ package generic_microinstruction_pkg is
     subtype arg3 is std_logic_vector(6 downto 0);
     subtype long_arg is std_logic_vector(27 downto 0);
 
-    type reg_array                  is array (integer range 0 to number_of_registers-1) of std_logic_vector(data_bit_width-1 downto 0);
+    type reg_array                  is array (natural range 0 to number_of_registers-1) of std_logic_vector(data_bit_width-1 downto 0);
+    type instruction_pipeline_array is array (natural range 0 to number_of_pipeline_stages-1) of std_logic_vector(instruction_bit_width-1 downto 0);
+    
     subtype t_instruction           is std_logic_vector(instruction_bit_width-1 downto 0);
-    type instruction_pipeline_array is array (integer range 0 to number_of_pipeline_stages-1) of t_instruction;
     type program_array              is array (natural range <>) of t_instruction;
 
 ------------------------------------------------------------------------
@@ -94,38 +95,38 @@ package generic_microinstruction_pkg is
 
 ------------------------------------------------------------------------
     function get_single_argument (
-        input_register : std_logic_vector )
+        input_register : t_instruction )
     return t_instruction;
 
 ------------------------------------------------------------------------
     function get_single_argument (
-        input_register : std_logic_vector )
+        input_register : t_instruction )
     return natural;
 ------------------------------------------------------------------------
-    function get_instruction ( input_register : std_logic_vector )
+    function get_instruction ( input_register : t_instruction )
         return integer;
 ------------------------------------------------------------------------
     function decode ( number : natural)
         return t_command;
 ------------------------------------------------------------------------
-    function decode ( number : std_logic_vector)
+    function decode ( number : t_instruction)
         return t_command;
 ------------------------------------------------------------------------
-    function get_dest ( input_register : std_logic_vector )
+    function get_dest ( input_register : t_instruction )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg1 ( input_register : std_logic_vector )
+    function get_arg1 ( input_register : t_instruction )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg2 ( input_register : std_logic_vector )
+    function get_arg2 ( input_register : t_instruction )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg3 ( input_register : std_logic_vector )
+    function get_arg3 ( input_register : t_instruction )
         return natural;
 ------------------------------------------------------------------------
-    function get_long_argument ( input_register : std_logic_vector )
+    function get_long_argument ( input_register : t_instruction )
         return natural;
-    function get_long_argument ( input_register : std_logic_vector )
+    function get_long_argument ( input_register : t_instruction )
         return t_instruction;
 ------------------------------------------------------------------------
     function pipelined_block ( program : program_array)
@@ -237,7 +238,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_dest
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -247,7 +248,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_arg1
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -257,7 +258,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_arg2
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -267,7 +268,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_arg3
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -277,7 +278,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_long_argument
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -289,7 +290,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_long_argument
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return t_instruction
     is
@@ -303,7 +304,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_single_argument
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return t_instruction
     is
@@ -317,7 +318,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_single_argument
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return natural
     is
@@ -330,7 +331,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_instruction
     (
-        input_register : std_logic_vector 
+        input_register : t_instruction 
     )
     return integer
     is
@@ -350,7 +351,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function decode
     (
-        number : std_logic_vector
+        number : t_instruction
     )
     return t_command
     is

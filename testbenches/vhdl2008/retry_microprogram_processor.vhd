@@ -45,7 +45,9 @@ LIBRARY ieee  ;
 
 entity microprogram_processor is
     generic(
-            package processor_microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+            g_instruction_bit_width : natural := 32
+            ;g_data_bit_width : natural := 32
+            ;g_number_of_pipeline_stages : natural := 10
             ;g_used_radix : natural
             ;g_program    : work.dual_port_ram_pkg.ram_array
             ;g_data       : work.dual_port_ram_pkg.ram_array
@@ -62,14 +64,14 @@ end microprogram_processor;
 
 architecture rtl of microprogram_processor is
 
-    package microinstruction_pkg is new work.generic_microinstruction_pkg 
+    package proc_microinstruction_pkg is new work.generic_microinstruction_pkg 
         generic map(
-            g_instruction_bit_width      => processor_microinstruction_pkg.instruction_bit_width
-            ,g_data_bit_width            => processor_microinstruction_pkg.data_bit_width
-            ,g_number_of_pipeline_stages => processor_microinstruction_pkg.number_of_pipeline_stages);
-        use microinstruction_pkg.all;
+            g_instruction_bit_width      => g_instruction_bit_width
+            ,g_data_bit_width            => g_data_bit_width
+            ,g_number_of_pipeline_stages => g_number_of_pipeline_stages);
+        use proc_microinstruction_pkg.all;
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => 32);
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => g_data_bit_width);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => 32   , addresswidth => 10);
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
@@ -90,6 +92,23 @@ architecture rtl of microprogram_processor is
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
+    component microprogram_sequencer is
+    generic(
+        package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
+      );
+    port(
+        clock : in std_logic
+
+        ;instruction_ram_read_in  : out ram_read_in_record
+        ;instruction_ram_read_out : in ram_read_out_record
+
+        ;processor_enabled   : out boolean
+        ;instr_pipeline      : out microinstruction_pkg.instruction_pipeline_array
+        ;processor_requested : in boolean := true
+        ;start_address       : in natural := 0
+    );
+    end component;
+
 begin
 
 ----------------------------------------------------------
@@ -107,8 +126,8 @@ begin
         end if;
     end process;
 ----------------------------------------------------------
-    u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(microinstruction_pkg)
+    u_microprogram_sequencer : microprogram_sequencer
+    generic map(proc_microinstruction_pkg)
     port map(clock 
     , instr_ram_read_in(0) 
     , instr_ram_read_out(0) 
@@ -118,7 +137,7 @@ begin
     , start_address       => mproc_in.start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, radix => g_used_radix)
+    generic map(proc_microinstruction_pkg, radix => g_used_radix)
     port map(clock 
     , instr_ram_read_out(0) 
     , sub_read_in
