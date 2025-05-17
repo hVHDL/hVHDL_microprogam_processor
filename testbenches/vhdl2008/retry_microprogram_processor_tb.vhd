@@ -7,6 +7,7 @@ library vunit_lib;
 context vunit_lib.vunit_context;
 
     use work.microprogram_processor_pkg.all;
+    use work.microinstruction_pkg.all;
 
 entity retry_microprogram_processor_tb is
   generic (runner_cfg : string);
@@ -30,9 +31,6 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     function to_fixed is new generic_to_fixed 
         generic map(word_length => word_length, used_radix => used_radix);
     --
-    package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
-        use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
 
@@ -209,7 +207,7 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_processor
-    generic map(microinstruction_pkg, used_radix, test_program, program_data)
+    generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
     port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
 end vunit_simulation;

@@ -73,7 +73,6 @@ package body ram_connector_pkg is
     end connect_data_to_ram_bus;
 
     ----------------------------------
-    -- this does not seem to work properly from package for some reason :(
     procedure generic_connect_ram_write_to_address
     generic( type return_type
             ;function conv(a : std_logic_vector) return return_type is <>)

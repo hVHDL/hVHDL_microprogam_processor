@@ -20,14 +20,12 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     -----------------------------------
     -- simulation specific signals ----
     use work.real_to_fixed_pkg.all;
+    use work.microinstruction_pkg.all;
 
-    package microinstruction_pkg is new work.generic_microinstruction_pkg 
-        generic map(g_number_of_pipeline_stages => 6);
-        use microinstruction_pkg.all;
 
     use work.multi_port_ram_pkg.all;
-    constant datawidth  : natural := 27;
-    constant used_radix : natural := 17;
+    constant datawidth  : natural := 32;
+    constant used_radix : natural := 20;
 
     constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 5, datawidth => datawidth);
     signal ram_read_in  : ref_subtype.ram_read_in'subtype;
@@ -92,7 +90,6 @@ begin
     end process stimulus;	
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(microinstruction_pkg)
     port map(simulator_clock 
     , instr_ram_read_in(0) 
     , instr_ram_read_out(0) 
@@ -102,7 +99,7 @@ begin
     , start_address       => 0);
 -- ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(microinstruction_pkg, radix => used_radix)
+    generic map(radix => used_radix)
     port map(simulator_clock 
     , instr_ram_read_out(0) 
     , ram_read_in
