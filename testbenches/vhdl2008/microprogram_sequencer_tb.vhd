@@ -108,8 +108,6 @@ begin
     , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-    -- ram_read_in  <= pc_read_in   and sub_read_in;
-    -- ram_write_in <= pim_ram_write and add_sub_ram_write;
 
     u_instruction_ram : entity work.multi_port_ram
     generic map(test_program)

@@ -73,7 +73,6 @@ architecture rtl of microprogram_processor is
     signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
     signal ram_read_in : ref_subtype.ram_read_in'subtype;
-    signal pc_read_in  : ref_subtype.ram_read_in'subtype;
     signal sub_read_in : ref_subtype.ram_read_in'subtype;
 
     signal ram_write_in      : ref_subtype.ram_write_in'subtype;
@@ -89,16 +88,6 @@ architecture rtl of microprogram_processor is
 
 begin
 
-----------------------------------------------------------
-    process(clock) is
-    begin
-        if rising_edge(clock)
-        then
-            mc_output.address <= ram_write_in.address;
-            mc_output.data <= ram_write_in.data;
-            mc_output.write_requested <= ram_write_in.write_requested;
-        end if;
-    end process;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
@@ -122,8 +111,8 @@ begin
 ----
     combine_ram_buses : process(all) is
     begin
-        if rising_edge(clock)
-        then
+        -- if rising_edge(clock)
+        -- then
             mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0, no_map_range_hi => 119);
             ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119, no_map_range_hi => 127);
             ram_write_in <= combine((0 => add_sub_ram_write));
@@ -136,8 +125,11 @@ begin
                     data_ram_read_out(i) <= ram_read_out(i);
                 end if;
             end loop;
-        end if;
+        -- end if;
     end process combine_ram_buses;
+
+    mc_output <= ram_write_in;
+
 ----
     u_program_ram : entity work.multi_port_ram
     generic map(g_program)
