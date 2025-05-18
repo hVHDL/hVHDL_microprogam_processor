@@ -39,7 +39,7 @@ begin
             init_mp_ram_read(instruction_ram_read_in);
 
             -------- instruction pipeline --------
-            instr_pipeline <= get_ram_data(instruction_ram_read_out) & instr_pipeline(0 to instr_pipeline'high-1);
+            instr_pipeline <= op(nop) & instr_pipeline(0 to instr_pipeline'high-1);
             --------------------------------------
             CASE processor_state is
                 WHEN halted =>
@@ -66,6 +66,7 @@ begin
                     if ram_read_is_ready(instruction_ram_read_out)
                         and decode(get_ram_data(instruction_ram_read_out)) /= program_end
                     then
+                            instr_pipeline(0) <= get_ram_data(instruction_ram_read_out);
                     end if;
                     ---
             end CASE;

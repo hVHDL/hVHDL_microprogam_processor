@@ -1,3 +1,51 @@
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+
+    use ieee.fixed_pkg.all;
+
+package mult_add_pkg is
+
+    type mult_add_input_array is array (natural range <>) of signed;
+    type mult_add_output_array is array (natural range <>) of signed;
+
+    -- constant number_of_pipeline_cycles : integer := g_input_registers + g_output_registers-1;
+
+    type mult_add_record is record
+        signed_data_a     : mult_add_input_array;
+        signed_data_b     : mult_add_input_array;
+        signed_data_c     : mult_add_input_array;
+        multiplier_result : mult_add_output_array;
+        shift_register    : std_logic_vector;
+    end record;
+
+    type mult_add_ref_record is record
+        signed_data_a     : mult_add_input_array;
+        signed_data_b     : mult_add_input_array;
+        signed_data_c     : mult_add_input_array;
+        multiplier_result : mult_add_output_array;
+        shift_register    : std_logic_vector;
+        pipeline_delay    : natural;
+        wordlength        : natural;
+    end record;
+
+end package mult_add_pkg;
+
+package body mult_add_pkg is
+
+    -- function create_ref_subtypes( word_length : natural ; input_registers : natural := 1 ; output_registers : natural := 1) return reference_record is
+    --
+    --     constant retval : mult_add_ref_record :=(
+    --         signed_data_a => 
+    --
+    --
+    --
+    --
+    -- begin
+    --     return
+
+end package body mult_add_pkg;
+-------------------------------------------------
 
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
@@ -14,7 +62,6 @@ entity instruction is
         ;arg3_mem      : natural := 2
         ;radix         : natural := 14
         ------ instruction encodings -------
-        ;g_datawidth : natural := 32
         ;g_mpy_add       : natural := 0
         ;g_mpy_sub       : natural := 1
         ;g_neg_mpy_add   : natural := 2
@@ -36,9 +83,10 @@ end;
 
 architecture add_sub_mpy of instruction is
 
-    signal a, b, c , cbuf : signed(g_datawidth-1 downto 0);
-    signal mpy_res        : signed(2*g_datawidth-1 downto 0);
-    signal mpy_res2       : signed(2*g_datawidth-1 downto 0);
+    constant datawidth : natural := data_read_out(data_read_out'left).data'length;
+    signal a, b, c , cbuf : signed(datawidth-1 downto 0);
+    signal mpy_res        : signed(2*datawidth-1 downto 0);
+    signal mpy_res2       : signed(2*datawidth-1 downto 0);
 
 begin
 
