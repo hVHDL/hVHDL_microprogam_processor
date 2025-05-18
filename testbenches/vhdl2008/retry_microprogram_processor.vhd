@@ -99,7 +99,7 @@ begin
     , start_address       => mproc_in.start_address);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(radix => g_used_radix)
+    generic map(g_datawidth => g_data_bit_width, radix => g_used_radix)
     port map(clock 
     , instr_ram_read_out(0) 
     , sub_read_in
