@@ -46,12 +46,12 @@ LIBRARY ieee  ;
 
 entity microprogram_processor is
     generic(
-            g_instruction_bit_width : natural := 32
-            ;g_data_bit_width : natural := 32
+            g_instruction_bit_width      : natural := 32
+            ;g_data_bit_width            : natural := 32
             ;g_number_of_pipeline_stages : natural := 10
-            ;g_used_radix : natural
-            ;g_program    : work.dual_port_ram_pkg.ram_array
-            ;g_data       : work.dual_port_ram_pkg.ram_array
+            ;g_used_radix                : natural
+            ;g_program                   : work.dual_port_ram_pkg.ram_array
+            ;g_data                      : work.dual_port_ram_pkg.ram_array
            );
     port(
         clock        : in std_logic
