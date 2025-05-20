@@ -85,35 +85,20 @@ float.add_source_files(ROOT / "testbenches/memory_processor/lcr_simulation_rk4_t
 v2008 = VU.add_library("v2008")
 
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/multiplier/multiplier_generic_pkg.vhd")
-
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/dual_port_ram_generic_pkg.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/fpga_internal_ram/arch_sim_generic_dual_port_ram.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/multi_port_ram/generic_multi_port_ram_pkg.vhd")
-
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/dp_ram_w_configurable_recrods.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/arch_sim_dp_ram_w_configurable_records.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/mpram_w_configurable_records.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
+
+v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/add_sub_instruction.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/ram_connector_generic_pkg.vhd")
 
-retry_w_unconstrained_ram = VU.add_library("retry_w_unconstrained_ram")
-
-retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/dp_ram_w_configurable_recrods.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/arch_sim_dp_ram_w_configurable_records.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/mpram_w_configurable_records.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
-
-retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_addsub.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_sequencer.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor.vhd")
-
-retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
-retry_w_unconstrained_ram.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 
 # VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
-VU.set_sim_option("nvc.sim_flags", ["-w"])
+# VU.set_sim_option("nvc.sim_flags", ["-w"])
 
 VU.main()

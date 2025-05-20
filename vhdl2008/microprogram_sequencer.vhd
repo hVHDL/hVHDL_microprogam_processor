@@ -3,28 +3,22 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
     use ieee.math_real.all;
 
+    use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
+
 entity microprogram_sequencer is
-    generic(
-        package microinstruction_pkg is new work.generic_microinstruction_pkg generic map (<>)
-        ;package mp_ram_pkg is new work.generic_multi_port_ram_pkg generic map (<>)
-        ;inst_mem : natural := 0
-       );
     port(
         clock : in std_logic
 
-        -- ;instruction_ram_read_in : out mp_ram_pkg.ram_read_in_array
-        ;ram_read_in                : out mp_ram_pkg.ram_read_in_array
-        ;ram_read_out               : in mp_ram_pkg.ram_read_out_array
-        ;ram_write_in               : out mp_ram_pkg.ram_write_in_record
-        ;processor_enabled          : out boolean
-        ;instr_pipeline             : out microinstruction_pkg.instruction_pipeline_array
-        ;processor_requested        : in boolean := true
-        ;start_address              : in natural := 0
+        ;instruction_ram_read_in  : out ram_read_in_record
+        ;instruction_ram_read_out : in ram_read_out_record
+
+        ;processor_enabled   : out boolean
+        ;instr_pipeline      : out instruction_pipeline_array
+        ;processor_requested : in boolean := true
+        ;start_address       : in natural := 0
     );
-    use microinstruction_pkg.all;
-    use mp_ram_pkg.all;
-    use work.real_to_fixed_pkg.all;
-end;
+end entity microprogram_sequencer;
 
 architecture rtl of microprogram_sequencer is
 
@@ -42,14 +36,10 @@ begin
 
     begin
         if rising_edge(clock) then
-            init_mp_ram_read(ram_read_in);
-            init_mp_write(ram_write_in);
+            init_mp_ram_read(instruction_ram_read_in);
 
             -------- instruction pipeline --------
-            for i in instr_pipeline'high downto 1 loop
-                instr_pipeline(i) <= instr_pipeline(i-1);
-            end loop;
-            instr_pipeline(0) <= op(nop);
+            instr_pipeline <= op(nop) & instr_pipeline(0 to instr_pipeline'high-1);
             --------------------------------------
             CASE processor_state is
                 WHEN halted =>
@@ -62,36 +52,36 @@ begin
 
                 WHEN running =>
 
-                    request_data_from_ram(ram_read_in(inst_mem), program_counter);
+                    request_data_from_ram(instruction_ram_read_in, program_counter);
                     program_counter <= program_counter + 1;
 
                     ---
-                    if ram_read_is_ready( ram_read_out(0) )
-                        and decode(get_ram_data(ram_read_out(0))) = program_end
+                    if ram_read_is_ready( instruction_ram_read_out )
+                        and decode(get_ram_data(instruction_ram_read_out)) = program_end
                     then
                         processor_state <= halted;
                     end if;
 
                     ---
-                    if ram_read_is_ready(ram_read_out(0))
-                        and decode(get_ram_data(ram_read_out(0))) /= program_end
+                    if ram_read_is_ready(instruction_ram_read_out)
+                        and decode(get_ram_data(instruction_ram_read_out)) /= program_end
                     then
-                            instr_pipeline(0) <= get_ram_data(ram_read_out(0));
+                            instr_pipeline(0) <= get_ram_data(instruction_ram_read_out);
                     end if;
                     ---
             end CASE;
 
             ------------ jump instruction ----------------
-            if processor_enabled and ram_read_is_ready(ram_read_out(0)) 
+            if processor_enabled and ram_read_is_ready(instruction_ram_read_out) 
             then
-                CASE decode(get_ram_data(ram_read_out(0))) is
+                CASE decode(get_ram_data(instruction_ram_read_out)) is
                     when jump =>
                         if rpt_counter > 0 then
                             rpt_counter <= rpt_counter - 1;
-                            program_counter <= get_single_argument(get_ram_data(ram_read_out(0)));
+                            program_counter <= get_single_argument(get_ram_data(instruction_ram_read_out));
                         end if;
                     WHEN set_rpt =>
-                        rpt_counter <= get_single_argument(get_ram_data(ram_read_out(0)));
+                        rpt_counter <= get_single_argument(get_ram_data(instruction_ram_read_out));
                     when others => --do nothing
                 end CASE;
             end if;
@@ -101,3 +91,4 @@ begin
     end process make_program_counter;	
 ------------------------------------------------------------------------
 end rtl;
+
