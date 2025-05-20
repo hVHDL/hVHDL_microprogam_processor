@@ -85,9 +85,9 @@ float.add_source_files(ROOT / "testbenches/memory_processor/lcr_simulation_rk4_t
 v2008 = VU.add_library("v2008")
 
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fixed_pkg.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/dp_ram_w_configurable_recrods.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/arch_sim_dp_ram_w_configurable_records.vhd")
-v2008.add_source_files(ROOT / "source/hVHDL_memory_library/testbench/dual_port_ram/mpram_w_configurable_records.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/dp_ram_w_configurable_recrods.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/arch_sim_dp_ram_w_configurable_records.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/mpram_w_configurable_records.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
 
