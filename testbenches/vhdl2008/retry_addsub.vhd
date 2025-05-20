@@ -61,6 +61,8 @@ entity instruction is
         ;arg2_mem      : natural := 1
         ;arg3_mem      : natural := 2
         ;radix         : natural := 14
+        ;g_read_delays     : natural := 0
+        ;g_read_out_delays : natural := 0
         ------ instruction encodings -------
         ;g_mpy_add       : natural := 0
         ;g_mpy_sub       : natural := 1
@@ -120,7 +122,7 @@ begin
             mpy_res  <= mpy_res2 + shift_left(resize(cbuf , mpy_res'length), radix) ;
             ---------------
 
-            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay)) is
+            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
                     a <= signed(get_ram_data(data_read_out(arg1_mem)));
                     b <= signed(get_ram_data(data_read_out(arg2_mem)));
@@ -162,10 +164,10 @@ begin
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3)) is
+            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
                 WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c |a_sub_b_mpy_c | lp_filter =>
                     write_data_to_ram(ram_write_in 
-                    , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3))
+                    , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
                     , std_logic_vector(mpy_res(radix+data_read_out(data_read_out'left).data'length-1 downto radix)));
                 WHEN others => -- do nothing
             end CASE;
