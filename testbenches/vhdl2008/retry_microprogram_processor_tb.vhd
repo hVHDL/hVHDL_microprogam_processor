@@ -105,8 +105,15 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
         , 7  => add(6, 1, 1)
         , 8  => mpy(7, 2, 2)
         , 9  => op(mpy_add,8, 2, 2, 1)
-        , 10  => op(mpy_sub,9, 2, 2, 1)
+        , 10 => op(mpy_sub,9, 2, 2, 1)
         , 13 => op(program_end)
+
+        -- equation:
+        -- didt = input_voltage - duty*dc_link - i*rl
+        -- dudt = i*duty - iload
+
+        -- u = u + dudt*h/c
+        -- i = i + didt*h/c
 
         -- lc filter
         , 128 => op(set_rpt     , 200)
