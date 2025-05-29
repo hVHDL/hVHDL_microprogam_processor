@@ -50,23 +50,10 @@ architecture vunit_simulation of retry_microprogram_processor_tb is
     constant readports : natural := 3;
     constant addresswidth : natural := 10;
     constant datawidth : natural := word_length;
-    constant ram_connector_ref : ram_connector_record := (
-            read_in => (
-                0 to readports - 1 => (
-                    address        => (0 to addresswidth - 1 => '0'),
-                    read_requested => '0'
-                )
-            )
 
-            ,read_out => (
-                0 to readports - 1 => (
-                    data          => (datawidth - 1 downto 0 => '0'),
-                    data_is_ready => '0'
-                )
-            ));
+    constant ram_connector_ref : ram_connector_record := create_ref_subtype(readports => readports, addresswidth => addresswidth, datawidth => datawidth);
 
     signal ram_connector : ram_connector_ref'subtype;
-
 
     signal test1 : real := 0.0;
     signal test2 : real := 0.0;

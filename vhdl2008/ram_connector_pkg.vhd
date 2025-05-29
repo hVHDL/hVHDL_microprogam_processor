@@ -20,6 +20,8 @@ package ram_connector_pkg is
                      ; address : in natural
                      ; data : in std_logic_vector);
 
+    function create_ref_subtype(readports : natural ; addresswidth : natural ; datawidth : natural) return ram_connector_record;
+
     -------------------------------------------
     procedure generic_connect_ram_write_to_address
     generic( type return_type
@@ -43,6 +45,27 @@ end package ram_connector_pkg;
 
 package body ram_connector_pkg is
 
+    -------------------------------------------
+    function create_ref_subtype(readports : natural ; addresswidth : natural ; datawidth : natural) return ram_connector_record is
+        constant retval : ram_connector_record := (
+                read_in => (
+                    0 to readports - 1 => (
+                        address        => (0 to addresswidth - 1 => '0'),
+                        read_requested => '0'
+                    )
+                )
+
+                ,read_out => (
+                    0 to readports - 1 => (
+                        data          => (datawidth - 1 downto 0 => '0'),
+                        data_is_ready => '0'
+                    )
+                ));
+    begin
+
+        return retval;
+
+    end create_ref_subtype;
     -------------------------------------------
     procedure init_ram_connector(signal self : inout ram_connector_record) is
     begin
