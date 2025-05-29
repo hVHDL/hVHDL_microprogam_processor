@@ -10,11 +10,13 @@ package microprogram_processor_pkg is
     end record;
 
     type microprogram_processor_out_record is record
-        is_busy : boolean;
+        is_busy  : boolean;
+        is_ready : boolean;
     end record;
 
     procedure init_mproc (signal self_in : out microprogram_processor_in_record);
     procedure calculate (signal self_in : out microprogram_processor_in_record; start_address : in natural);
+    function is_ready(self_out : microprogram_processor_out_record) return boolean;
 
 end package microprogram_processor_pkg;
 
@@ -33,6 +35,10 @@ package body microprogram_processor_pkg is
         self_in.start_address <= start_address;
     end calculate;
 
+    function is_ready(self_out : microprogram_processor_out_record) return boolean is
+    begin
+        return self_out.is_ready;
+    end is_ready;
 
 end package body microprogram_processor_pkg;
 
@@ -96,7 +102,8 @@ begin
     , processor_enabled   => mproc_out.is_busy
     , instr_pipeline      => instr_pipeline
     , processor_requested => mproc_in.processor_requested
-    , start_address       => mproc_in.start_address);
+    , start_address       => mproc_in.start_address
+    , is_ready            => mproc_out.is_ready);
 ----------------------------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(radix => g_used_radix)
@@ -113,8 +120,8 @@ begin
     begin
         -- if rising_edge(clock)
         -- then
-            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0, no_map_range_hi => 119);
-            ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119, no_map_range_hi => 127);
+            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 119);
+            ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
             ram_write_in <= combine((0 => add_sub_ram_write));
 
             for i in ram_read_out'range loop

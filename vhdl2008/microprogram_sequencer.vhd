@@ -17,6 +17,7 @@ entity microprogram_sequencer is
         ;instr_pipeline      : out instruction_pipeline_array
         ;processor_requested : in boolean := true
         ;start_address       : in natural := 0
+        ;is_ready            : out boolean
     );
 end entity microprogram_sequencer;
 
@@ -41,6 +42,8 @@ begin
             -------- instruction pipeline --------
             instr_pipeline <= op(nop) & instr_pipeline(0 to instr_pipeline'high-1);
             --------------------------------------
+            is_ready <= false;
+                                     
             CASE processor_state is
                 WHEN halted =>
 
@@ -60,6 +63,7 @@ begin
                         and decode(get_ram_data(instruction_ram_read_out)) = program_end
                     then
                         processor_state <= halted;
+                        is_ready <= true;
                     end if;
 
                     ---
