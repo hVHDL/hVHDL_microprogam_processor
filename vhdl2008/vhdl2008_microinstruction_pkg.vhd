@@ -40,6 +40,7 @@ package generic_microinstruction_pkg is
     function mpy(dest, a, b : natural) return std_logic_vector;
     function accum(a : natural) return std_logic_vector;
     function acc_get_and_zero(dest , a : natural) return std_logic_vector;
+    function set(dest, a : natural) return std_logic_vector;
 
     subtype comm is std_logic_vector(31 downto 28);
     subtype dest is std_logic_vector(27 downto 21);
@@ -454,6 +455,12 @@ package body generic_microinstruction_pkg is
     begin
         return op(get_acc_and_zero, dest, a);
     end acc_get_and_zero;
+
+    function set(dest, a : natural) return std_logic_vector is
+    begin
+        return op(mpy_add, dest, a, 1, 0);
+    end set;
+
 
 end package body generic_microinstruction_pkg;
 
