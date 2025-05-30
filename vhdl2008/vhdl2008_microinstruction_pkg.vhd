@@ -28,8 +28,8 @@ package generic_microinstruction_pkg is
         ,nop         
         ,set_rpt
         ,jump
-        ,res6
-        ,res7
+        ,acc
+        ,get_acc_and_zero
         ,res8
         ,res9
         ,res10
@@ -38,6 +38,8 @@ package generic_microinstruction_pkg is
     function sub(dest, a, b : natural) return std_logic_vector;
     function add(dest, a, b : natural) return std_logic_vector;
     function mpy(dest, a, b : natural) return std_logic_vector;
+    function accum(a : natural) return std_logic_vector;
+    function acc_get_and_zero(dest , a : natural) return std_logic_vector;
 
     subtype comm is std_logic_vector(31 downto 28);
     subtype dest is std_logic_vector(27 downto 21);
@@ -443,7 +445,15 @@ package body generic_microinstruction_pkg is
         return op(mpy_add, dest, a, b, 0);
     end mpy;
 
+    function accum(a : natural) return std_logic_vector is
+    begin
+        return op(acc, 0, a);
+    end accum;
 
+    function acc_get_and_zero(dest , a : natural) return std_logic_vector is
+    begin
+        return op(get_acc_and_zero, dest, a);
+    end acc_get_and_zero;
 
 end package body generic_microinstruction_pkg;
 

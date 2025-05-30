@@ -90,6 +90,8 @@ architecture add_sub_mpy of instruction is
     signal mpy_res        : signed(2*datawidth-1 downto 0);
     signal mpy_res2       : signed(2*datawidth-1 downto 0);
 
+    signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
+
 begin
 
     mpy_add_sub : process(clock) is
@@ -101,7 +103,7 @@ begin
             ---------------
             if ram_read_is_ready(instruction_ram_read_out) then
                 CASE decode(get_ram_data(instruction_ram_read_out)) is
-                    WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter =>
+                    WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | acc =>
 
                         request_data_from_ram(data_read_in(arg1_mem)
                             , get_arg1(get_ram_data(instruction_ram_read_out)));
@@ -161,6 +163,9 @@ begin
                     b <= signed(get_ram_data(data_read_out(arg3_mem)));
                     c <= signed(get_ram_data(data_read_out(arg2_mem)));
 
+                WHEN acc | get_acc_and_zero =>
+                    accumulator <= accumulator + signed(get_ram_data(data_read_out(arg3_mem)));
+
                 WHEN others => -- do nothing
             end CASE;
             ---------------
@@ -169,6 +174,15 @@ begin
                     write_data_to_ram(ram_write_in 
                     , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
                     , std_logic_vector(mpy_res(radix+data_read_out(data_read_out'left).data'length-1 downto radix)));
+
+                WHEN get_acc_and_zero =>
+
+                    write_data_to_ram(ram_write_in
+                    , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    , std_logic_vector(accumulator));
+
+                    accumulator <= (others => '0');
+
                 WHEN others => -- do nothing
             end CASE;
             ---------------
