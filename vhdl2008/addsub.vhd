@@ -103,7 +103,7 @@ begin
             ---------------
             if ram_read_is_ready(instruction_ram_read_out) then
                 CASE decode(get_ram_data(instruction_ram_read_out)) is
-                    WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | acc =>
+                    WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | acc | get_acc_and_zero =>
 
                         request_data_from_ram(data_read_in(arg1_mem)
                             , get_arg1(get_ram_data(instruction_ram_read_out)));
