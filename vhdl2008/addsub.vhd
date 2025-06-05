@@ -103,7 +103,16 @@ begin
             ---------------
             if ram_read_is_ready(instruction_ram_read_out) then
                 CASE decode(get_ram_data(instruction_ram_read_out)) is
-                    WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | acc | get_acc_and_zero =>
+                    WHEN mpy_add 
+                        | neg_mpy_add 
+                        | neg_mpy_sub 
+                        | mpy_sub 
+                        | a_add_b_mpy_c 
+                        | a_sub_b_mpy_c 
+                        | lp_filter 
+                        | acc 
+                        | get_acc_and_zero 
+                        =>
 
                         request_data_from_ram(data_read_in(arg1_mem)
                             , get_arg1(get_ram_data(instruction_ram_read_out)));
@@ -170,7 +179,14 @@ begin
             end CASE;
             ---------------
             CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
-                WHEN mpy_add | neg_mpy_add | neg_mpy_sub | mpy_sub | a_add_b_mpy_c |a_sub_b_mpy_c | lp_filter =>
+                WHEN mpy_add 
+                    | neg_mpy_add   
+                    | neg_mpy_sub   
+                    | mpy_sub
+                    | a_add_b_mpy_c 
+                    | a_sub_b_mpy_c 
+                    | lp_filter =>
+
                     write_data_to_ram(ram_write_in 
                     , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
                     , std_logic_vector(mpy_res(radix+data_read_out(data_read_out'left).data'length-1 downto radix)));
