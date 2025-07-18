@@ -120,7 +120,7 @@ begin
     begin
         -- if rising_edge(clock)
         -- then
-            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 119);
+            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
             ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
             ram_write_in <= combine((0 => add_sub_ram_write));
 
