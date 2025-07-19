@@ -180,12 +180,12 @@ begin
 
                     if signed(get_ram_data(data_read_out(arg3_mem))) < 0
                     then
-                        if accumulator <= signed(get_ram_data(data_read_out(arg3_mem)))
+                        if accumulator <= signed(get_ram_data(data_read_out(arg2_mem)))
                         then
                             accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
                         end if;
                     else
-                        if accumulator >= signed(get_ram_data(data_read_out(arg3_mem)))
+                        if accumulator >= signed(get_ram_data(data_read_out(arg2_mem)))
                         then
                             accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
                         end if;
