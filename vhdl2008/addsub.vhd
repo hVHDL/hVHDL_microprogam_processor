@@ -112,6 +112,7 @@ begin
                         | lp_filter 
                         | acc 
                         | get_acc_and_zero 
+                        | check_and_saturate_acc 
                         =>
 
                         request_data_from_ram(data_read_in(arg1_mem)
@@ -174,6 +175,21 @@ begin
 
                 WHEN acc | get_acc_and_zero =>
                     accumulator <= accumulator + signed(get_ram_data(data_read_out(arg3_mem)));
+
+                WHEN check_and_saturate_acc =>
+
+                    if signed(get_ram_data(data_read_out(arg3_mem))) < 0
+                    then
+                        if accumulator <= signed(get_ram_data(data_read_out(arg3_mem)))
+                        then
+                            accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
+                        end if;
+                    else
+                        if accumulator >= signed(get_ram_data(data_read_out(arg3_mem)))
+                        then
+                            accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
+                        end if;
+                    end if;
 
                 WHEN others => -- do nothing
             end CASE;

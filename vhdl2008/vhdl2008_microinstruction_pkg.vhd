@@ -30,7 +30,7 @@ package generic_microinstruction_pkg is
         ,jump
         ,acc
         ,get_acc_and_zero
-        ,res8
+        ,check_and_saturate_acc
         ,res9
         ,res10
     );
