@@ -2,49 +2,78 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-    use ieee.fixed_pkg.all;
+    use work.real_to_fixed_pkg.all;
 
-package mult_add_pkg is
+package fixed_dsp_pkg is
 
-    type mult_add_input_array is array (natural range <>) of signed;
-    type mult_add_output_array is array (natural range <>) of signed;
+    type fixed_dsp_input_array is array (natural range <>) of signed;
+    type fixed_dsp_output_array is array (natural range <>) of signed;
 
     -- constant number_of_pipeline_cycles : integer := g_input_registers + g_output_registers-1;
 
-    type mult_add_record is record
-        signed_data_a     : mult_add_input_array;
-        signed_data_b     : mult_add_input_array;
-        signed_data_c     : mult_add_input_array;
-        multiplier_result : mult_add_output_array;
-        shift_register    : std_logic_vector;
+    type fixed_dsp_record is record
+        a : fixed_dsp_input_array;
+        b : fixed_dsp_input_array;
+        c : fixed_dsp_input_array;
+        result : fixed_dsp_output_array;
+        shift_register : std_logic_vector;
     end record;
 
-    type mult_add_ref_record is record
-        signed_data_a     : mult_add_input_array;
-        signed_data_b     : mult_add_input_array;
-        signed_data_c     : mult_add_input_array;
-        multiplier_result : mult_add_output_array;
+    type fixed_dsp_ref_record is record
+        a     : fixed_dsp_input_array;
+        b     : fixed_dsp_input_array;
+        c     : fixed_dsp_input_array;
+        result : fixed_dsp_output_array;
         shift_register    : std_logic_vector;
         pipeline_delay    : natural;
         wordlength        : natural;
     end record;
 
-end package mult_add_pkg;
+    function create_fixed_dsp_ref_type (
+        a_length      : natural := 36
+        ; input_regs  : natural := 2
+        ; output_regs : natural := 1)
+    return fixed_dsp_ref_record;
 
-package body mult_add_pkg is
+end package fixed_dsp_pkg;
 
-    -- function create_ref_subtypes( word_length : natural ; input_registers : natural := 1 ; output_registers : natural := 1) return reference_record is
-    --
-    --     constant retval : mult_add_ref_record :=(
-    --         signed_data_a => 
-    --
-    --
-    --
-    --
-    -- begin
-    --     return
+package body fixed_dsp_pkg is
 
-end package body mult_add_pkg;
+    function create_fixed_dsp_ref_type (
+        a_length      : natural := 36
+        ; input_regs  : natural := 2
+        ; output_regs : natural := 1)
+        return fixed_dsp_ref_record 
+    is
+        constant num_ref : signed := to_fixed(0.0, a_length, a_length);
+        constant a_ref : fixed_dsp_input_array(0 to input_regs-1) := (others => num_ref);
+        constant c_ref : fixed_dsp_input_array(0 to input_regs) := (others => num_ref);
+        constant res_ref : fixed_dsp_output_array(0 to output_regs-1) := (others => to_fixed(0.0, a_length*2, a_length));
+
+        constant retval : fixed_dsp_ref_record := (
+            a  => a_ref
+            ,b => a_ref
+            ,c => c_ref
+            ,result => res_ref
+            ,shift_register => (0 to input_regs+output_regs-1 => '0')
+            ,pipeline_delay => input_regs + output_regs
+            ,wordlength => a_length);
+    begin
+
+        return retval;
+
+    end create_fixed_dsp_ref_type;
+
+    procedure create_fixed_dsp(signal self : inout fixed_dsp_record) is
+    begin
+        -- fix this
+        -- self.result(result'high) <= self.a(self.a'high) * self.b(self.b'high);
+        -- self.c(1) <= self.c(0);
+        -- self.mpy_res  <= mpy_res2 + shift_left(resize(self.c(1) , mpy_res'length), radix) ;
+
+    end create_fixed_dsp;
+
+end package body fixed_dsp_pkg;
 -------------------------------------------------
 
 LIBRARY ieee  ; 
