@@ -46,9 +46,9 @@ package body fixed_dsp_pkg is
         return fixed_dsp_ref_record 
     is
         constant num_ref : signed := to_fixed(0.0, a_length, a_length);
-        constant a_ref : fixed_dsp_input_array(0 to input_regs-1) := (others => num_ref);
-        constant c_ref : fixed_dsp_input_array(0 to input_regs) := (others => num_ref);
-        constant res_ref : fixed_dsp_output_array(0 to output_regs-1) := (others => to_fixed(0.0, a_length*2, a_length));
+        constant a_ref : fixed_dsp_input_array(0 to input_regs-1) := (0 to input_regs-1 => num_ref);
+        constant c_ref : fixed_dsp_input_array(0 to input_regs) := (0 to input_regs => num_ref);
+        constant res_ref : fixed_dsp_output_array(0 to output_regs-1) := (0 to output_regs-1 => to_fixed(0.0, a_length*2, a_length));
 
         constant retval : fixed_dsp_ref_record := (
             a  => a_ref
