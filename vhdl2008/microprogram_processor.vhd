@@ -56,8 +56,10 @@ entity microprogram_processor is
             ;g_data_bit_width            : natural := 32
             ;g_number_of_pipeline_stages : natural := 10
             ;g_used_radix                : natural
+            ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
             ;g_data                      : work.dual_port_ram_pkg.ram_array
+            ;g_idle_ram_write              : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
            );
     port(
         clock        : in std_logic
@@ -66,6 +68,7 @@ entity microprogram_processor is
         ;mc_read_in  : out ram_read_in_array
         ;mc_read_out : in ram_read_out_array
         ;mc_output   : out ram_write_in_record
+        ;mc_write_in : in ram_write_in_record := g_idle_ram_write
     );
 end microprogram_processor;
 
@@ -122,7 +125,13 @@ begin
         -- then
             mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
             ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
+
             ram_write_in <= combine((0 => add_sub_ram_write));
+
+            if not write_requested(add_sub_ram_write)
+            then
+                -- ram_write_in <= combine((0 => mc_write_in));
+            end if;
 
             for i in ram_read_out'range loop
                 if mc_read_out(i).data_is_ready then
