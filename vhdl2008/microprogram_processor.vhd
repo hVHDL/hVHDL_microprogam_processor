@@ -59,7 +59,7 @@ entity microprogram_processor is
             ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
             ;g_data                      : work.dual_port_ram_pkg.ram_array
-            ;g_idle_ram_write              : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
+            ;g_idle_ram_write            : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
            );
     port(
         clock        : in std_logic
@@ -95,6 +95,8 @@ architecture rtl of microprogram_processor is
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
+    signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
+
 begin
 
 ----------------------------------------------------------
@@ -128,10 +130,19 @@ begin
 
             ram_write_in <= combine((0 => add_sub_ram_write));
 
-            if not write_requested(add_sub_ram_write)
-            then
-                -- ram_write_in <= combine((0 => mc_write_in));
-            end if;
+            -- add buffering for writing ram externally when not written by processor
+            -- if write_requested(ram_write_in) then
+            --     write_buffer <= ram_write_in;
+            -- end if;
+
+            -- if not write_requested(add_sub_ram_write)
+            -- then
+            --     if write_requested(ram_write_in) 
+            --         or write_requested(write_buffer)
+            --     then
+            --         ram_write_in <= combine((0 => mc_write_in));
+            --     end if;
+            -- end if;
 
             for i in ram_read_out'range loop
                 if mc_read_out(i).data_is_ready then
