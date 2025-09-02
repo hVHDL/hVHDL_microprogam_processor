@@ -90,8 +90,6 @@ architecture rtl of microprogram_processor is
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
-    use work.real_to_fixed_pkg.all;
-
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
@@ -110,6 +108,25 @@ begin
     , start_address       => mproc_in.start_address
     , is_ready            => mproc_out.is_ready);
 ----------------------------------------------------------
+----
+    u_program_ram : entity work.multi_port_ram
+    generic map(g_program)
+    port map(
+        clock => clock
+        ,ram_read_in  => instr_ram_read_in(0 to 0)
+        ,ram_read_out => instr_ram_read_out(0 to 0)
+        ,ram_write_in => instr_ram_write_in);
+----
+    u_data_ram : entity work.multi_port_ram
+    generic map(g_data)
+    port map(
+        clock => clock
+        ,ram_read_in  => ram_read_in
+        ,ram_read_out => ram_read_out
+        ,ram_write_in => ram_write_in);
+
+---------------------------------------
+---------------------------------------
     add_sub_mpy : entity work.instruction
     generic map(radix => g_used_radix)
     port map(clock 
@@ -120,7 +137,6 @@ begin
     , instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
-----
     combine_ram_buses : process(all) is
     begin
         -- if rising_edge(clock)
@@ -157,21 +173,5 @@ begin
 
     mc_output <= ram_write_in;
 
-----
-    u_program_ram : entity work.multi_port_ram
-    generic map(g_program)
-    port map(
-        clock => clock
-        ,ram_read_in  => instr_ram_read_in(0 to 0)
-        ,ram_read_out => instr_ram_read_out(0 to 0)
-        ,ram_write_in => instr_ram_write_in);
-----
-    u_data_ram : entity work.multi_port_ram
-    generic map(g_data)
-    port map(
-        clock => clock
-        ,ram_read_in  => ram_read_in
-        ,ram_read_out => ram_read_out
-        ,ram_write_in => ram_write_in);
----------------------------------------
+-------------------------------
 end rtl;
