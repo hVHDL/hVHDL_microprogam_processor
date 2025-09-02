@@ -2,10 +2,19 @@
 
 from pathlib import Path
 from vunit import VUnit
+import argparse
 
-# ROOT
+# Parse extra arguments
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--dump-arrays",
+    action="store_true",
+    help="Enable dumping arrays in the NVC simulator"
+)
+args, vunit_args = parser.parse_known_args()
+
 ROOT = Path(__file__).resolve().parent
-VU = VUnit.from_argv()
+VU = VUnit.from_argv(vunit_args)
 
 fixed_point = VU.add_library("fixed_point")
 
@@ -91,6 +100,10 @@ v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/mpram_w_conf
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
 
+
+v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/*.vhd")
+
+
 v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
@@ -98,7 +111,7 @@ v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 
-# VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
-# VU.set_sim_option("nvc.sim_flags", ["-w"])
+if args.dump_arrays:
+    VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])
 
 VU.main()
