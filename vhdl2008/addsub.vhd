@@ -1,3 +1,20 @@
+-----
+    use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
+
+package instruction_pkg is
+    type instruction_in_record is record
+        data_read_in             : ram_read_in_array    ;
+        ram_write_in             : ram_write_in_record  ;
+    end record;
+
+    type instruction_out_record is record
+        instruction_ram_read_out : ram_read_out_record        ;
+        data_read_out            : ram_read_out_array         ;
+        instr_pipeline           : instruction_pipeline_array ;
+    end record;
+end package instruction_pkg;
+-----
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
@@ -109,10 +126,11 @@ entity instruction is
         ;ram_write_in             : out ram_write_in_record
         ;instr_pipeline           : in instruction_pipeline_array
     );
-    use work.real_to_fixed_pkg.all;
 end;
 
 architecture add_sub_mpy of instruction is
+
+    use work.real_to_fixed_pkg.all;
 
     constant datawidth : natural := data_read_out(data_read_out'left).data'length;
     signal a, b, c , cbuf : signed(datawidth-1 downto 0);

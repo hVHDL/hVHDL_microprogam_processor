@@ -1,3 +1,143 @@
+--
+--------------------------------------------
+LIBRARY ieee  ; 
+    USE ieee.NUMERIC_STD.all  ; 
+    USE ieee.std_logic_1164.all  ; 
+
+    use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
+
+entity float_processor is
+    generic(
+            g_instruction_bit_width      : natural := 32
+            ;g_data_bit_width            : natural := 32
+            ;g_number_of_pipeline_stages : natural := 10
+            ;g_used_radix                : natural
+            ;g_addresswidth              : natural := 10
+            ;g_program                   : work.dual_port_ram_pkg.ram_array
+            ;g_data                      : work.dual_port_ram_pkg.ram_array
+            ;g_idle_ram_write            : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
+           );
+    port(
+        clock        : in std_logic
+        ;mproc_in    : in work.microprogram_processor_pkg.microprogram_processor_in_record
+        ;mproc_out   : out work.microprogram_processor_pkg.microprogram_processor_out_record
+        ;mc_read_in  : out ram_read_in_array
+        ;mc_read_out : in ram_read_out_array
+        ;mc_output   : out ram_write_in_record
+        ;mc_write_in : in ram_write_in_record := g_idle_ram_write
+        ------ instruction entity connection
+        -- ;data_read_in             : in ram_read_in_array
+        -- ;ram_write_in             : in ram_write_in_record
+        -- ;instruction_ram_read_out : out ram_read_out_record
+        -- ;data_read_out            : out ram_read_out_array
+        -- ;instr_pipeline           : out instruction_pipeline_array
+    );
+end float_processor;
+
+architecture rtl of float_processor is
+
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => g_data_bit_width);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => 32   , addresswidth => 10);
+
+    signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
+    signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
+    signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
+
+    signal ram_read_in : ref_subtype.ram_read_in'subtype;
+    signal sub_read_in : ref_subtype.ram_read_in'subtype;
+
+    signal ram_write_in      : ref_subtype.ram_write_in'subtype;
+    signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
+
+    signal ram_read_out : ref_subtype.ram_read_out'subtype;
+    signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
+
+    signal command        : t_command                  := (program_end);
+    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+
+    signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
+
+begin
+
+----------------------------------------------------------
+    u_microprogram_sequencer : entity work.microprogram_sequencer
+    port map(clock 
+    , instr_ram_read_in(0) 
+    , instr_ram_read_out(0) 
+    , processor_enabled   => mproc_out.is_busy
+    , instr_pipeline      => instr_pipeline
+    , processor_requested => mproc_in.processor_requested
+    , start_address       => mproc_in.start_address
+    , is_ready            => mproc_out.is_ready);
+----------------------------------------------------------
+----
+    u_program_ram : entity work.multi_port_ram
+    generic map(g_program)
+    port map(
+        clock => clock
+        ,ram_read_in  => instr_ram_read_in(0 to 0)
+        ,ram_read_out => instr_ram_read_out(0 to 0)
+        ,ram_write_in => instr_ram_write_in);
+----
+    u_data_ram : entity work.multi_port_ram
+    generic map(g_data)
+    port map(
+        clock => clock
+        ,ram_read_in  => ram_read_in
+        ,ram_read_out => ram_read_out
+        ,ram_write_in => ram_write_in);
+
+---------------------------------------
+---------------------------------------
+    add_sub_mpy : entity work.instruction
+    generic map(radix => g_used_radix)
+    port map(clock 
+    , instr_ram_read_out(0) 
+    , sub_read_in
+    , data_ram_read_out 
+    , add_sub_ram_write 
+    , instr_pipeline);
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+    combine_ram_buses : process(all) is
+    begin
+        -- if rising_edge(clock)
+        -- then
+            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
+            ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
+
+            ram_write_in <= combine((0 => add_sub_ram_write));
+
+            -- add buffering for writing ram externally when not written by processor
+            -- if write_requested(ram_write_in) then
+            --     write_buffer <= ram_write_in;
+            -- end if;
+
+            -- if not write_requested(add_sub_ram_write)
+            -- then
+            --     if write_requested(ram_write_in) 
+            --         or write_requested(write_buffer)
+            --     then
+            --         ram_write_in <= combine((0 => mc_write_in));
+            --     end if;
+            -- end if;
+
+            for i in ram_read_out'range loop
+                if mc_read_out(i).data_is_ready then
+                    data_ram_read_out(i).data          <= mc_read_out(i).data;
+                    data_ram_read_out(i).data_is_ready <= mc_read_out(i).data_is_ready;
+                else
+                    data_ram_read_out(i) <= ram_read_out(i);
+                end if;
+            end loop;
+        -- end if;
+    end process combine_ram_buses;
+
+    mc_output <= ram_write_in;
+
+-------------------------------
+end rtl;
 
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
@@ -140,6 +280,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal mproc_in  : microprogram_processor_in_record;
     signal mproc_out : microprogram_processor_out_record;
 
+
 begin
 
 ------------------------------------------------------------------------
@@ -201,7 +342,7 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    u_microprogram_processor : entity work.microprogram_processor
+    u_microprogram_processor : entity work.float_processor
     generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
     port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------
