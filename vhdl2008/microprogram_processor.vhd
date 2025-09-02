@@ -95,6 +95,18 @@ architecture rtl of microprogram_processor is
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
+    use work.instruction_pkg.all;
+    constant intruction_in_ref : instruction_in_record := (
+        instr_ram_read_in => instr_ref_subtype.ram_read_in
+        ,data_read_in     => ref_subtype.ram_read_in
+        ,instr_pipeline   => (others => op(nop))
+        );
+
+    constant instruction_out_ref : instruction_out_record := (
+        data_read_out => ref_subtype.ram_read_out
+        ,ram_write_in => ref_subtype.ram_write_in
+        );
+
 begin
 
 ----------------------------------------------------------
