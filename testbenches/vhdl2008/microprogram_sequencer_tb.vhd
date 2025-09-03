@@ -67,6 +67,21 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     signal processor_enabled : boolean := true;
     signal processor_requested : boolean := false;
 
+    use work.instruction_pkg.all;
+    constant instruction_in_ref : instruction_in_record := (
+        instr_ram_read_out => instr_ref_subtype.ram_read_out
+        ,data_read_out     => ref_subtype.ram_read_out
+        ,instr_pipeline    => (others => op(nop))
+        );
+
+    constant instruction_out_ref : instruction_out_record := (
+        data_read_in  => ref_subtype.ram_read_in
+        ,ram_write_in => ref_subtype.ram_write_in
+        );
+
+    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
+    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+
 begin
 
 ------------------------------------------------------------------------
@@ -101,11 +116,10 @@ begin
     add_sub_mpy : entity work.instruction
     generic map(radix => used_radix)
     port map(simulator_clock 
-    , instr_ram_read_out(0) 
-    , ram_read_in
-    , ram_read_out 
-    , ram_write_in 
-    , instr_pipeline);
+    ,addsub_in
+    ,addsub_out);
+
+    addsub_in <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 
@@ -121,8 +135,8 @@ begin
     generic map(test_data)
     port map(
         clock => simulator_clock
-        ,ram_read_in  => ram_read_in
+        ,ram_read_in  => addsub_out.data_read_in
         ,ram_read_out => ram_read_out
-        ,ram_write_in => ram_write_in);
+        ,ram_write_in => addsub_out.ram_write_in);
 ------------------------------------------------------------------------
 end vunit_simulation;

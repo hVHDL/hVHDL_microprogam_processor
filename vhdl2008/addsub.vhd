@@ -4,14 +4,14 @@
 package instruction_pkg is
 
     type instruction_in_record is record
-        instr_ram_read_in : ram_read_in_array ;
-        data_read_in      : ram_read_in_array  ;
-        instr_pipeline    : instruction_pipeline_array ;
+        data_read_out      : ram_read_out_array  ;
+        instr_ram_read_out : ram_read_out_array ;
+        instr_pipeline     : instruction_pipeline_array ;
     end record;
 
     type instruction_out_record is record
-        data_read_out            : ram_read_out_array  ;
-        ram_write_in             : ram_write_in_record ;
+        data_read_in : ram_read_in_array  ;
+        ram_write_in : ram_write_in_record ;
     end record;
 
 end package instruction_pkg;
@@ -103,6 +103,7 @@ LIBRARY ieee  ;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
+    use work.instruction_pkg.all;
 
 entity instruction is
     generic(
@@ -123,11 +124,8 @@ entity instruction is
        );
     port(
         clock : in std_logic
-        ;instruction_ram_read_out : in ram_read_out_record
-        ;data_read_in             : out ram_read_in_array
-        ;data_read_out            : in ram_read_out_array
-        ;ram_write_in             : out ram_write_in_record
-        ;instr_pipeline           : in instruction_pipeline_array
+        ;instruction_in : in instruction_in_record
+        ;instruction_out : out instruction_out_record
     );
 end;
 
@@ -135,7 +133,7 @@ architecture add_sub_mpy of instruction is
 
     use work.real_to_fixed_pkg.all;
 
-    constant datawidth : natural := data_read_out(data_read_out'left).data'length;
+    constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
     signal a, b, c , cbuf : signed(datawidth-1 downto 0);
     signal mpy_res        : signed(2*datawidth-1 downto 0);
     signal mpy_res2       : signed(2*datawidth-1 downto 0);
@@ -147,12 +145,12 @@ begin
     mpy_add_sub : process(clock) is
     begin
         if rising_edge(clock) then
-            init_mp_ram_read(data_read_in);
-            init_mp_write(ram_write_in);
+            init_mp_ram_read(instruction_out.data_read_in);
+            init_mp_write(instruction_out.ram_write_in);
 
             ---------------
-            if ram_read_is_ready(instruction_ram_read_out) then
-                CASE decode(get_ram_data(instruction_ram_read_out)) is
+            if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
+                CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
                     WHEN mpy_add 
                         | neg_mpy_add 
                         | neg_mpy_sub 
@@ -165,14 +163,14 @@ begin
                         | check_and_saturate_acc 
                         =>
 
-                        request_data_from_ram(data_read_in(arg1_mem)
-                            , get_arg1(get_ram_data(instruction_ram_read_out)));
+                        request_data_from_ram(instruction_out.data_read_in(arg1_mem)
+                            , get_arg1(get_ram_data(instruction_in.instr_ram_read_out(0))));
 
-                        request_data_from_ram(data_read_in(arg2_mem)
-                            , get_arg2(get_ram_data(instruction_ram_read_out)));
+                        request_data_from_ram(instruction_out.data_read_in(arg2_mem)
+                            , get_arg2(get_ram_data(instruction_in.instr_ram_read_out(0))));
 
-                        request_data_from_ram(data_read_in(arg3_mem)
-                            , get_arg3(get_ram_data(instruction_ram_read_out)));
+                        request_data_from_ram(instruction_out.data_read_in(arg3_mem)
+                            , get_arg3(get_ram_data(instruction_in.instr_ram_read_out(0))));
 
                     WHEN others => -- do nothing
                 end CASE;
@@ -184,67 +182,67 @@ begin
             mpy_res  <= mpy_res2 + shift_left(resize(cbuf , mpy_res'length), radix) ;
             ---------------
 
-            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
+            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    a <= signed(get_ram_data(data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(data_read_out(arg3_mem)));
+                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_add =>
-                    a <= signed( not get_ram_data(data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(data_read_out(arg3_mem)));
+                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_sub =>
-                    a <= signed( not get_ram_data(data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(data_read_out(arg3_mem)));
+                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN mpy_sub =>
-                    a <= signed(get_ram_data(data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(data_read_out(arg3_mem)));
+                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN a_add_b_mpy_c =>
-                    a <=   signed(get_ram_data(data_read_out(arg1_mem)))
-                         + signed(get_ram_data(data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg3_mem)));
+                    a <=   signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
+                         + signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
                     c <= (others => '0');
 
                 WHEN a_sub_b_mpy_c =>
-                    a <= signed(get_ram_data(data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg3_mem)));
+                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
+                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
                     c <= (others => '0');
 
                 WHEN lp_filter =>
-                    a <= signed(get_ram_data(data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(data_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(data_read_out(arg2_mem)));
+                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
+                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    c <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
 
                 WHEN acc | get_acc_and_zero =>
-                    accumulator <= accumulator + signed(get_ram_data(data_read_out(arg3_mem)));
+                    accumulator <= accumulator + signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN check_and_saturate_acc =>
 
-                    if signed(get_ram_data(data_read_out(arg3_mem))) < 0
+                    if signed(get_ram_data(instruction_in.data_read_out(arg3_mem))) < 0
                     then
-                        if accumulator <= signed(get_ram_data(data_read_out(arg2_mem)))
+                        if accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
                         then
-                            accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
+                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
                         end if;
                     else
-                        if accumulator >= signed(get_ram_data(data_read_out(arg2_mem)))
+                        if accumulator >= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
                         then
-                            accumulator <= signed(get_ram_data(data_read_out(arg2_mem)));
+                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
                         end if;
                     end if;
 
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            CASE decode(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
+            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
                 WHEN mpy_add 
                     | neg_mpy_add   
                     | neg_mpy_sub   
@@ -253,14 +251,14 @@ begin
                     | a_sub_b_mpy_c 
                     | lp_filter =>
 
-                    write_data_to_ram(ram_write_in 
-                    , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(mpy_res(radix+data_read_out(data_read_out'left).data'length-1 downto radix)));
+                    write_data_to_ram(instruction_out.ram_write_in 
+                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    , std_logic_vector(mpy_res(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
 
                 WHEN get_acc_and_zero =>
 
-                    write_data_to_ram(ram_write_in
-                    , get_dest(instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    write_data_to_ram(instruction_out.ram_write_in
+                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
                     , std_logic_vector(accumulator));
 
                     accumulator <= (others => '0');

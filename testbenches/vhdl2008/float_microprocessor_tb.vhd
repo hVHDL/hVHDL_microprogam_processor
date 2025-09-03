@@ -60,18 +60,19 @@ architecture rtl of float_processor is
 
     use work.instruction_pkg.all;
 
-    constant intruction_in_ref : instruction_in_record := (
-        instr_ram_read_in => instr_ref_subtype.ram_read_in
-        ,data_read_in     => ref_subtype.ram_read_in
-        ,instr_pipeline   => (others => op(nop))
+    constant instruction_in_ref : instruction_in_record := (
+        instr_ram_read_out => instr_ref_subtype.ram_read_out
+        ,data_read_out     => ref_subtype.ram_read_out
+        ,instr_pipeline    => (others => op(nop))
         );
 
     constant instruction_out_ref : instruction_out_record := (
-        data_read_out => ref_subtype.ram_read_out
+        data_read_in  => ref_subtype.ram_read_in
         ,ram_write_in => ref_subtype.ram_write_in
         );
-    -- constant instruction_in_ref : instruction_in_record := (data_read_in => 
-    -- signal addsub_in : instruction_in_record;
+
+    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
+    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
 
 begin
 
@@ -106,13 +107,12 @@ begin
 ---------------------------------------
 ---------------------------------------
     add_sub_mpy : entity work.instruction
-    generic map(radix => g_used_radix)
+    generic map(radix => 20)
     port map(clock 
-    , instr_ram_read_out(0) 
-    , sub_read_in
-    , data_ram_read_out 
-    , add_sub_ram_write 
-    , instr_pipeline);
+    ,addsub_in
+    ,addsub_out);
+
+    addsub_in <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     combine_ram_buses : process(all) is
