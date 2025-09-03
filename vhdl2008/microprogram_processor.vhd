@@ -142,7 +142,7 @@ begin
 
 ---------------------------------------
 ---------------------------------------
-    add_sub_mpy : entity work.instruction
+    add_sub_mpy : entity work.instruction(add_sub_mpy)
     generic map(radix => g_used_radix)
     port map(clock 
     ,addsub_in

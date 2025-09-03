@@ -112,7 +112,7 @@ begin
     , processor_requested => processor_requested
     , start_address       => 0);
 -- ----------------------------------------------------------
-    add_sub_mpy : entity work.instruction
+    add_sub_mpy : entity work.instruction(add_sub_mpy)
     generic map(radix => used_radix)
     port map(simulator_clock 
     ,addsub_in

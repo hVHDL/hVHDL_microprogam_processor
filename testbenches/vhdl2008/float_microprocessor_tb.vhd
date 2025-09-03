@@ -1,4 +1,3 @@
---
 --------------------------------------------
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
@@ -351,7 +350,7 @@ begin
     generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
     port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output, instruction_in => addsub_in, instruction_out => addsub_out);
 ------------------------------------------------------------------------
-    add_sub_mpy : entity work.instruction
+    dingdong : entity work.instruction(float_mult_add)
     generic map(radix => 20)
     port map(simulator_clock 
     ,addsub_in
