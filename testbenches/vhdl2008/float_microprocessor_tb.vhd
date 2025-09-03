@@ -6,6 +6,7 @@ LIBRARY ieee  ;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
+    use work.instruction_pkg.all;
 
 entity float_processor is
     generic(
@@ -27,11 +28,8 @@ entity float_processor is
         ;mc_output   : out ram_write_in_record
         ;mc_write_in : in ram_write_in_record := g_idle_ram_write
         ------ instruction entity connection
-        -- ;data_read_in             : in ram_read_in_array
-        -- ;ram_write_in             : in ram_write_in_record
-        -- ;instruction_ram_read_out : out ram_read_out_record
-        -- ;data_read_out            : out ram_read_out_array
-        -- ;instr_pipeline           : out instruction_pipeline_array
+        ;instruction_in  : out instruction_in_record
+        ;instruction_out : in instruction_out_record
     );
 end float_processor;
 
@@ -58,24 +56,10 @@ architecture rtl of float_processor is
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
-    use work.instruction_pkg.all;
-
-    constant instruction_in_ref : instruction_in_record := (
-        instr_ram_read_out => instr_ref_subtype.ram_read_out
-        ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (others => op(nop))
-        );
-
-    constant instruction_out_ref : instruction_out_record := (
-        data_read_in  => ref_subtype.ram_read_in
-        ,ram_write_in => ref_subtype.ram_write_in
-        );
-
-    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
-    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
-
 begin
 
+    instruction_in  <= (ram_read_out, instr_ram_read_out, instr_pipeline);
+    -- instruction_out <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
@@ -104,15 +88,6 @@ begin
         ,ram_read_out => ram_read_out
         ,ram_write_in => ram_write_in);
 
----------------------------------------
----------------------------------------
-    add_sub_mpy : entity work.instruction
-    generic map(radix => 20)
-    port map(clock 
-    ,addsub_in
-    ,addsub_out);
-
-    addsub_in <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     combine_ram_buses : process(all) is
@@ -295,6 +270,22 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal mproc_in  : microprogram_processor_in_record;
     signal mproc_out : microprogram_processor_out_record;
 
+    use work.instruction_pkg.all;
+
+    constant instruction_in_ref : instruction_in_record := (
+        instr_ram_read_out => instr_ref_subtype.ram_read_out
+        ,data_read_out     => ref_subtype.ram_read_out
+        ,instr_pipeline    => (others => op(nop))
+        );
+
+    constant instruction_out_ref : instruction_out_record := (
+        data_read_in  => ref_subtype.ram_read_in
+        ,ram_write_in => ref_subtype.ram_write_in
+        );
+
+    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
+    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+
 
 begin
 
@@ -357,8 +348,14 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    u_microprogram_processor : entity work.float_processor
+    u_float_processor : entity work.float_processor
     generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
-    port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output);
+    port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output, instruction_in => addsub_in, instruction_out => addsub_out);
 ------------------------------------------------------------------------
+    add_sub_mpy : entity work.instruction
+    generic map(radix => 20)
+    port map(simulator_clock 
+    ,addsub_in
+    ,addsub_out);
+
 end vunit_simulation;

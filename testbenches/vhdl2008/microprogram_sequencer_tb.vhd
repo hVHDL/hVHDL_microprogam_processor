@@ -22,7 +22,6 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     use work.real_to_fixed_pkg.all;
     use work.microinstruction_pkg.all;
 
-
     use work.multi_port_ram_pkg.all;
     constant datawidth  : natural := 32;
     constant used_radix : natural := 20;
