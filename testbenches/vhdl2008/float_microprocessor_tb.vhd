@@ -59,7 +59,6 @@ architecture rtl of float_processor is
 begin
 
     instruction_in  <= (ram_read_out, instr_ram_read_out, instr_pipeline);
-    -- instruction_out <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
@@ -84,9 +83,9 @@ begin
     generic map(g_data)
     port map(
         clock => clock
-        ,ram_read_in  => ram_read_in
+        ,ram_read_in  => instruction_out.data_read_in
         ,ram_read_out => ram_read_out
-        ,ram_write_in => ram_write_in);
+        ,ram_write_in => instruction_out.ram_write_in);
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
