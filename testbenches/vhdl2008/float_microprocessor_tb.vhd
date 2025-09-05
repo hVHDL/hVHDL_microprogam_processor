@@ -57,7 +57,7 @@ architecture rtl of float_processor is
 
 begin
 
-    instruction_in  <= (ram_read_out, instr_ram_read_out, instr_pipeline);
+    instruction_in  <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
@@ -82,9 +82,9 @@ begin
     generic map(g_data)
     port map(
         clock => clock
-        ,ram_read_in  => instruction_out.data_read_in
+        ,ram_read_in  => ram_read_in
         ,ram_read_out => ram_read_out
-        ,ram_write_in => instruction_out.ram_write_in);
+        ,ram_write_in => ram_write_in);
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
@@ -92,10 +92,10 @@ begin
     begin
         -- if rising_edge(clock)
         -- then
-            mc_read_in   <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
-            ram_read_in  <= combine((0 => sub_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
+            mc_read_in   <= combine((0 => instruction_out.data_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
+            ram_read_in  <= combine((0 => instruction_out.data_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
 
-            ram_write_in <= combine((0 => add_sub_ram_write));
+            ram_write_in <= combine((0 => instruction_out.ram_write_in));
 
             -- add buffering for writing ram externally when not written by processor
             -- if write_requested(ram_write_in) then
