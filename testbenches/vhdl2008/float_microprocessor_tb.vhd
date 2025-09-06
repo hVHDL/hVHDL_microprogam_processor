@@ -42,12 +42,9 @@ architecture rtl of float_processor is
     signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
     signal ram_read_in : ref_subtype.ram_read_in'subtype;
-    signal sub_read_in : ref_subtype.ram_read_in'subtype;
-
-    signal ram_write_in      : ref_subtype.ram_write_in'subtype;
-    signal add_sub_ram_write : ref_subtype.ram_write_in'subtype;
-
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
+    signal ram_write_in      : ref_subtype.ram_write_in'subtype;
+
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
     signal command        : t_command                  := (program_end);
