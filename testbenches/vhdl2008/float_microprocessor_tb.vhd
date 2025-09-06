@@ -353,7 +353,7 @@ begin
     ,instruction_in  => addsub_in
     ,instruction_out => addsub_out);
 ------------------------------------------------------------------------
-    u_instruction : entity work.instruction(fixed_mult_add)
+    u_instruction : entity work.instruction(float_mult_add)
     generic map(radix => 20)
     port map(simulator_clock 
     ,addsub_in

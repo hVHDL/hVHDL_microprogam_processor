@@ -1,6 +1,11 @@
 architecture float_mult_add of instruction is
 
     use work.real_to_fixed_pkg.all;
+    use work.float_typedefs_generic_pkg.all;
+    use work.multiply_add_pkg.all;
+    constant mpya_ref : mpya_subtype_record := create_mpya_typeref(8,24);
+    signal mpya_in  : mpya_ref.mpya_in'subtype  := mpya_ref.mpya_in;
+    signal mpya_out : mpya_ref.mpya_out'subtype := mpya_ref.mpya_out;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
     signal a, b, c , cbuf : signed(datawidth-1 downto 0);
@@ -10,26 +15,31 @@ architecture float_mult_add of instruction is
     signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
 
 begin
+    ---------------------------
+    u_float_mpy_add : entity work.multiply_add
+    port map(
+        clock
+        ,mpya_in
+        ,mpya_out
+    );
 
-    mpy_add_sub : process(clock) is
+    ---------------------------
+
+    float_mpy_add : process(clock) is
     begin
         if rising_edge(clock) then
             init_mp_ram_read(instruction_out.data_read_in);
             init_mp_write(instruction_out.ram_write_in);
 
+            init_multiply_add(mpya_in);
+
             ---------------
             if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
                 CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
                     WHEN mpy_add 
+                        | mpy_sub 
                         | neg_mpy_add 
                         | neg_mpy_sub 
-                        | mpy_sub 
-                        | a_add_b_mpy_c 
-                        | a_sub_b_mpy_c 
-                        | lp_filter 
-                        | acc 
-                        | get_acc_and_zero 
-                        | check_and_saturate_acc 
                         =>
 
                         request_data_from_ram(instruction_out.data_read_in(arg1_mem)
@@ -137,6 +147,6 @@ begin
             ---------------
 
         end if;
-    end process mpy_add_sub;
+    end process float_mpy_add;
 
 end float_mult_add;
