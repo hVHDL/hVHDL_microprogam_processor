@@ -22,9 +22,7 @@ begin
         ,mpya_in
         ,mpya_out
     );
-
     ---------------------------
-
     float_mpy_add : process(clock) is
     begin
         if rising_edge(clock) then
@@ -56,67 +54,25 @@ begin
             end if;
 
             ---------------
-            mpy_res2 <= a * b;
-            cbuf     <= c;
-            mpy_res  <= mpy_res2 + shift_left(resize(cbuf , mpy_res'length), radix) ;
-            ---------------
 
             CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    multiply_add(mpya_in
+                    ,(32 downto 0 => '0')
+                    ,(32 downto 0 => '0')
+                    ,(32 downto 0 => '0'));
 
                 WHEN neg_mpy_add =>
-                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    -- multiply_add(mpya_in
+                    -- ,get_ram_data(instruction_in.data_read_out(arg1_mem))
+                    -- ,get_ram_data(instruction_in.data_read_out(arg2_mem))
+                    -- ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_sub =>
-                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
-
-                WHEN mpy_sub =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
-
-                WHEN a_add_b_mpy_c =>
-                    a <=   signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
-
-                WHEN a_sub_b_mpy_c =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
-
-                WHEN lp_filter =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-
-                WHEN acc | get_acc_and_zero =>
-                    accumulator <= accumulator + signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-
-                WHEN check_and_saturate_acc =>
-
-                    if signed(get_ram_data(instruction_in.data_read_out(arg3_mem))) < 0
-                    then
-                        if accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
-                        then
-                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                        end if;
-                    else
-                        if accumulator >= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
-                        then
-                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                        end if;
-                    end if;
+                    -- multiply_add(mpya_in
+                    -- ,get_ram_data(instruction_in.data_read_out(arg1_mem));
+                    -- ,get_ram_data(instruction_in.data_read_out(arg2_mem));
+                    -- ,get_ram_data(instruction_in.data_read_out(arg3_mem));
 
                 WHEN others => -- do nothing
             end CASE;

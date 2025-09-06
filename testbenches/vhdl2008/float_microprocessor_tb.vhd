@@ -204,6 +204,9 @@ architecture vunit_simulation of float_microprocessor_tb is
     constant rxi              : natural := 30;
     constant cap_current      : natural := 31;
 
+    constant f2_0    : natural := 50;
+    constant fneg2_0 : natural := 51;
+
     constant sampletime : real := 1.0e-6;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
@@ -221,6 +224,9 @@ architecture vunit_simulation of float_microprocessor_tb is
         , voltage_gain     => to_fixed(sampletime*1.0/3.0e-6)
         , input_voltage    => to_fixed(10.0)
         , inductor_voltage => to_fixed(0.0)
+        , inductor_voltage => to_fixed(0.0)
+
+        -- , f2_0 => to_slv(
 
         , others => (others => '0')
     );
@@ -248,6 +254,8 @@ architecture vunit_simulation of float_microprocessor_tb is
         , 137 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
         , 140 => op(jump        , 129)
         , 143 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
+
+        , 144 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
         , others => op(nop));
 
