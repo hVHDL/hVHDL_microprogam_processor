@@ -1,4 +1,4 @@
-architecture float_mult_add of instruction is
+architecture fixed_mult_add of instruction is
 
     use work.real_to_fixed_pkg.all;
 
@@ -139,4 +139,4 @@ begin
         end if;
     end process mpy_add_sub;
 
-end float_mult_add;
+end fixed_mult_add;

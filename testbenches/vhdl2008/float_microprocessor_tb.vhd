@@ -12,7 +12,6 @@ entity float_processor is
             g_instruction_bit_width      : natural := 32
             ;g_data_bit_width            : natural := 32
             ;g_number_of_pipeline_stages : natural := 10
-            ;g_used_radix                : natural
             ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
             ;g_data                      : work.dual_port_ram_pkg.ram_array
@@ -95,9 +94,9 @@ begin
             ram_write_in <= combine((0 => instruction_out.ram_write_in));
 
             -- add buffering for writing ram externally when not written by processor
-            -- if write_requested(ram_write_in) then
-            --     write_buffer <= ram_write_in;
-            -- end if;
+            if write_requested(ram_write_in) then
+                write_buffer <= ram_write_in;
+            end if;
 
             -- if not write_requested(add_sub_ram_write)
             -- then
@@ -344,13 +343,21 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_float_processor : entity work.float_processor
-    generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
-    port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output, instruction_in => addsub_in, instruction_out => addsub_out);
+    generic map(g_program => test_program, g_data => program_data)
+    port map(simulator_clock
+    ,mproc_in
+    ,mproc_out
+    ,mc_read_in
+    ,mc_read_out
+    ,mc_output
+    ,instruction_in  => addsub_in
+    ,instruction_out => addsub_out);
 ------------------------------------------------------------------------
-    dingdong : entity work.instruction(float_mult_add)
+    u_instruction : entity work.instruction(fixed_mult_add)
     generic map(radix => 20)
     port map(simulator_clock 
     ,addsub_in
     ,addsub_out);
+------------------------------------------------------------------------
 
 end vunit_simulation;

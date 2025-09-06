@@ -112,6 +112,7 @@ v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vh
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/arch_float_mult_add.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/arch_fixed_mult_add.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/float_microprocessor_tb.vhd")
 
 if args.dump_arrays:
