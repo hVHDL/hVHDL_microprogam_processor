@@ -8,11 +8,6 @@ architecture float_mult_add of instruction is
     signal mpya_out : mpya_ref.mpya_out'subtype := mpya_ref.mpya_out;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    signal a, b, c , cbuf : signed(datawidth-1 downto 0);
-    signal mpy_res        : signed(2*datawidth-1 downto 0);
-    signal mpy_res2       : signed(2*datawidth-1 downto 0);
-
-    signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
 
 begin
     ---------------------------
@@ -57,10 +52,10 @@ begin
 
             CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    multiply_add(mpya_in
-                    ,(32 downto 0 => '0')
-                    ,(32 downto 0 => '0')
-                    ,(32 downto 0 => '0'));
+                    -- multiply_add(mpya_in
+                    -- ,(31 downto 0 => '0')
+                    -- ,(31 downto 0 => '0')
+                    -- ,(31 downto 0 => '0'));
 
                 WHEN neg_mpy_add =>
                     -- multiply_add(mpya_in
@@ -82,21 +77,11 @@ begin
                     | neg_mpy_add   
                     | neg_mpy_sub   
                     | mpy_sub
-                    | a_add_b_mpy_c 
-                    | a_sub_b_mpy_c 
-                    | lp_filter =>
+                    =>
 
-                    write_data_to_ram(instruction_out.ram_write_in 
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(mpy_res(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
-
-                WHEN get_acc_and_zero =>
-
-                    write_data_to_ram(instruction_out.ram_write_in
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(accumulator));
-
-                    accumulator <= (others => '0');
+                    -- write_data_to_ram(instruction_out.ram_write_in 
+                    -- , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    -- , std_logic_vector(mpy_res(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
 
                 WHEN others => -- do nothing
             end CASE;
