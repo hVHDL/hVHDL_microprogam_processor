@@ -12,6 +12,7 @@ architecture float_mult_add of instruction is
 begin
     ---------------------------
     u_float_mpy_add : entity work.multiply_add
+    generic map(8, 24)
     port map(
         clock
         ,mpya_in
@@ -52,16 +53,16 @@ begin
 
             CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    -- multiply_add(mpya_in
-                    -- ,(31 downto 0 => '0')
-                    -- ,(31 downto 0 => '0')
-                    -- ,(31 downto 0 => '0'));
+                    multiply_add(mpya_in
+                    ,get_ram_data(instruction_in.data_read_out(arg1_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg2_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_add =>
-                    -- multiply_add(mpya_in
-                    -- ,get_ram_data(instruction_in.data_read_out(arg1_mem))
-                    -- ,get_ram_data(instruction_in.data_read_out(arg2_mem))
-                    -- ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    multiply_add(mpya_in
+                    ,get_ram_data(instruction_in.data_read_out(arg1_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg2_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_sub =>
                     -- multiply_add(mpya_in

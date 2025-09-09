@@ -10,7 +10,7 @@ LIBRARY ieee  ;
 entity float_processor is
     generic(
             g_instruction_bit_width      : natural := 32
-            ;g_data_bit_width            : natural := 32
+            ;g_data_bit_width            : natural := 33
             ;g_number_of_pipeline_stages : natural := 10
             ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
@@ -147,9 +147,9 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    constant instruction_length : natural := 40;
-    constant word_length : natural := 32;
-    constant used_radix : natural := 20;
+    constant instruction_length : natural := 32;
+    constant word_length        : natural := 33;
+    constant used_radix         : natural := 20;
 
     --
     use work.real_to_fixed_pkg.all;
@@ -164,7 +164,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 10);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => instruction_length, addresswidth => 10);
 
     signal mc_read_in  : ref_subtype.ram_read_in'subtype;
     signal mc_read_out : ref_subtype.ram_read_out'subtype;
