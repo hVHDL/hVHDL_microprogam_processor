@@ -2,8 +2,11 @@ architecture float_mult_add of instruction is
 
     use work.real_to_fixed_pkg.all;
     use work.float_typedefs_generic_pkg.all;
+    use work.float_to_real_conversions_pkg.all;
     use work.multiply_add_pkg.all;
-    constant mpya_ref : mpya_subtype_record := create_mpya_typeref(8,24);
+    function to_hfloat is new to_hfloat_generic generic map(8,24);
+    constant hfloat_ref : hfloat_record := to_hfloat(0.0);
+    constant mpya_ref : mpya_subtype_record := create_mpya_typeref(hfloat_ref);
     signal mpya_in  : mpya_ref.mpya_in'subtype  := mpya_ref.mpya_in;
     signal mpya_out : mpya_ref.mpya_out'subtype := mpya_ref.mpya_out;
 
@@ -12,7 +15,7 @@ architecture float_mult_add of instruction is
 begin
     ---------------------------
     u_float_mpy_add : entity work.multiply_add
-    generic map(8, 24)
+    generic map(hfloat_ref)
     port map(
         clock
         ,mpya_in
