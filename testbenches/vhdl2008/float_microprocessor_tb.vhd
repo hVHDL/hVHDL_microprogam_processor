@@ -180,6 +180,8 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     signal ram_connector : ram_connector_ref'subtype;
 
+    use work.float_to_real_conversions_pkg.all;
+
     signal test1 : real := 0.0;
     signal test2 : real := 0.0;
     signal test3 : real := 0.0;
@@ -209,6 +211,19 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     constant sampletime : real := 1.0e-6;
 
+    -- function to_hfloat is new to_hfloat_slv_generic generic map(8,32);
+    -- function to_hfloat
+    -- (
+    --     real_number : real
+    -- )
+    -- return std_logic_vector
+    -- is
+    -- begin
+    --
+    --     return to_std_logic_vector(to_hfloat(real_number, 8,23));
+    --
+    -- end to_hfloat;
+
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
            0 => to_fixed(0.0)
         ,  1 => to_fixed(1.0)
@@ -226,7 +241,7 @@ architecture vunit_simulation of float_microprocessor_tb is
         , inductor_voltage => to_fixed(0.0)
         , inductor_voltage => to_fixed(0.0)
 
-        -- , f2_0 => to_slv(
+        -- , f2_0 => to_hfloat(2.0
 
         , others => (others => '0')
     );
@@ -287,7 +302,6 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
     signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
-
 
 begin
 

@@ -4,13 +4,14 @@ architecture float_mult_add of instruction is
     use work.float_typedefs_generic_pkg.all;
     use work.float_to_real_conversions_pkg.all;
     use work.multiply_add_pkg.all;
-    function to_hfloat is new to_hfloat_generic generic map(8,24);
+    constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
+
+    function to_hfloat is new to_hfloat_generic generic map(exponent_length => 8, word_length => datawidth);
     constant hfloat_ref : hfloat_record := to_hfloat(0.0);
     constant mpya_ref : mpya_subtype_record := create_mpya_typeref(hfloat_ref);
     signal mpya_in  : mpya_ref.mpya_in'subtype  := mpya_ref.mpya_in;
     signal mpya_out : mpya_ref.mpya_out'subtype := mpya_ref.mpya_out;
 
-    constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
 
 begin
     ---------------------------
