@@ -9,9 +9,7 @@ LIBRARY ieee  ;
 
 entity float_processor is
     generic(
-            g_instruction_bit_width      : natural := 32
-            ;g_data_bit_width            : natural := 33
-            ;g_number_of_pipeline_stages : natural := 10
+            g_number_of_pipeline_stages : natural := 10
             ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
             ;g_data                      : work.dual_port_ram_pkg.ram_array
@@ -33,16 +31,19 @@ end float_processor;
 
 architecture rtl of float_processor is
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => g_data_bit_width);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => 32   , addresswidth => 10);
+    constant datawidth         : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
+    constant instruction_width : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
+
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => datawidth);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_width   , addresswidth => 10);
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
     signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
 
-    signal ram_read_in : ref_subtype.ram_read_in'subtype;
+    signal ram_read_in  : ref_subtype.ram_read_in'subtype;
     signal ram_read_out : ref_subtype.ram_read_out'subtype;
-    signal ram_write_in      : ref_subtype.ram_write_in'subtype;
+    signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
@@ -148,7 +149,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     -----------------------------------
     -- simulation specific signals ----
     constant instruction_length : natural := 32;
-    constant word_length        : natural := 33;
+    constant word_length        : natural := 37;
     constant used_radix         : natural := 20;
 
     --
@@ -211,7 +212,7 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     constant sampletime : real := 1.0e-6;
 
-    -- function to_hfloat is new to_hfloat_slv_generic generic map(8,32);
+    function to_hfloat is new to_hfloat_slv_generic generic map(8,word_length);
     -- function to_hfloat
     -- (
     --     real_number : real
@@ -241,7 +242,8 @@ architecture vunit_simulation of float_microprocessor_tb is
         , inductor_voltage => to_fixed(0.0)
         , inductor_voltage => to_fixed(0.0)
 
-        -- , f2_0 => to_hfloat(2.0
+        , f2_0 => to_hfloat(2.0)
+        , fneg2_0 => to_hfloat(-2.0)
 
         , others => (others => '0')
     );
