@@ -34,11 +34,12 @@ begin
             ---------------
             if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
                 CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
-                    WHEN mpy_add 
-                        | mpy_sub 
-                        | neg_mpy_add 
-                        | neg_mpy_sub 
-                        =>
+                    WHEN 
+                      mpy_add 
+                    | mpy_sub 
+                    | neg_mpy_add 
+                    | neg_mpy_sub 
+                    =>
 
                         request_data_from_ram(instruction_out.data_read_in(arg1_mem)
                             , get_arg1(get_ram_data(instruction_in.instr_ram_read_out(0))));
@@ -84,9 +85,9 @@ begin
                     | mpy_sub
                     =>
 
-                    -- write_data_to_ram(instruction_out.ram_write_in 
-                    -- , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    -- , std_logic_vector(mpy_res(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
+                    write_data_to_ram(instruction_out.ram_write_in 
+                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    , get_mpya_result(mpya_out));
 
                 WHEN others => -- do nothing
             end CASE;

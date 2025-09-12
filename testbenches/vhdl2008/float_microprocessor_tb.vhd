@@ -47,7 +47,6 @@ architecture rtl of float_processor is
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
-    signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
@@ -149,7 +148,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     -----------------------------------
     -- simulation specific signals ----
     constant instruction_length : natural := 32;
-    constant word_length        : natural := 37;
+    constant word_length        : natural := 32;
     constant used_radix         : natural := 20;
 
     --
@@ -182,6 +181,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal ram_connector : ram_connector_ref'subtype;
 
     use work.float_to_real_conversions_pkg.all;
+    use work.float_typedefs_generic_pkg.all;
 
     signal test1 : real := 0.0;
     signal test2 : real := 0.0;
@@ -212,18 +212,12 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     constant sampletime : real := 1.0e-6;
 
+    constant hfloat_ref : hfloat_record :=(
+        sign => '0'
+        ,exponent => (7 downto 0 => x"00")
+        ,mantissa => (word_length-2-8 downto 0 => (word_length-2-8 downto 0 => '0')));
+
     function to_hfloat is new to_hfloat_slv_generic generic map(8,word_length);
-    -- function to_hfloat
-    -- (
-    --     real_number : real
-    -- )
-    -- return std_logic_vector
-    -- is
-    -- begin
-    --
-    --     return to_std_logic_vector(to_hfloat(real_number, 8,23));
-    --
-    -- end to_hfloat;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
            0 => to_fixed(0.0)
@@ -242,19 +236,27 @@ architecture vunit_simulation of float_microprocessor_tb is
         , inductor_voltage => to_fixed(0.0)
         , inductor_voltage => to_fixed(0.0)
 
-        , f2_0 => to_hfloat(2.0)
+        , f2_0    => to_hfloat(2.0)
         , fneg2_0 => to_hfloat(-2.0)
 
         , others => (others => '0')
     );
 
     constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
-        6    => sub(5, 1, 1)
-        , 7  => add(6, 1, 1)
-        , 8  => mpy(7, 2, 2)
-        , 9  => op(mpy_add,8, 2, 2, 1)
-        , 10 => op(mpy_sub,9, 2, 2, 1)
-        , 13 => op(program_end)
+        0 => op(nop)
+        -- 6    => sub(5, 1, 1)
+        -- , 7  => add(6, 1, 1)
+        -- , 8  => mpy(7, 2, 2)
+        -- , 9  => op(mpy_add,8, 2, 2, 1)
+        -- , 10 => op(mpy_sub,9, 2, 2, 1)
+        -- , 13 => op(program_end)
+
+        , 14 => op(mpy_add,5, f2_0, fneg2_0, f2_0)
+        , 15 => op(mpy_add,6, fneg2_0, 0, f2_0)
+        , 16 => op(mpy_add,7, f2_0, 0, f2_0)
+        , 17 => op(mpy_add,8, fneg2_0, 0, f2_0)
+        , 18 => op(mpy_add,9, f2_0, 0, f2_0)
+        , 23 => op(program_end)
 
         -- equation:
         -- didt = input_voltage - duty*dc_link - i*rl
@@ -285,6 +287,8 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal lc_load : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
     signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
     signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
+
+    signal float_reg1 : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
 
     signal mproc_in  : microprogram_processor_in_record;
     signal mproc_out : microprogram_processor_out_record;
@@ -322,7 +326,7 @@ begin
 
         function convert(data_in : std_logic_vector) return real is
         begin
-            return to_real(signed(data_in), used_radix);
+            return to_real(to_hfloat(data_in, hfloat_ref));
         end convert;
 
         procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
@@ -337,20 +341,16 @@ begin
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
             connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
+            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 124, float_reg1);
 
             init_mproc(mproc_in);
             CASE simulation_counter is
                 when 0 =>
-                    calculate(mproc_in, 6);
+                    calculate(mproc_in, 14);
 
-                when 50 => 
-                    lc_load <= to_fixed(2.3);
-                    lc_duty <= to_fixed(0.9);
-                    calculate(mproc_in, 128);
+                when 30 =>
+                    calculate(mproc_in, 14);
 
-                when 800 => lc_duty <= to_fixed(0.6);
-                when 1600 => 
-                    -- lc_load <= to_fixed(1.3);
                 WHEN others => --do nothing
             end CASE;
 
