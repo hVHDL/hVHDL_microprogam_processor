@@ -9,7 +9,7 @@ LIBRARY ieee  ;
 
 entity float_processor is
     generic(
-            g_number_of_pipeline_stages : natural := 10
+            g_number_of_pipeline_stages : natural := 11
             ;g_addresswidth              : natural := 10
             ;g_program                   : work.dual_port_ram_pkg.ram_array
             ;g_data                      : work.dual_port_ram_pkg.ram_array
@@ -47,7 +47,9 @@ architecture rtl of float_processor is
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
-    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+    constant pipeline_high : natural := instruction_in.instr_pipeline'high;
+
+    signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
@@ -184,7 +186,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     use work.float_typedefs_generic_pkg.all;
 
     signal test1 : real := 0.0;
-    signal test2 : real := 0.0;
+    signal test2 : real := 1.0;
     signal test3 : real := 0.0;
     signal test4 : real := 0.0;
     signal test5 : real := 0.0;
@@ -237,7 +239,8 @@ architecture vunit_simulation of float_microprocessor_tb is
         , inductor_voltage => to_fixed(0.0)
 
         , f2_0    => to_hfloat(2.0)
-        , fneg2_0 => to_hfloat(-2.0)
+        , fneg2_0 => to_hfloat(-5.0)
+        -- ,52 => to_hfloat(
 
         , others => (others => '0')
     );
@@ -251,12 +254,12 @@ architecture vunit_simulation of float_microprocessor_tb is
         -- , 10 => op(mpy_sub,9, 2, 2, 1)
         -- , 13 => op(program_end)
 
-        , 14 => op(mpy_add,5, f2_0, fneg2_0, f2_0)
-        , 15 => op(mpy_add,6, fneg2_0, 0, f2_0)
-        , 16 => op(mpy_add,7, f2_0, 0, f2_0)
-        , 17 => op(mpy_add,8, fneg2_0, 0, f2_0)
-        , 18 => op(mpy_add,9, f2_0, 0, f2_0)
-        , 23 => op(program_end)
+         , 14 => op(mpy_add      , 5 , fneg2_0 , fneg2_0    , fneg2_0)
+         , 15 => op(mpy_add      , 6 , 0    , 0       , fneg2_0)
+         -- , 16 => op(mpy_add      , 7 , f2_0 , f2_0    , fneg2_0)
+         , 17 => op(mpy_add      , 8 , f2_0 , f2_0    , f2_0)
+         -- , 18 => op(mpy_add      , 9 , f2_0 , fneg2_0 , fneg2_0)
+         , 23 => op(program_end)
 
         -- equation:
         -- didt = input_voltage - duty*dc_link - i*rl
@@ -298,7 +301,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     constant instruction_in_ref : instruction_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (others => op(nop))
+        ,instr_pipeline    => (0 to 20 => op(nop))
         );
 
     constant instruction_out_ref : instruction_out_record := (
@@ -306,7 +309,7 @@ architecture vunit_simulation of float_microprocessor_tb is
         ,ram_write_in => ref_subtype.ram_write_in
         );
 
-    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
+    signal addsub_in  : instruction_in_ref'subtype  := instruction_in_ref;
     signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
 
 begin
@@ -377,7 +380,7 @@ begin
     ,instruction_in  => addsub_in
     ,instruction_out => addsub_out);
 ------------------------------------------------------------------------
-    u_instruction : entity work.instruction(float_mult_add)
+    u_float_mult_add : entity work.instruction(float_mult_add)
     generic map(radix => 20)
     port map(simulator_clock 
     ,addsub_in

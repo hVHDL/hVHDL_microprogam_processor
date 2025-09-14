@@ -50,7 +50,7 @@ package generic_microinstruction_pkg is
     subtype long_arg is std_logic_vector(27 downto 0);
 
     type reg_array                  is array (natural range 0 to number_of_registers-1) of std_logic_vector(data_bit_width-1 downto 0);
-    type instruction_pipeline_array is array (natural range 0 to number_of_pipeline_stages-1) of std_logic_vector(instruction_bit_width-1 downto 0);
+    type instruction_pipeline_array is array (natural range <>) of std_logic_vector(instruction_bit_width-1 downto 0);
     
     subtype t_instruction           is std_logic_vector(instruction_bit_width-1 downto 0);
     type program_array              is array (natural range <>) of t_instruction;

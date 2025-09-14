@@ -91,7 +91,7 @@ architecture rtl of microprogram_processor is
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
     signal command        : t_command                  := (program_end);
-    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+    signal instr_pipeline : instruction_pipeline_array(0 to g_number_of_pipeline_stages-1) := (0 to g_number_of_pipeline_stages-1 => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
@@ -99,7 +99,7 @@ architecture rtl of microprogram_processor is
     constant instruction_in_ref : instruction_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (others => op(nop))
+        ,instr_pipeline    => (0 to g_number_of_pipeline_stages-1 => op(nop))
         );
 
     constant instruction_out_ref : instruction_out_record := (

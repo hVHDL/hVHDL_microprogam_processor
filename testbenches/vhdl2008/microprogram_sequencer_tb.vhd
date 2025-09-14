@@ -61,7 +61,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
         , others => op(program_end));
 
     signal command        : t_command                  := (program_end);
-    signal instr_pipeline : instruction_pipeline_array := (others => op(nop));
+    signal instr_pipeline : instruction_pipeline_array(0 to 7) := (0 to 7 => op(nop));
 
     signal processor_enabled : boolean := true;
     signal processor_requested : boolean := false;
@@ -70,7 +70,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     constant instruction_in_ref : instruction_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (others => op(nop))
+        ,instr_pipeline    => (0 to 7 => op(nop))
         );
 
     constant instruction_out_ref : instruction_out_record := (
