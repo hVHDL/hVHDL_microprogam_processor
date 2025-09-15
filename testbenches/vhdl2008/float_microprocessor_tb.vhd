@@ -28,29 +28,38 @@ architecture vunit_simulation of float_microprocessor_tb is
     constant used_radix         : natural := 20;
 
     --
-    use work.real_to_fixed_pkg.all;
-    function to_fixed is new generic_to_fixed 
-        generic map(word_length => word_length, used_radix => used_radix);
-    --
-
     use work.multi_port_ram_pkg.all;
 
     constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => word_length        , addresswidth => 10);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_length , addresswidth => 10);
 
-    signal mc_read_in  : ref_subtype.ram_read_in'subtype;
-    signal mc_read_out : ref_subtype.ram_read_out'subtype;
     signal mc_output   : ref_subtype.ram_write_in'subtype;
+
+    signal mproc_in     : microprogram_processor_in_record;
+    signal mproc_out    : microprogram_processor_out_record;
+    constant init_write : ram_write_in_record := init_write_in(10, word_length);
+    signal mc_write_in  : init_write'subtype  := init_write;
+
+    use work.instruction_pkg.all;
+
+    constant instruction_in_ref : instruction_in_record := (
+        instr_ram_read_out => instr_ref_subtype.ram_read_out
+        ,data_read_out     => ref_subtype.ram_read_out
+        ,instr_pipeline    => (0 to 20 => op(nop))
+        );
+
+    constant instruction_out_ref : instruction_out_record := (
+        data_read_in  => ref_subtype.ram_read_in
+        ,ram_write_in => ref_subtype.ram_write_in
+        );
+
+    signal addsub_in  : instruction_in_ref'subtype  := instruction_in_ref;
+    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+
     ----
 
     use work.float_to_real_conversions_pkg.all;
     use work.float_typedefs_generic_pkg.all;
-
-    signal test1 : real := 0.0;
-    signal test2 : real := 1.0;
-    signal test3 : real := 0.0;
-    signal test4 : real := 0.0;
-    signal test5 : real := 0.0;
 
     constant y    : natural := 50;
     constant u    : natural := 60;
@@ -83,10 +92,10 @@ architecture vunit_simulation of float_microprocessor_tb is
     function to_hfloat is new to_hfloat_slv_generic generic map(8,word_length);
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := (
-           0 => to_fixed(0.0)
-        ,  1 => to_fixed(1.0)
-        ,  2 => to_fixed(2.0)
-        ,  3 => to_fixed(-3.0)
+           0 => to_hfloat(0.0)
+        ,  1 => to_hfloat(1.0)
+        ,  2 => to_hfloat(2.0)
+        ,  3 => to_hfloat(-3.0)
 
         , duty             => to_hfloat(0.9)
         , inductor_current => to_hfloat(0.0)
@@ -138,29 +147,16 @@ architecture vunit_simulation of float_microprocessor_tb is
         , others => op(nop));
 
     ----
+
+    --- test signals
     signal current : real := 0.0;
     signal voltage : real := 0.0;
+    signal test1 : real := 0.0;
+    signal test2 : real := 1.0;
+    signal test3 : real := 0.0;
+    signal test4 : real := 0.0;
+    signal test5 : real := 0.0;
 
-    signal mproc_in     : microprogram_processor_in_record;
-    signal mproc_out    : microprogram_processor_out_record;
-    constant init_write : ram_write_in_record := init_write_in(10, word_length);
-    signal mc_write_in  : init_write'subtype  := init_write;
-
-    use work.instruction_pkg.all;
-
-    constant instruction_in_ref : instruction_in_record := (
-        instr_ram_read_out => instr_ref_subtype.ram_read_out
-        ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (0 to 20 => op(nop))
-        );
-
-    constant instruction_out_ref : instruction_out_record := (
-        data_read_in  => ref_subtype.ram_read_in
-        ,ram_write_in => ref_subtype.ram_write_in
-        );
-
-    signal addsub_in  : instruction_in_ref'subtype  := instruction_in_ref;
-    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
 
 begin
 
