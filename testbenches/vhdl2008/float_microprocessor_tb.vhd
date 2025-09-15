@@ -54,7 +54,6 @@ architecture rtl of float_processor is
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
-    signal write_is_buffered : boolean := false;
 
 begin
 
@@ -94,12 +93,9 @@ begin
         if rising_edge(clock) 
         then
             if write_requested(mc_write_in) then
-                write_buffer      <= mc_write_in;
-                write_is_buffered <= true;
-
                 if not write_requested(instruction_out.ram_write_in)
                 then
-                    write_is_buffered <= false;
+                    write_buffer <= mc_write_in;
                 end if;
             end if;
         end if;
@@ -124,8 +120,6 @@ begin
                     ram_write_in <= combine((0 => mc_write_in));
                 end if;
             end if;
-
-
 
             for i in ram_read_out'range loop
                 if mc_read_out(i).data_is_ready then
@@ -179,12 +173,8 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     use work.multi_port_ram_pkg.all;
 
-    constant ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 3, datawidth => word_length, addresswidth => 10);
-    signal ram_read_in  : ref_subtype.ram_read_in'subtype;
-    signal ram_read_out : ref_subtype.ram_read_out'subtype;
-    signal ram_write_in : ref_subtype.ram_write_in'subtype;
-
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1, datawidth => instruction_length, addresswidth => 10);
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => word_length        , addresswidth => 10);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_length , addresswidth => 10);
 
     signal mc_read_in  : ref_subtype.ram_read_in'subtype;
     signal mc_read_out : ref_subtype.ram_read_out'subtype;
@@ -385,6 +375,8 @@ begin
                 when 40 => write_data_to_ram(mc_write_in, 53, to_hfloat(9.51));
 
                 when 60 =>
+                    calculate(mproc_in, 14);
+                when 90 =>
                     calculate(mproc_in, 14);
 
                 WHEN others => --do nothing
