@@ -263,10 +263,10 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal current : real := 0.0;
     signal voltage : real := 0.0;
 
-    signal mproc_in    : microprogram_processor_in_record;
-    signal mproc_out   : microprogram_processor_out_record;
+    signal mproc_in     : microprogram_processor_in_record;
+    signal mproc_out    : microprogram_processor_out_record;
     constant init_write : ram_write_in_record := init_write_in(10, word_length);
-    signal mc_write_in : init_write'subtype := init_write;
+    signal mc_write_in  : init_write'subtype  := init_write;
 
     use work.instruction_pkg.all;
 
