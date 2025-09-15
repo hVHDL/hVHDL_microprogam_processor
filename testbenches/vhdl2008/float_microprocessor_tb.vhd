@@ -164,15 +164,6 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal mc_read_out : ref_subtype.ram_read_out'subtype;
     signal mc_output   : ref_subtype.ram_write_in'subtype;
     ----
-    use work.ram_connector_pkg.all;
-
-    constant readports : natural := 3;
-    constant addresswidth : natural := 10;
-    constant datawidth : natural := word_length;
-
-    constant ram_connector_ref : ram_connector_record := create_ref_subtype(readports => readports, addresswidth => addresswidth, datawidth => datawidth);
-
-    signal ram_connector : ram_connector_ref'subtype;
 
     use work.float_to_real_conversions_pkg.all;
     use work.float_typedefs_generic_pkg.all;
@@ -269,16 +260,8 @@ architecture vunit_simulation of float_microprocessor_tb is
         , others => op(nop));
 
     ----
-    signal ext_input : std_logic_vector(word_length-1 downto 0) := to_fixed(-22.351);
-
     signal current : real := 0.0;
     signal voltage : real := 0.0;
-
-    signal lc_load : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
-    signal lc_duty : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.5);
-    signal lc_input_voltage : std_logic_vector(word_length-1 downto 0) := to_fixed(10.0);
-
-    signal float_reg1 : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
 
     signal mproc_in    : microprogram_processor_in_record;
     signal mproc_out   : microprogram_processor_out_record;
@@ -321,19 +304,13 @@ begin
             return to_real(to_hfloat(data_in, hfloat_ref));
         end convert;
 
+        use work.ram_connector_pkg.generic_connect_ram_write_to_address;
         procedure connect_ram_write_to_address is new generic_connect_ram_write_to_address generic map(return_type => real, conv => convert);
 
 
     begin
         if rising_edge(simulator_clock) then
             simulation_counter <= simulation_counter + 1;
-
-            init_ram_connector(ram_connector);
-            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 120, ext_input);
-            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 121, lc_load);
-            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 122, lc_duty);
-            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 123, lc_input_voltage);
-            connect_data_to_ram_bus(ram_connector, mc_read_in, mc_read_out, 124, float_reg1);
 
             init_mproc(mproc_in);
             CASE simulation_counter is
