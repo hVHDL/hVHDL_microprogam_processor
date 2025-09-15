@@ -24,6 +24,7 @@ begin
     );
     ---------------------------
     float_mpy_add : process(clock) is
+
     begin
         if rising_edge(clock) then
             init_mp_ram_read(instruction_out.data_read_in);

@@ -10,10 +10,11 @@ LIBRARY ieee  ;
 entity float_processor is
     generic(
             g_number_of_pipeline_stages : natural := 11
-            ;g_addresswidth              : natural := 10
-            ;g_program                   : work.dual_port_ram_pkg.ram_array
-            ;g_data                      : work.dual_port_ram_pkg.ram_array
-            ;g_idle_ram_write            : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
+            ;g_addresswidth             : natural := 10
+            ;g_data_bit_width           : natural := 32
+            ;g_program                  : work.dual_port_ram_pkg.ram_array
+            ;g_data                     : work.dual_port_ram_pkg.ram_array
+            ;g_idle_ram_write           : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
            );
     port(
         clock        : in std_logic
@@ -31,10 +32,11 @@ end float_processor;
 
 architecture rtl of float_processor is
 
-    constant datawidth         : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    constant instruction_width : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
+    constant number_of_dataports : natural := instruction_in.data_read_out'length;
+    constant datawidth           : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
+    constant instruction_width   : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => datawidth);
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => number_of_dataports , datawidth => datawidth);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_width   , addresswidth => 10);
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
@@ -52,6 +54,7 @@ architecture rtl of float_processor is
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
+    signal write_is_buffered : boolean := false;
 
 begin
 
@@ -86,6 +89,22 @@ begin
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
+    buffer_writes : process(clock) is
+    begin
+        if rising_edge(clock) 
+        then
+            if write_requested(mc_write_in) then
+                write_buffer      <= mc_write_in;
+                write_is_buffered <= true;
+
+                if not write_requested(instruction_out.ram_write_in)
+                then
+                    write_is_buffered <= false;
+                end if;
+            end if;
+        end if;
+    end process;
+------------------------------------------------------------------------
     combine_ram_buses : process(all) is
     begin
         -- if rising_edge(clock)
@@ -95,19 +114,18 @@ begin
 
             ram_write_in <= combine((0 => instruction_out.ram_write_in));
 
-            -- add buffering for writing ram externally when not written by processor
-            if write_requested(ram_write_in) then
-                write_buffer <= ram_write_in;
+            if not write_requested(instruction_out.ram_write_in)
+            then
+                if write_requested(write_buffer)
+                then
+                    ram_write_in <= combine((0 => write_buffer));
+                elsif write_requested(mc_write_in)
+                then
+                    ram_write_in <= combine((0 => mc_write_in));
+                end if;
             end if;
 
-            -- if not write_requested(add_sub_ram_write)
-            -- then
-            --     if write_requested(ram_write_in) 
-            --         or write_requested(write_buffer)
-            --     then
-            --         ram_write_in <= combine((0 => mc_write_in));
-            --     end if;
-            -- end if;
+
 
             for i in ram_read_out'range loop
                 if mc_read_out(i).data_is_ready then
@@ -150,7 +168,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     -----------------------------------
     -- simulation specific signals ----
     constant instruction_length : natural := 32;
-    constant word_length        : natural := 32;
+    constant word_length        : natural := 40;
     constant used_radix         : natural := 20;
 
     --
@@ -240,7 +258,10 @@ architecture vunit_simulation of float_microprocessor_tb is
 
         , f2_0    => to_hfloat(2.0)
         , fneg2_0 => to_hfloat(-5.0)
-        -- ,52 => to_hfloat(
+        ,52 => to_hfloat(0.1235)
+        ,53 => to_hfloat(2.0)
+        ,54 => to_hfloat(10.0e6)
+        ,55 => to_hfloat(1.0)
 
         , others => (others => '0')
     );
@@ -258,7 +279,7 @@ architecture vunit_simulation of float_microprocessor_tb is
          , 15 => op(mpy_add      , 6 , 0    , 0       , fneg2_0)
          -- , 16 => op(mpy_add      , 7 , f2_0 , f2_0    , fneg2_0)
          , 17 => op(mpy_add      , 8 , f2_0 , f2_0    , f2_0)
-         -- , 18 => op(mpy_add      , 9 , f2_0 , fneg2_0 , fneg2_0)
+         , 18 => op(mpy_add      , 9 , 55 , 53 , 54)
          , 23 => op(program_end)
 
         -- equation:
@@ -293,8 +314,10 @@ architecture vunit_simulation of float_microprocessor_tb is
 
     signal float_reg1 : std_logic_vector(word_length-1 downto 0)          := to_fixed(0.0);
 
-    signal mproc_in  : microprogram_processor_in_record;
-    signal mproc_out : microprogram_processor_out_record;
+    signal mproc_in    : microprogram_processor_in_record;
+    signal mproc_out   : microprogram_processor_out_record;
+    constant init_write : ram_write_in_record := init_write_in(10, word_length);
+    signal mc_write_in : init_write'subtype := init_write;
 
     use work.instruction_pkg.all;
 
@@ -353,6 +376,16 @@ begin
 
                 when 30 =>
                     calculate(mproc_in, 14);
+                when 34 => write_data_to_ram(mc_write_in, 53, to_hfloat(3.51));
+                when 35 => write_data_to_ram(mc_write_in, 53, to_hfloat(4.51));
+                when 36 => write_data_to_ram(mc_write_in, 53, to_hfloat(5.51));
+                when 37 => write_data_to_ram(mc_write_in, 53, to_hfloat(6.51));
+                when 38 => write_data_to_ram(mc_write_in, 53, to_hfloat(7.51));
+                when 39 => write_data_to_ram(mc_write_in, 53, to_hfloat(8.51));
+                when 40 => write_data_to_ram(mc_write_in, 53, to_hfloat(9.51));
+
+                when 60 =>
+                    calculate(mproc_in, 14);
 
                 WHEN others => --do nothing
             end CASE;
@@ -370,13 +403,14 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_float_processor : entity work.float_processor
-    generic map(g_program => test_program, g_data => program_data)
+    generic map(g_program => test_program, g_data => program_data, g_data_bit_width => word_length)
     port map(simulator_clock
     ,mproc_in
     ,mproc_out
     ,mc_read_in
     ,mc_read_out
     ,mc_output
+    ,mc_write_in
     ,instruction_in  => addsub_in
     ,instruction_out => addsub_out);
 ------------------------------------------------------------------------
