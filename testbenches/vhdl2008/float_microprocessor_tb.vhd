@@ -231,30 +231,24 @@ architecture vunit_simulation of float_microprocessor_tb is
         , inductor_voltage => to_fixed(0.0)
 
         , f2_0    => to_hfloat(2.0)
-        , fneg2_0 => to_hfloat(-5.0)
-        ,52 => to_hfloat(0.1235)
-        ,53 => to_hfloat(2.0)
-        ,54 => to_hfloat(10.0e6)
-        ,55 => to_hfloat(1.0)
+        , 51 => to_hfloat(-2.0)
+        , 52 => to_hfloat(0.1235)
+        , 53 => to_hfloat(2.0)
+        , 54 => to_hfloat(10.0e6)
+        , 55 => to_hfloat(1.0)
 
         , others => (others => '0')
     );
 
     constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
         0 => op(nop)
-        -- 6    => sub(5, 1, 1)
-        -- , 7  => add(6, 1, 1)
-        -- , 8  => mpy(7, 2, 2)
-        -- , 9  => op(mpy_add,8, 2, 2, 1)
-        -- , 10 => op(mpy_sub,9, 2, 2, 1)
-        -- , 13 => op(program_end)
 
-         , 14 => op(mpy_add      , 5 , fneg2_0 , fneg2_0    , fneg2_0)
-         , 15 => op(mpy_add      , 6 , 0    , 0       , fneg2_0)
-         -- , 16 => op(mpy_add      , 7 , f2_0 , f2_0    , fneg2_0)
-         , 17 => op(mpy_add      , 8 , f2_0 , f2_0    , f2_0)
-         , 18 => op(mpy_add      , 9 , 55 , 53 , 54)
-         , 23 => op(program_end)
+        , 14 => op(mpy_add      , 5 , 51 , 51 , 51)
+        , 15 => op(mpy_sub      , 6 , 51 , 51 , 51)
+        , 16 => op(neg_mpy_add  , 7 , 51 , 51 , 51)
+        , 17 => op(neg_mpy_sub  , 8 , 51 , 51 , 51)
+        , 18 => op(mpy_add      , 9 , 55      , 53      , 54)
+        , 23 => op(program_end)
 
         -- equation:
         -- didt = input_voltage - duty*dc_link - i*rl

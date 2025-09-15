@@ -24,6 +24,12 @@ begin
     );
     ---------------------------
     float_mpy_add : process(clock) is
+        function "-" (a : std_logic_vector) return std_logic_vector is
+            variable retval : a'subtype := a;
+        begin
+            retval(retval'left) := not retval(retval'left);
+            return retval;
+        end function;
 
     begin
         if rising_edge(clock) then
@@ -64,17 +70,23 @@ begin
                     ,get_ram_data(instruction_in.data_read_out(arg2_mem))
                     ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
-                WHEN neg_mpy_add =>
+                WHEN mpy_sub =>
                     multiply_add(mpya_in
                     ,get_ram_data(instruction_in.data_read_out(arg1_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg2_mem))
+                    ,-get_ram_data(instruction_in.data_read_out(arg3_mem)));
+
+                WHEN neg_mpy_add =>
+                    multiply_add(mpya_in
+                    ,-get_ram_data(instruction_in.data_read_out(arg1_mem))
                     ,get_ram_data(instruction_in.data_read_out(arg2_mem))
                     ,get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_sub =>
-                    -- multiply_add(mpya_in
-                    -- ,get_ram_data(instruction_in.data_read_out(arg1_mem));
-                    -- ,get_ram_data(instruction_in.data_read_out(arg2_mem));
-                    -- ,get_ram_data(instruction_in.data_read_out(arg3_mem));
+                    multiply_add(mpya_in
+                    ,-get_ram_data(instruction_in.data_read_out(arg1_mem))
+                    ,get_ram_data(instruction_in.data_read_out(arg2_mem))
+                    ,-get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN others => -- do nothing
             end CASE;
