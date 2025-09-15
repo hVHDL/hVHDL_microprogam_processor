@@ -20,8 +20,6 @@ entity float_processor is
         clock        : in std_logic
         ;mproc_in    : in work.microprogram_processor_pkg.microprogram_processor_in_record
         ;mproc_out   : out work.microprogram_processor_pkg.microprogram_processor_out_record
-        ;mc_read_in  : out ram_read_in_array
-        ;mc_read_out : in ram_read_out_array
         ;mc_output   : out ram_write_in_record
         ;mc_write_in : in ram_write_in_record := g_idle_ram_write
         ------ instruction entity connection
@@ -35,6 +33,7 @@ architecture rtl of float_processor is
     constant number_of_dataports : natural := instruction_in.data_read_out'length;
     constant datawidth           : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
     constant instruction_width   : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
+    constant pipeline_high       : natural := instruction_in.instr_pipeline'high;
 
     constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => number_of_dataports , datawidth => datawidth);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_width   , addresswidth => 10);
@@ -49,15 +48,14 @@ architecture rtl of float_processor is
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
-    constant pipeline_high : natural := instruction_in.instr_pipeline'high;
-
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
 begin
 
-    instruction_in  <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
+    instruction_in <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
+    mc_output      <= ram_write_in;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
@@ -82,8 +80,8 @@ begin
     generic map(g_data)
     port map(
         clock => clock
-        ,ram_read_in  => ram_read_in
-        ,ram_read_out => ram_read_out
+        ,ram_read_in  => instruction_out.data_read_in
+        ,ram_read_out => data_ram_read_out
         ,ram_write_in => ram_write_in);
 
 ------------------------------------------------------------------------
@@ -105,9 +103,6 @@ begin
     begin
         -- if rising_edge(clock)
         -- then
-            mc_read_in   <= combine((0 => instruction_out.data_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
-            ram_read_in  <= combine((0 => instruction_out.data_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
-
             ram_write_in <= combine((0 => instruction_out.ram_write_in));
 
             if not write_requested(instruction_out.ram_write_in)
@@ -120,19 +115,8 @@ begin
                     ram_write_in <= combine((0 => mc_write_in));
                 end if;
             end if;
-
-            for i in ram_read_out'range loop
-                if mc_read_out(i).data_is_ready then
-                    data_ram_read_out(i).data          <= mc_read_out(i).data;
-                    data_ram_read_out(i).data_is_ready <= mc_read_out(i).data_is_ready;
-                else
-                    data_ram_read_out(i) <= ram_read_out(i);
-                end if;
-            end loop;
         -- end if;
     end process combine_ram_buses;
-
-    mc_output <= ram_write_in;
 
 -------------------------------
 end rtl;
@@ -399,8 +383,6 @@ begin
     port map(simulator_clock
     ,mproc_in
     ,mproc_out
-    ,mc_read_in
-    ,mc_read_out
     ,mc_output
     ,mc_write_in
     ,instruction_in  => addsub_in
