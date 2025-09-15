@@ -139,7 +139,7 @@ end;
 architecture vunit_simulation of float_microprocessor_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 1500;
+    constant simtime_in_clocks : integer := 4500;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -219,23 +219,22 @@ architecture vunit_simulation of float_microprocessor_tb is
         ,  2 => to_fixed(2.0)
         ,  3 => to_fixed(-3.0)
 
-        , duty             => to_fixed(0.5)
-        , inductor_current => to_fixed(0.0)
-        , cap_voltage      => to_fixed(0.0)
-        , ind_res          => to_fixed(0.9)
-        , load             => to_fixed(0.0)
-        , current_gain     => to_fixed(sampletime*1.0/2.0e-6)
-        , voltage_gain     => to_fixed(sampletime*1.0/3.0e-6)
-        , input_voltage    => to_fixed(10.0)
-        , inductor_voltage => to_fixed(0.0)
-        , inductor_voltage => to_fixed(0.0)
+        , duty             => to_hfloat(0.9)
+        , inductor_current => to_hfloat(0.0)
+        , cap_voltage      => to_hfloat(12.0)
+        , ind_res          => to_hfloat(0.9)
+        , load             => to_hfloat(0.0)
+        , current_gain     => to_hfloat(sampletime*1.0/3.0e-6)
+        , voltage_gain     => to_hfloat(sampletime*1.0/3.0e-6)
+        , input_voltage    => to_hfloat(10.0)
+        , inductor_voltage => to_hfloat(0.0)
 
-        , f2_0    => to_hfloat(2.0)
-        , 51 => to_hfloat(-2.0)
-        , 52 => to_hfloat(0.1235)
-        , 53 => to_hfloat(2.0)
-        , 54 => to_hfloat(10.0e6)
-        , 55 => to_hfloat(1.0)
+        , f2_0 => to_hfloat(2.0)
+        , 51   => to_hfloat(-2.0)
+        , 52   => to_hfloat(0.1235)
+        , 53   => to_hfloat(2.0)
+        , 54   => to_hfloat(10.0e6)
+        , 55   => to_hfloat(1.0)
 
         , others => (others => '0')
     );
@@ -258,15 +257,14 @@ architecture vunit_simulation of float_microprocessor_tb is
         -- i = i + didt*h/c
 
         -- lc filter
-        , 128 => op(set_rpt     , 200)
+        , 128 => op(set_rpt     , 300)
         , 129 => op(neg_mpy_add , inductor_voltage , duty             , cap_voltage      , input_voltage)
         , 130 => op(mpy_sub     , cap_current      , duty             , inductor_current , load)
-        , 136 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
-        , 137 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
-        , 140 => op(jump        , 129)
-        , 143 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
+        , 142 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
+        , 143 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
+        , 153 => op(jump        , 129)
+        , 156 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
-        , 144 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
         , others => op(nop));
 
@@ -356,6 +354,11 @@ begin
                     calculate(mproc_in, 14);
                 when 90 =>
                     calculate(mproc_in, 14);
+
+                when 150 =>
+                    calculate(mproc_in, 128);
+                when 2000 =>
+                    write_data_to_ram(mc_write_in, duty, to_hfloat(0.81));
 
                 WHEN others => --do nothing
             end CASE;
