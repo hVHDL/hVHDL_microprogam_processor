@@ -30,15 +30,21 @@ architecture vunit_simulation of float_microprocessor_tb is
     --
     use work.multi_port_ram_pkg.all;
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => word_length        , addresswidth => 10);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_length , addresswidth => 10);
+    constant ref_subtype       : subtype_ref_record := 
+        create_ref_subtypes(readports => 3 
+        , datawidth => word_length        
+        , addresswidth => 10);
+
+    constant instr_ref_subtype : subtype_ref_record := 
+    create_ref_subtypes(readports => 1 
+    , datawidth => instruction_length 
+    , addresswidth => 10);
 
     signal mc_output   : ref_subtype.ram_write_in'subtype;
+    signal mc_write_in : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
     signal mproc_in     : microprogram_processor_in_record;
     signal mproc_out    : microprogram_processor_out_record;
-    constant init_write : ram_write_in_record := init_write_in(10, word_length);
-    signal mc_write_in  : init_write'subtype  := init_write;
 
     use work.instruction_pkg.all;
 
@@ -76,11 +82,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     constant current_gain     : natural := 26;
     constant voltage_gain     : natural := 27;
     constant inductor_voltage : natural := 29;
-    constant rxi              : natural := 30;
     constant cap_current      : natural := 31;
-
-    constant f2_0    : natural := 50;
-    constant fneg2_0 : natural := 51;
 
     constant sampletime : real := 0.7e-6;
 
@@ -107,7 +109,6 @@ architecture vunit_simulation of float_microprocessor_tb is
         , input_voltage    => to_hfloat(10.0)
         , inductor_voltage => to_hfloat(0.0)
 
-        , f2_0 => to_hfloat(2.0)
         , 51   => to_hfloat(-2.0)
         , 52   => to_hfloat(0.1235)
         , 53   => to_hfloat(2.0)
@@ -143,10 +144,7 @@ architecture vunit_simulation of float_microprocessor_tb is
         , 153 => op(jump        , 129)
         , 156 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
 
-
         , others => op(nop));
-
-    ----
 
     --- test signals
     signal current : real := 0.0;
@@ -156,7 +154,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal test3 : real := 0.0;
     signal test4 : real := 0.0;
     signal test5 : real := 0.0;
-
+    ----
 
 begin
 
@@ -187,12 +185,12 @@ begin
             simulation_counter <= simulation_counter + 1;
 
             init_mproc(mproc_in);
-            CASE simulation_counter is
-                when 0 =>
-                    calculate(mproc_in, 14);
+            init_mp_write(mc_write_in);
 
-                when 30 =>
-                    calculate(mproc_in, 14);
+            CASE simulation_counter is
+                when 0  => calculate(mproc_in, 14);
+                when 30 => calculate(mproc_in, 14);
+
                 when 34 => write_data_to_ram(mc_write_in, 53, to_hfloat(3.51));
                 when 35 => write_data_to_ram(mc_write_in, 53, to_hfloat(4.51));
                 when 36 => write_data_to_ram(mc_write_in, 53, to_hfloat(5.51));
@@ -201,20 +199,13 @@ begin
                 when 39 => write_data_to_ram(mc_write_in, 53, to_hfloat(8.51));
                 when 40 => write_data_to_ram(mc_write_in, 53, to_hfloat(9.51));
 
-                when 60 =>
-                    calculate(mproc_in, 14);
-                when 90 =>
-                    calculate(mproc_in, 14);
+                when 60  => calculate(mproc_in, 14);
+                when 90  => calculate(mproc_in, 14);
+                when 150 => calculate(mproc_in, 128);
 
-                when 150 =>
-                    calculate(mproc_in, 128);
-                when 2000 =>
-                    write_data_to_ram(mc_write_in, duty, to_hfloat(0.81));
-
-                when 3800 =>
-                    write_data_to_ram(mc_write_in, load, to_hfloat(7.81));
-                when 3801 =>
-                    write_data_to_ram(mc_write_in, duty, to_hfloat(0.75));
+                when 2000 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.81));
+                when 3800 => write_data_to_ram(mc_write_in, load, to_hfloat(7.81));
+                when 3801 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.75));
 
                 WHEN others => --do nothing
             end CASE;
