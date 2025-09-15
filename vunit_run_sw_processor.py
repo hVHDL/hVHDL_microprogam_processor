@@ -107,6 +107,7 @@ v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/*.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/microprogram_controller.vhd")
 
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
