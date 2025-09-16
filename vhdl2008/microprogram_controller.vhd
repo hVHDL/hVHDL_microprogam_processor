@@ -12,6 +12,7 @@ entity microprogram_controller is
             g_number_of_pipeline_stages : natural := 11
             ;g_addresswidth             : natural := 10
             ;g_data_bit_width           : natural := 32
+            ;g_instruction_bit_width    : natural := 32
             ;g_program                  : work.dual_port_ram_pkg.ram_array
             ;g_data                     : work.dual_port_ram_pkg.ram_array
             ;g_idle_ram_write           : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
@@ -35,8 +36,10 @@ architecture rtl of microprogram_controller is
     constant instruction_width   : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
     constant pipeline_high       : natural := instruction_in.instr_pipeline'high;
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => number_of_dataports , datawidth => datawidth);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => instruction_width   , addresswidth => 10);
+    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(
+        readports => instruction_in.data_read_out'length 
+        , datawidth => g_data_bit_width);
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => g_instruction_bit_width   , addresswidth => 10);
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
