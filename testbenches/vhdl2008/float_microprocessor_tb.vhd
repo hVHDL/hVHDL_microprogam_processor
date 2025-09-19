@@ -17,7 +17,7 @@ end;
 architecture vunit_simulation of float_microprocessor_tb is
 
     constant clock_period      : time    := 1 ns;
-    constant simtime_in_clocks : integer := 8500;
+    constant simtime_in_clocks : integer := 20000;
     
     signal simulator_clock     : std_logic := '0';
     signal simulation_counter  : natural   := 0;
@@ -84,7 +84,7 @@ architecture vunit_simulation of float_microprocessor_tb is
     constant inductor_voltage : natural := 29;
     constant cap_current      : natural := 31;
 
-    constant sampletime : real := 0.7e-6;
+    constant sampletime : real := 1.0e-6;
 
     constant hfloat_ref : hfloat_record :=(
         sign => '0'
@@ -102,11 +102,11 @@ architecture vunit_simulation of float_microprocessor_tb is
         , duty             => to_hfloat(0.9)
         , inductor_current => to_hfloat(0.0)
         , cap_voltage      => to_hfloat(12.0)
-        , ind_res          => to_hfloat(0.4)
+        , ind_res          => to_hfloat(0.8)
         , load             => to_hfloat(0.0)
-        , current_gain     => to_hfloat(sampletime*1.0/3.0e-6)
-        , voltage_gain     => to_hfloat(sampletime*1.0/3.0e-6)
-        , input_voltage    => to_hfloat(10.0)
+        , current_gain     => to_hfloat(sampletime*1.0/30.0e-6)
+        , voltage_gain     => to_hfloat(sampletime*1.0/30.0e-6)
+        , input_voltage    => to_hfloat(20.0)
         , inductor_voltage => to_hfloat(0.0)
 
         , 51   => to_hfloat(-2.0)
@@ -125,7 +125,7 @@ architecture vunit_simulation of float_microprocessor_tb is
         , 15 => op(mpy_sub      , 6 , 51 , 51 , 51)
         , 16 => op(neg_mpy_add  , 7 , 51 , 51 , 51)
         , 17 => op(neg_mpy_sub  , 8 , 51 , 51 , 51)
-        , 18 => op(mpy_add      , 9 , 55      , 53      , 54)
+        , 18 => op(mpy_add      , 9 , 55 , 53 , 54)
         , 23 => op(program_end)
 
         -- equation:
@@ -139,10 +139,10 @@ architecture vunit_simulation of float_microprocessor_tb is
         , 128 => op(set_rpt     , 1500)
         , 129 => op(neg_mpy_add , inductor_voltage , duty             , cap_voltage      , input_voltage)
         , 130 => op(mpy_sub     , cap_current      , duty             , inductor_current , load)
-        , 142 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
-        , 143 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
-        , 153 => op(jump        , 129)
-        , 156 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
+        , 143 => op(neg_mpy_add , inductor_voltage , ind_res          , inductor_current , inductor_voltage)
+        , 144 => op(mpy_add     , cap_voltage      , cap_current      , voltage_gain     , cap_voltage)
+        , 157 => op(mpy_add     , inductor_current , inductor_voltage , current_gain     , inductor_current)
+        , 158 => op(program_end)
 
         , others => op(nop));
 
@@ -187,6 +187,11 @@ begin
             init_mproc(mproc_in);
             init_mp_write(mc_write_in);
 
+            if simulation_counter mod 40 = 0
+            then
+                calculate(mproc_in,129);
+            end if;
+
             CASE simulation_counter is
                 when 0  => calculate(mproc_in, 14);
                 when 30 => calculate(mproc_in, 14);
@@ -201,11 +206,11 @@ begin
 
                 when 60  => calculate(mproc_in, 14);
                 when 90  => calculate(mproc_in, 14);
-                when 150 => calculate(mproc_in, 128);
+                -- when 150 => calculate(mproc_in, 128);
 
-                when 2000 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.81));
-                when 3800 => write_data_to_ram(mc_write_in, load, to_hfloat(7.81));
-                when 3801 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.75));
+                when 8000 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.81));
+                -- when 3800 => write_data_to_ram(mc_write_in, load, to_hfloat(0.81));
+                -- when 10801 => write_data_to_ram(mc_write_in, duty, to_hfloat(0.45));
 
                 WHEN others => --do nothing
             end CASE;
