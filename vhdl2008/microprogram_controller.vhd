@@ -92,12 +92,18 @@ begin
     begin
         if rising_edge(clock) 
         then
-            if write_requested(mc_write_in) then
-                if not write_requested(instruction_out.ram_write_in)
-                then
-                    write_buffer <= mc_write_in;
-                end if;
+            if not write_requested(instruction_out.ram_write_in) 
+            and write_requested(write_buffer)
+            then
+                init_mp_write(write_buffer);
             end if;
+
+            if write_requested(mc_write_in)
+            and write_requested(instruction_out.ram_write_in)
+            then
+                write_buffer <= mc_write_in;
+            end if;
+
         end if;
     end process;
 ------------------------------------------------------------------------
