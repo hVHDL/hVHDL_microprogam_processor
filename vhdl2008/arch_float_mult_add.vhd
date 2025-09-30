@@ -62,6 +62,7 @@ begin
             end if;
 
             ---------------
+            multiply_add(mpya_in,to_std_logic(hfloat_ref), to_std_logic(hfloat_ref), to_std_logic(hfloat_ref));
 
             CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>

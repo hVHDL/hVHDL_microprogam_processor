@@ -58,18 +58,21 @@ architecture rtl of microprogram_controller is
 begin
 
 ----------------------------------------------------------
-    instruction_in <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
-    mc_output      <= ram_write_in;
+    instruction_in <= (data_read_out        => data_ram_read_out
+                       , instr_ram_read_out => instr_ram_read_out
+                       , instr_pipeline     => instr_pipeline);
+
+    mc_output <= ram_write_in;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     port map(clock 
-    , instr_ram_read_in(0) 
-    , instr_ram_read_out(0) 
-    , processor_enabled   => mproc_out.is_busy
-    , instr_pipeline      => instr_pipeline
-    , processor_requested => mproc_in.processor_requested
-    , start_address       => mproc_in.start_address
-    , is_ready            => mproc_out.is_ready);
+    , instruction_ram_read_in  => instr_ram_read_in(0)
+    , instruction_ram_read_out => instr_ram_read_out(0)
+    , processor_enabled        => mproc_out.is_busy
+    , instr_pipeline           => instr_pipeline
+    , processor_requested      => mproc_in.processor_requested
+    , start_address            => mproc_in.start_address
+    , is_ready                 => mproc_out.is_ready);
 ----------------------------------------------------------
     u_program_ram : entity work.multi_port_ram
     generic map(g_program)
