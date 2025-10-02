@@ -36,7 +36,7 @@ begin
             init_mp_ram_read(instruction_out.data_read_in);
             init_mp_write(instruction_out.ram_write_in);
 
-            init_multiply_add(mpya_in);
+            -- init_multiply_add(mpya_in);
 
             ---------------
             if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then

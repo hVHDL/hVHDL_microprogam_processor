@@ -25,7 +25,7 @@ package ram_connector_pkg is
     -------------------------------------------
     procedure generic_connect_ram_write_to_address
     generic( type return_type
-            ;function conv(a : std_logic_vector) return return_type is <>)
+            ;impure function conv(a : std_logic_vector) return return_type is <>)
     (
         write_in : in ram_write_in_record
         ; address : in natural
@@ -98,7 +98,7 @@ package body ram_connector_pkg is
     ----------------------------------
     procedure generic_connect_ram_write_to_address
     generic( type return_type
-            ;function conv(a : std_logic_vector) return return_type is <>)
+            ;impure function conv(a : std_logic_vector) return return_type is <>)
     (
         write_in : in ram_write_in_record
         ; address : in natural
