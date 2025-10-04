@@ -15,7 +15,7 @@ architecture float_mult_add of instruction is
 
 begin
     ---------------------------
-    u_float_mpy_add : entity work.multiply_add
+    u_float_mpy_add : entity work.multiply_add(hfloat)
     generic map(hfloat_ref)
     port map(
         clock
