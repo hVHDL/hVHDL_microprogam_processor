@@ -15,13 +15,24 @@ architecture float_mult_add of instruction is
 
 begin
     ---------------------------
-    u_float_mpy_add : entity work.multiply_add(hfloat)
-    generic map(hfloat_ref)
-    port map(
-        clock
-        ,mpya_in
-        ,mpya_out
-    );
+    addsub_gen : 
+    if g_option = "hfloat" generate
+        u_float_mpy_add : entity work.multiply_add(hfloat)
+        generic map(hfloat_ref)
+        port map(
+            clock
+            ,mpya_in
+            ,mpya_out
+        );
+    elsif g_option = "agilex" generate
+        u_float_mpy_add : entity work.multiply_add(agilex)
+        generic map(hfloat_ref) -- note needs to have 8 bit exponent and 32 bit word length
+        port map(
+            clock
+            ,mpya_in
+            ,mpya_out
+        );
+    end generate;
     ---------------------------
     float_mpy_add : process(clock) is
         function "-" (a : std_logic_vector) return std_logic_vector is

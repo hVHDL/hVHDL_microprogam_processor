@@ -107,12 +107,14 @@ LIBRARY ieee  ;
 
 entity instruction is
     generic(
-        arg1_mem      : natural := 0
-        ;arg2_mem      : natural := 1
-        ;arg3_mem      : natural := 2
-        ;radix         : natural := 14
-        ;g_read_delays     : natural := 0
-        ;g_read_out_delays : natural := 0
+        arg1_mem             : natural := 0
+        ;arg2_mem            : natural := 1
+        ;arg3_mem            : natural := 2
+        ;radix               : natural := 14
+        ;g_read_delays       : natural := 0
+        ;g_read_out_delays   : natural := 0
+        ;g_instruction_delay : natural := 9
+        ;g_options           : string  := "hfloat"
         ------ instruction encodings -------
         ;g_mpy_add       : natural := 0
         ;g_mpy_sub       : natural := 1
