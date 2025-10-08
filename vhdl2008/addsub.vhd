@@ -114,7 +114,7 @@ entity instruction is
         ;g_read_delays       : natural := 0
         ;g_read_out_delays   : natural := 0
         ;g_instruction_delay : natural := 9
-        ;g_options           : string  := "hfloat"
+        ;g_option            : string  := "hfloat"
         ------ instruction encodings -------
         ;g_mpy_add       : natural := 0
         ;g_mpy_sub       : natural := 1

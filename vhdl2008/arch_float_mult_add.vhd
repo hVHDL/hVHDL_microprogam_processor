@@ -103,7 +103,7 @@ begin
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 9 + g_read_delays+ g_read_out_delays)) is
+            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_instruction_delay + g_read_delays+ g_read_out_delays)) is
                 WHEN mpy_add 
                     | neg_mpy_add   
                     | neg_mpy_sub   
@@ -111,7 +111,7 @@ begin
                     =>
 
                     write_data_to_ram(instruction_out.ram_write_in 
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 9 + g_read_delays+ g_read_out_delays))
+                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_instruction_delay + g_read_delays+ g_read_out_delays))
                     , get_mpya_result(mpya_out));
 
                 WHEN others => -- do nothing
