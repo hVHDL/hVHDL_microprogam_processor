@@ -6,6 +6,10 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
+    use work.real_to_fixed_pkg.all;
+    use work.microinstruction_pkg.all;
+    use work.multi_port_ram_pkg.all;
+
 entity microprogram_sequencer_tb is
   generic (runner_cfg : string);
 end;
@@ -19,10 +23,6 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     signal simulation_counter  : natural   := 0;
     -----------------------------------
     -- simulation specific signals ----
-    use work.real_to_fixed_pkg.all;
-    use work.microinstruction_pkg.all;
-
-    use work.multi_port_ram_pkg.all;
     constant datawidth  : natural := 32;
     constant used_radix : natural := 20;
 

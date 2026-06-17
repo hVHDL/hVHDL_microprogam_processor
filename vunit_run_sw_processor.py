@@ -97,21 +97,21 @@ v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/real_to_fixed/real_to_fi
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/dp_ram_w_configurable_recrods.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/arch_sim_dp_ram_w_configurable_records.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_memory_library/vhdl2008/mpram_w_configurable_records.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
-
-
 v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/*.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/multiply_add_arch_agilex.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/sim_native_fp32.vhd")
 
-
+v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
+
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_controller.vhd")
-
+#
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
-
+#
 v2008.add_source_files(ROOT / "vhdl2008/arch_float_mult_add.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/arch_fixed_mult_add.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/float_microprocessor_tb.vhd")
