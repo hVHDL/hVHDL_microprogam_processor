@@ -105,6 +105,7 @@ v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/def_microinstruction_pkg.vhd")
 
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_controller.vhd")
