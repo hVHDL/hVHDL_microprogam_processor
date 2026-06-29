@@ -17,6 +17,92 @@ package instruction_pkg is
 end package instruction_pkg;
 ----------------------------------
 ----------------------------------
+LIBRARY ieee  ; 
+    USE ieee.NUMERIC_STD.all  ; 
+    USE ieee.std_logic_1164.all  ; 
+    use ieee.math_real.all;
+
+entity fixed_dsp is
+    generic(g_radix : natural);
+    port(
+        clock : in std_logic           := '0'
+        ;a    : in signed(31 downto 0) := (others => '0')
+        ;d    : in signed(31 downto 0) := (others => '0')
+        ;b    : in signed(31 downto 0) := (others => '0')
+        ;c    : in signed(31 downto 0) := (others => '0')
+
+        ;accumulate    : in std_logic -- 0=p <= p + (a*b)
+        ;pre_subtract  : in std_logic -- 0=a+d
+        ;post_subtract : in std_logic -- 0=mpy_out+d, 1 => mpy_out-d
+        ;invert_mult   : in std_logic -- 1 => negate multiplier result
+
+        ;result : out signed(63 downto 0)
+    );
+end entity;
+
+architecture rtl of fixed_dsp is
+    signal cbuf    : signed(a'length-1 downto 0);
+    signal mpy_res : signed(2*cbuf'length-1 downto 0);
+
+    signal pre  : signed(a'length-1 downto 0);
+    signal mult : signed(a'length + b'length-1 downto 0);
+    signal m48  : signed(a'length + b'length-1 downto 0);
+
+    signal c_buf : m48'subtype;
+
+    alias radix is g_radix;
+    alias P is result;
+
+    signal buf_accumulate    : std_logic;-- 0=p <= p + (a*b)
+    signal buf_pre_subtract  : std_logic;-- 0=a+d
+    signal buf_post_subtract : std_logic;-- 0=mpy_out+d, 1 => mpy_out-d
+    signal buf_invert_mult   : std_logic;-- 1 => negate multiplier result
+
+
+begin
+
+    -- Pre-adder
+    pre <= a + d when pre_subtract = '0'
+           else a - d;
+
+    -- Multiplier
+    mult <= pre * B;
+
+    process(clock)
+    begin
+        if rising_edge(clock) then
+
+            --p1
+            -- Resize to accumulator width
+            m48 <= resize(mult, P'length);
+            c_buf <= shift_left(resize(c, c_buf'length), radix);
+
+            --p2
+            if invert_mult = '1' then
+                if post_subtract = '0' then
+                    P <= c_buf - m48;
+                else
+                    P <= -(c_buf + m48);
+                end if;
+            else
+                if post_subtract = '0' then
+                    P <= c_buf + m48;
+                else
+                    P <= c_buf - m48;
+                end if;
+            end if;
+            --
+
+            -- if accumulate = '1' then
+            --     P <= P + m48;
+            -- end if;
+
+        end if;
+    end process;
+
+end rtl;
+
+----------------------------------
 
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
@@ -60,11 +146,31 @@ architecture add_sub_mpy of instruction is
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
     signal a, b, c , cbuf : signed(datawidth-1 downto 0);
     signal mpy_res        : signed(2*datawidth-1 downto 0);
-    signal mpy_res2       : signed(2*datawidth-1 downto 0);
 
     signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
 
+    signal dsp_op : std_logic_vector(3 downto 0) := (others => '0');
+    alias accumulate    is dsp_op(0); -- 0=p <= p + (a*b)
+    alias pre_subtract  is dsp_op(1); -- 0=a+d
+    alias post_subtract is dsp_op(2); -- 0=mpy_out+d, 1 => mpy_out-d
+    alias invert_mult   is dsp_op(3); -- 1 => negate multiplier result
+
 begin
+
+    u_fixed_dsp : entity work.fixed_dsp
+    generic map(g_radix => radix)
+    port map( clock => clock
+    ,a => a
+    ,b => b
+    ,c => c
+
+    ,accumulate    => accumulate   
+    ,pre_subtract  => pre_subtract 
+    ,post_subtract => post_subtract
+    ,invert_mult   => invert_mult  
+
+    ,result => mpy_res
+    );
 
     mpy_add_sub : process(clock) is
     begin
@@ -101,10 +207,6 @@ begin
             end if;
 
             ---------------
-            mpy_res2 <= a * b;
-            cbuf     <= c;
-            mpy_res  <= mpy_res2 + shift_left(resize(cbuf , mpy_res'length), radix) ;
-            ---------------
 
             CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
@@ -113,7 +215,7 @@ begin
                     c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
                 WHEN neg_mpy_add =>
-                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
+                    a <= signed(not get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
                     c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
 
