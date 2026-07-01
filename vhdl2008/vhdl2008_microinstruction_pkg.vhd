@@ -31,7 +31,7 @@ package generic_microinstruction_pkg is
         ,acc
         ,get_acc_and_zero
         ,check_and_saturate_acc
-        ,res9
+        ,mpy_acc
         ,res10
     );
     function get(instr : t_command) return std_logic_vector;
