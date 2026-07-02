@@ -25,16 +25,17 @@ LIBRARY ieee  ;
 entity fixed_dsp is
     generic(g_radix : natural);
     port(
-        clock : in std_logic           := '0'
+        clock : in std_logic := '0'
         ;a    : in signed
         ;d    : in signed
         ;b    : in signed
         ;c    : in signed
 
-        ;accumulate    : in std_logic -- 0=p <= p + (a*b)
-        ;pre_subtract  : in std_logic -- 0=a+d
-        ;post_subtract : in std_logic -- 0=mpy_out+d, 1 => mpy_out-d
-        ;invert_result   : in std_logic -- 1 => negate multiplier result
+        ;accumulate_with_1    : in std_logic -- 0=p <= p + (a*b)
+        ;pre_subtract_with_1  : in std_logic -- 0=a+d
+        ;post_subtract_with_1 : in std_logic -- 0=mpy_out+d, 1 => mpy_out-d
+        ;invert_result_with_1 : in std_logic -- 1 => negate multiplier result
+        ;reset_accumulator_with_1 : in std_logic
 
         ;result : out signed
     );
@@ -47,19 +48,22 @@ architecture rtl of fixed_dsp is
 
     signal c_buf : mult'subtype;
 
-    alias radix is g_radix;
-    alias P is result;
+    signal P : result'subtype := (others => '0');
 
     signal buf_accumulate    : std_logic;-- 0=p <= p + (a*b)
     signal buf_pre_subtract  : std_logic;-- 0=a+d
     signal buf_post_subtract : std_logic;-- 0=mpy_out+d, 1 => mpy_out-d
-    signal buf_invert_result   : std_logic;-- 1 => negate multiplier result
+    signal buf_invert_result : std_logic;-- 1 => negate multiplier result
 
+    signal buf_reset_accumulator_with_1 : std_logic;
 
 begin
 
+    -- output 
+    result <= P;
+
     -- Pre-adder
-    pre <= a + d when pre_subtract = '0'
+    pre <= a + d when pre_subtract_with_1 = '0'
      else  a - d;
 
     process(clock)
@@ -69,16 +73,17 @@ begin
             --p1
             -- Resize to accumulator width
             mult  <= pre * B;
-            c_buf <= shift_left(resize(c, c_buf'length), radix);
+            c_buf <= shift_left(resize(c, c_buf'length), g_radix);
 
-            buf_accumulate    <= accumulate   ;
-            buf_pre_subtract  <= pre_subtract ;
-            buf_post_subtract <= post_subtract;
-            buf_invert_result <= invert_result;
+            buf_accumulate    <= accumulate_with_1   ;
+            buf_pre_subtract  <= pre_subtract_with_1 ;
+            buf_post_subtract <= post_subtract_with_1;
+            buf_invert_result <= invert_result_with_1;
+            buf_reset_accumulator_with_1 <= reset_accumulator_with_1;
 
             --p2
             if buf_invert_result = '1' then
-                if post_subtract = '0' then
+                if buf_post_subtract = '0' then
                     P <= -(mult + c_buf);
                 else
                     P <= -(mult - c_buf);
@@ -98,6 +103,10 @@ begin
                 else
                     P <= P + mult;
                 end if;
+            end if;
+
+            if buf_reset_accumulator_with_1 = '1' then
+                P <= (others => '0');
             end if;
 
         end if;
@@ -146,6 +155,8 @@ architecture add_sub_mpy of instruction is
 
     use work.real_to_fixed_pkg.all;
 
+    constant g_radix : natural := radix;
+
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
     signal a, b, c, d  : signed(datawidth-1 downto 0);
     signal dsp_result  : signed(2*datawidth-1 downto 0);
@@ -153,28 +164,29 @@ architecture add_sub_mpy of instruction is
     signal mac_mpy     : signed(2*datawidth-1 downto 0);
     signal accumulator : mac_mpy'subtype := (others => '0');
 
-    signal accumulate        : std_logic ;-- 0=p <= p + (a*b)
-    signal pre_subtract      : std_logic ;-- 0=a+d
-    signal post_subtract     : std_logic ;-- 0=mpy_out+d, 1 => mpy_out-d
-    signal invert_result     : std_logic ; -- 1 => negate multiplier result
+    signal accumulate        : std_logic := '0';-- 0=p <= p + (a*b)
+    signal pre_subtract      : std_logic := '0';-- 0=a+d
+    signal post_subtract     : std_logic := '0';-- 0=mpy_out+d, 1 => mpy_out-d
+    signal invert_result     : std_logic := '0'; -- 1 => negate multiplier result
     signal buf_accumulate    : std_logic := '0';
     signal reset_accumulator : std_logic := '0';
-
 
 begin
 
     u_fixed_dsp : entity work.fixed_dsp
-    generic map(g_radix => radix)
+    generic map(g_radix => g_radix)
     port map( clock => clock
     ,a => a
     ,d => d
     ,b => b
     ,c => c
 
-    ,accumulate    => accumulate
-    ,pre_subtract  => pre_subtract
-    ,post_subtract => post_subtract
-    ,invert_result => invert_result
+    ,accumulate_with_1    => accumulate
+    ,pre_subtract_with_1  => pre_subtract
+    ,post_subtract_with_1 => post_subtract
+    ,invert_result_with_1 => invert_result
+
+    ,reset_accumulator_with_1 => reset_accumulator
 
     ,result => dsp_result
     );
