@@ -1,4 +1,3 @@
-
 LIBRARY ieee  ; 
     USE ieee.NUMERIC_STD.all  ; 
     USE ieee.std_logic_1164.all  ; 
@@ -9,8 +8,7 @@ LIBRARY ieee  ;
 
 entity microprogram_controller is
     generic(
-            g_number_of_pipeline_stages : natural := 11
-            ;g_addresswidth             : natural := 10
+            g_addresswidth             : natural := 10
             ;g_data_bit_width           : natural := 32
             ;g_instruction_bit_width    : natural := 32
             ;g_program                  : work.dual_port_ram_pkg.ram_array

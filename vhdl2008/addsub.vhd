@@ -153,8 +153,6 @@ end;
 
 architecture add_sub_mpy of instruction is
 
-    use work.real_to_fixed_pkg.all;
-
     constant g_radix : natural := radix;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
