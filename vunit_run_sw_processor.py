@@ -102,6 +102,7 @@ v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/multi
 v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/sim_native_fp32.vhd")
 
 v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/instruction_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
