@@ -22,105 +22,6 @@ LIBRARY ieee  ;
     USE ieee.std_logic_1164.all  ; 
     use ieee.math_real.all;
 
-entity fixed_dsp is
-    generic(g_radix : natural);
-    port(
-        clock : in std_logic := '0'
-        ;a    : in signed
-        ;d    : in signed
-        ;b    : in signed
-        ;c    : in signed
-
-        ;accumulate_with_1    : in std_logic -- 0=p <= p + (a*b)
-        ;pre_subtract_with_1  : in std_logic -- 0=a+d
-        ;post_subtract_with_1 : in std_logic -- 0=mpy_out+d, 1 => mpy_out-d
-        ;invert_result_with_1 : in std_logic -- 1 => negate multiplier result
-        ;reset_accumulator_with_1 : in std_logic
-
-        ;result : out signed
-    );
-end entity;
-
-architecture rtl of fixed_dsp is
-
-    signal pre  : signed(a'length-1 downto 0);
-    signal mult : signed(a'length + b'length-1 downto 0);
-
-    signal c_buf : mult'subtype;
-
-    signal P : result'subtype := (others => '0');
-
-    signal buf_accumulate    : std_logic;-- 0=p <= p + (a*b)
-    signal buf_pre_subtract  : std_logic;-- 0=a+d
-    signal buf_post_subtract : std_logic;-- 0=mpy_out+d, 1 => mpy_out-d
-    signal buf_invert_result : std_logic;-- 1 => negate multiplier result
-
-    signal buf_reset_accumulator_with_1 : std_logic;
-
-begin
-
-    -- output 
-    result <= P;
-
-    -- Pre-adder
-    pre <= a + d when pre_subtract_with_1 = '0'
-     else  a - d;
-
-    process(clock)
-    begin
-        if rising_edge(clock) then
-
-            --p1
-            -- Resize to accumulator width
-            mult  <= pre * B;
-            c_buf <= shift_left(resize(c, c_buf'length), g_radix);
-
-            buf_accumulate    <= accumulate_with_1   ;
-            buf_pre_subtract  <= pre_subtract_with_1 ;
-            buf_post_subtract <= post_subtract_with_1;
-            buf_invert_result <= invert_result_with_1;
-            buf_reset_accumulator_with_1 <= reset_accumulator_with_1;
-
-            --p2
-            if buf_invert_result = '1' then
-                if buf_post_subtract = '0' then
-                    P <= -(mult + c_buf);
-                else
-                    P <= -(mult - c_buf);
-                end if;
-            else
-                if buf_post_subtract = '0' then
-                    P <= mult + c_buf;
-                else
-                    P <= mult - c_buf;
-                end if;
-            end if;
-            --
-
-            if buf_accumulate = '1' then
-                if buf_post_subtract = '1' then
-                    P <= P - mult;
-                else
-                    P <= P + mult;
-                end if;
-            end if;
-
-            if buf_reset_accumulator_with_1 = '1' then
-                P <= (others => '0');
-            end if;
-
-        end if;
-    end process;
-
-end rtl;
-
-----------------------------------
-
-LIBRARY ieee  ; 
-    USE ieee.NUMERIC_STD.all  ; 
-    USE ieee.std_logic_1164.all  ; 
-    use ieee.math_real.all;
-
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
     use work.instruction_pkg.all;
@@ -135,14 +36,6 @@ entity instruction is
         ;g_read_out_delays   : natural := 0
         ;g_instruction_delay : natural := 9
         ;g_option            : string  := "hfloat"
-        ------ instruction encodings -------
-        ;g_mpy_add       : natural := 0
-        ;g_mpy_sub       : natural := 1
-        ;g_neg_mpy_add   : natural := 2
-        ;g_neg_mpy_sub   : natural := 3
-        ;g_a_add_b_mpy_c : natural := 4
-        ;g_a_sub_b_mpy_c : natural := 5
-        ;g_lp_filter     : natural := 6
        );
     port(
         clock : in std_logic

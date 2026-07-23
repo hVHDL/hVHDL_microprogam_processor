@@ -110,6 +110,9 @@ v2008.add_source_files(ROOT / "vhdl2008/def_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor_pkg.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
 v2008.add_source_files(ROOT / "vhdl2008/microprogram_controller.vhd")
+
+v2008.add_source_files(ROOT / "vhdl2008/fixed_dsp.vhd")
+v2008.add_source_files(ROOT / "vhdl2008/arch_rtl_fixed_dsp.vhd")
 #
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
