@@ -22,19 +22,21 @@ begin
     u_fixed_dsp : entity work.fixed_dsp
     generic map(g_radix => g_radix)
     port map( clock => clock
-    ,a => a
-    ,d => d
-    ,b => b
-    ,c => c
+    ,fixed_dsp_in.a => a
+    ,fixed_dsp_in.d => d
+    ,fixed_dsp_in.b => b
+    ,fixed_dsp_in.c => c
 
-    ,accumulate_with_1    => accumulate
-    ,pre_subtract_with_1  => pre_subtract
-    ,post_subtract_with_1 => post_subtract
-    ,invert_result_with_1 => invert_result
+    ,fixed_dsp_in.request_with_1       => '1'
+    ,fixed_dsp_in.accumulate_with_1    => accumulate
+    ,fixed_dsp_in.pre_subtract_with_1  => pre_subtract
+    ,fixed_dsp_in.post_subtract_with_1 => post_subtract
+    ,fixed_dsp_in.invert_result_with_1 => invert_result
 
-    ,reset_accumulator_with_1 => reset_accumulator
+    ,fixed_dsp_in.reset_accumulator_with_1 => reset_accumulator
 
-    ,result => dsp_result
+    ,ready_with_1 => open
+    ,result       => dsp_result
     );
 
 

@@ -6,10 +6,10 @@ LIBRARY ieee  ;
 package fixed_dsp_pkg is
 
     type fixed_dsp_in_record is record
-        a : signed;
-        d : signed;
-        b : signed;
-        c : signed;
+        a : signed(31 downto 0);
+        d : signed(31 downto 0);
+        b : signed(31 downto 0);
+        c : signed(31 downto 0);
 
         request_with_1           : std_logic;
         accumulate_with_1        : std_logic; -- 0=p <= p + (a*b)
