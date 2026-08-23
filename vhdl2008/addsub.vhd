@@ -17,6 +17,8 @@ architecture add_sub_mpy of instruction is
     signal buf_accumulate    : std_logic := '0';
     signal reset_accumulator : std_logic := '0';
 
+    signal ready_with_1 : std_logic := '0';
+
 begin
 
     u_fixed_dsp : entity work.fixed_dsp
@@ -35,8 +37,8 @@ begin
 
     ,fixed_dsp_in.reset_accumulator_with_1 => reset_accumulator
 
-    ,ready_with_1 => open
-    ,result       => dsp_result
+    ,fixed_dsp_out.ready_with_1 => ready_with_1
+    ,fixed_dsp_out.result       => dsp_result
     );
 
 
