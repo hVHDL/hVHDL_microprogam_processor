@@ -4,7 +4,11 @@ architecture add_sub_mpy of instruction is
     constant g_radix : natural := radix;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    signal a, b, c, d  : signed(datawidth-1 downto 0);
+    signal a, b, d     : signed(datawidth-1 downto 0);
+    -- c is added directly into the multiplier's output width now, so it
+    -- must already be pre-shifted/resized to that width (see the c <=
+    -- assignments below)
+    signal c           : signed(2*datawidth-1 downto 0);
     signal dsp_result  : signed(2*datawidth-1 downto 0);
 
     signal mac_mpy     : signed(2*datawidth-1 downto 0);
@@ -22,7 +26,6 @@ architecture add_sub_mpy of instruction is
 begin
 
     u_fixed_dsp : entity work.fixed_dsp
-    generic map(g_radix => g_radix)
     port map( clock => clock
     ,fixed_dsp_in.a => a
     ,fixed_dsp_in.d => d
@@ -105,7 +108,7 @@ begin
                     a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     d <= (others => '0');
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
 
                 WHEN neg_mpy_add =>
                     accumulate    <= '0';
@@ -116,7 +119,7 @@ begin
                     a <= (others => '0');
                     d <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
 
                 WHEN neg_mpy_sub =>
                     accumulate    <= '0';
@@ -127,7 +130,7 @@ begin
                     a <= (others => '0');
                     d <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
 
                 WHEN mpy_sub =>
                     accumulate    <= '0';
@@ -138,7 +141,7 @@ begin
                     a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     d <= (others => '0');
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
 
                 WHEN a_add_b_mpy_c =>
                     accumulate    <= '0';
@@ -171,7 +174,7 @@ begin
                     a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
                     d <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
                     b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg2_mem))), 2*datawidth), g_radix);
 
                 WHEN mpy_acc | get_acc_and_zero =>
                     accumulate    <= '1';
