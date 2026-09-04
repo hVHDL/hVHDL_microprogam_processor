@@ -24,6 +24,14 @@ begin
             ,mpya_in
             ,mpya_out
         );
+    elsif g_option = "fast_hfloat" generate
+        u_float_mpy_add : entity work.multiply_add(fast_hfloat)
+        generic map(hfloat_ref) -- note needs to have 8 bit exponent and 32 bit word length
+        port map(
+            clock
+            ,mpya_in
+            ,mpya_out
+        );
     elsif g_option = "agilex" generate
         u_float_mpy_add : entity work.multiply_add(agilex)
         generic map(hfloat_ref) -- note needs to have 8 bit exponent and 32 bit word length
