@@ -1,4 +1,12 @@
 
+LIBRARY ieee  ;
+    USE ieee.NUMERIC_STD.all  ;
+    USE ieee.std_logic_1164.all  ;
+    use ieee.math_real.all;
+
+    use work.multi_port_ram_pkg.all;
+    use work.microinstruction_pkg.all;
+
 architecture add_sub_mpy of instruction is
 
     constant g_radix : natural := radix;
