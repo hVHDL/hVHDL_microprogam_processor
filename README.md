@@ -23,27 +23,22 @@ rtl/
                                       records
   arch_fixed_mult_add.vhd             fixed_mult_add : fixed_dsp, data width
                                       accumulator
-  arch_fixed_mult_acc.vhd             fixed_mult_acc : fixed_dsp, double
-                                      width product accumulator
   arch_float_mult_add.vhd             float_mult_add : hfloat
   microprogram_core.vhd               sequencer + program and data RAMs, the
                                       execution unit connected from outside
                                       (to_unit / from_unit)
-  fixed_microprogram_processor.vhd    sequencer + RAMs + fixed_mult_acc in one
-                                      entity
   microprogram_assembler_pkg.vhd      schedule(), repeat(), place() : one
                                       program source for any configuration
   ram_connector_pkg.vhd               helpers for combining RAM ports
 examples/
   boost_converter_pkg.vhd             an averaged boost converter model : its
                                       address map, program step and data
-testbenches/                     fixed_execution_unit_tb checks both fixed
-                                 point architectures, result_latency_tb
-                                 measures their result latency,
-                                 portable_program_tb runs one program source
-                                 on eight configurations ; the others run the
-                                 sequencer, fixed_microprogram_processor and
-                                 the float core
+testbenches/                     fixed_execution_unit_tb checks
+                                 fixed_mult_add, result_latency_tb measures
+                                 its result latency, portable_program_tb runs
+                                 one program source on four configurations ;
+                                 the others run the sequencer and the float
+                                 core
 vunit_run_sw_processor.py        VUnit run script
 ```
 
@@ -96,12 +91,11 @@ data width in its pre-adder, and the result is bits radix + width − 1 …
 radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder
 and `g_product_register` the product before the result adder, each one
 clock more to the result. `a_add_b_mpy_c`,
-`a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
-point architectures. `fixed_mult_acc` runs the same multiply-adds on its
-`fixed_dsp`, and its accumulator is at the product's width: `mpy_acc` adds
-a·b, `acc` adds c, `get_acc_and_zero` writes the accumulator + c and zeroes
-it. In `fixed_mult_add` the accumulator is data width, `acc` and
-`get_acc_and_zero` add c, and there is no `mpy_acc`. There is no hazard detection in the hardware: a result is in the data
+`a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in
+`fixed_mult_add`; its accumulator is data width, `acc` adds c,
+`get_acc_and_zero` writes the accumulator + c and zeroes it and
+`check_and_saturate_acc` limits it. `mpy_acc` is an encoding with no
+execution unit. There is no hazard detection in the hardware: a result is in the data
 RAM only after the pipeline delay, so dependent instructions are spaced
 with `nop`s, by hand or by `schedule()` below. A `jump` takes effect after
 the three instructions that follow it, which are already fetched and run
@@ -112,7 +106,7 @@ on every round; a `program_end` among them ends the program.
 `execution_unit_pkg.fixed_point_result_latency(pre_add_register,
 product_register)` is how many instructions after an instruction the first
 one that reads its result can be: 7, plus 1 for each of the pre-adder and
-product registers, for `fixed_mult_add` and `fixed_mult_acc` alike.
+product registers, for `fixed_mult_add`.
 `result_latency_tb` measures it at the data RAM's ports.
 
 It is the result stage + 2: the RAM takes the write a clock after the
@@ -198,7 +192,8 @@ python3 vunit_run_sw_processor.py
 ```
 
 `fixed_execution_unit_tb` runs the multiply-add and accumulator commands and
-a `jump` loop on both fixed point architectures, with and without the
-pre-adder and product registers, with 32 and 36 bit data and instructions
-and a 128 word program RAM, and checks every result against a model. The other
-testbenches run the processors without checking their results.
+a `jump` loop on `fixed_mult_add`, with and without the pre-adder and
+product registers, with 32 and 36 bit data and instructions and a 128 word
+program RAM, and checks every result against a model; `result_latency_tb`
+and `portable_program_tb` check theirs too. The sequencer and float core
+testbenches run without checking their results.

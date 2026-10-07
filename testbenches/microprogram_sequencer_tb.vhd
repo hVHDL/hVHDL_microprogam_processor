@@ -113,7 +113,7 @@ begin
     , processor_requested => processor_requested
     , start_address       => 0);
 -- ----------------------------------------------------------
-    fixed_mult_acc : entity work.execution_unit(fixed_mult_acc)
+    fixed_mult_add : entity work.execution_unit(fixed_mult_add)
     generic map(g_radix => used_radix)
     port map(simulator_clock 
     ,unit_in

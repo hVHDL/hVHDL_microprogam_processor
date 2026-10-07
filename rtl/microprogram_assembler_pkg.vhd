@@ -16,7 +16,7 @@
 --
 -- and encode(program, width) from microinstruction_pkg makes the ram
 -- contents. The configuration's result_latency is the execution unit's,
--- for fixed_mult_add and fixed_mult_acc execution_unit_pkg's
+-- for fixed_mult_add execution_unit_pkg's
 -- fixed_point_result_latency(). It counts the clock the data ram takes
 -- the write in, and a read in that clock is a collision between the
 -- ram's write and read ports, which gives no defined data on the FPGAs

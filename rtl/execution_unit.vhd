@@ -16,7 +16,7 @@ package execution_unit_pkg is
         ram_write_in : ram_write_in_record ;
     end record;
 
-    -- fixed_mult_add and fixed_mult_acc : the pipeline stage, counted from
+    -- fixed_mult_add : the pipeline stage, counted from
     -- the instruction's operand reads, in which a result is written ; the
     -- operands arrive read_pipeline_delay clocks after the reads, the
     -- fixed_dsp request is registered, the product takes 2 clocks and one
@@ -70,7 +70,7 @@ entity execution_unit is
         -- fixed_mult_add : fixed_dsp's g_pre_add_register, one more clock
         -- from the operands to the result
         ;g_pre_add_register  : boolean := false
-        -- fixed_mult_add, fixed_mult_acc : fixed_dsp's g_product_register,
+        -- fixed_mult_add : fixed_dsp's g_product_register,
         -- one clock more from the operands to the result
         ;g_product_register  : boolean := false
        );

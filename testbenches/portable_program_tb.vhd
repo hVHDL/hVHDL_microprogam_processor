@@ -22,7 +22,6 @@ context vunit_lib.vunit_context;
 entity portable_program_tb is
   generic (
       runner_cfg : string
-      ;g_architecture      : string  := "fixed_mult_add"
       ;g_pre_add_register  : boolean := false
       ;g_product_register  : boolean := false
       ;g_data_width        : natural := 32
@@ -198,7 +197,7 @@ begin
 
     begin
         test_runner_setup(runner, runner_cfg);
-        info(g_architecture & ", pre-adder register " & boolean'image(g_pre_add_register)
+        info("pre-adder register " & boolean'image(g_pre_add_register)
             & ", product register " & boolean'image(g_product_register)
             & ", " & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width)
             & " bit instructions : result latency " & integer'image(config.result_latency));
@@ -300,16 +299,8 @@ begin
         ,from_unit   => unit_out
     );
 
-    fixed_mult_add : if g_architecture = "fixed_mult_add" generate
-        u_instruction : entity work.execution_unit(fixed_mult_add)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
-        port map (clock, unit_in, unit_out);
-    end generate;
-
-    fixed_mult_acc : if g_architecture = "fixed_mult_acc" generate
-        u_instruction : entity work.execution_unit(fixed_mult_acc)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
-        port map (clock, unit_in, unit_out);
-    end generate;
+    u_fixed_mult_add : entity work.execution_unit(fixed_mult_add)
+    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
+    port map (clock, unit_in, unit_out);
 
 end vunit_simulation;

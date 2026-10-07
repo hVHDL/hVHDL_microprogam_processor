@@ -9,13 +9,11 @@ context vunit_lib.vunit_context;
     use work.microinstruction_pkg.all;
     use work.microprogram_interface_pkg.all;
 
--- runs programs on microprogram_core with the fixed point
--- instruction architecture g_architecture (fixed_mult_add or fixed_mult_acc)
--- and checks every result against a model of the arithmetic
+-- runs programs on microprogram_core with the fixed point execution unit
+-- fixed_mult_add and checks every result against a model of the arithmetic
 entity fixed_execution_unit_tb is
   generic (
       runner_cfg : string
-      ;g_architecture     : string  := "fixed_mult_add"
       ;g_pre_add_register : boolean := false
       ;g_product_register : boolean := false
       -- the program ram is 2**g_program_address_width words
@@ -96,12 +94,6 @@ architecture vunit_simulation of fixed_execution_unit_tb is
         , 20 => mi(get_acc_and_zero , 9 , 0  , 0  , 0)
         , 24 => mi(program_end)
 
-        -- 32 : products into the accumulator, fixed_mult_acc only
-        , 32 => mi(mpy_acc          , 0  , 85 , 86 , 0)
-        , 33 => mi(mpy_acc          , 0  , 87 , 88 , 0)
-        , 34 => mi(acc              , 0  , 0  , 0  , 92)
-        , 35 => mi(get_acc_and_zero , 10 , 0  , 0  , 93)
-        , 40 => mi(program_end)
 
         -- 64 : 100 rounds of y <- (u - y) * g + y
         , 64 => mi(set_rpt   , 99)
@@ -208,7 +200,7 @@ begin
 
     begin
         test_runner_setup(runner, runner_cfg);
-        info(g_architecture & ", pre-adder register " & boolean'image(g_pre_add_register)
+        info("pre-adder register " & boolean'image(g_pre_add_register)
             & ", product register " & boolean'image(g_product_register)
             & ", " & integer'image(test_program'length) & " word program ram, "
             & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width) & " bit instructions");
@@ -224,13 +216,6 @@ begin
         check_word(8, sum(sum(m(89), m(90)), m(91)));
         check_word(9, zero);
 
-        if g_architecture = "fixed_mult_acc" then
-            run_program(32);
-            products := signed(m(85)) * signed(m(86)) + signed(m(87)) * signed(m(88))
-                + shift_left(resize(signed(m(92)), 2*w), radix)
-                + shift_left(resize(signed(m(93)), 2*w), radix);
-            check_word(10, std_logic_vector(products(radix + w - 1 downto radix)));
-        end if;
 
         y := m(96);
         for i in 1 to 100 loop
@@ -272,16 +257,8 @@ begin
         ,from_unit => instr_out
     );
 
-    fixed_mult_add : if g_architecture = "fixed_mult_add" generate
-        u_instruction : entity work.execution_unit(fixed_mult_add)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
-        port map (clock, instr_in, instr_out);
-    end generate;
-
-    fixed_mult_acc : if g_architecture = "fixed_mult_acc" generate
-        u_instruction : entity work.execution_unit(fixed_mult_acc)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
-        port map (clock, instr_in, instr_out);
-    end generate;
+    u_fixed_mult_add : entity work.execution_unit(fixed_mult_add)
+    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
+    port map (clock, instr_in, instr_out);
 
 end vunit_simulation;
