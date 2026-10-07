@@ -31,14 +31,14 @@ end entity microprogram_sequencer;
 architecture rtl of microprogram_sequencer is
 
     signal program_counter : natural range 0 to g_program_size-1 := 0;
-    -- set_rpt's count, the low 21 bits of its argument
-    signal rpt_counter     : natural range 0 to 2**21-1 := 0;
+    -- set_rpt's count, its argument fields
+    signal rpt_counter     : natural range 0 to 2**single_argument_bits(g_instruction_width)-1 := 0;
 
     type t_processor_states is (halted, running);
     signal processor_state : t_processor_states := halted;
 
     -- nop from power up : an all zero instruction is mpy_add to address 0
-    constant nop_instruction : std_logic_vector(g_instruction_width-1 downto 0) := resize_instruction(op(nop), g_instruction_width);
+    constant nop_instruction : std_logic_vector(g_instruction_width-1 downto 0) := encode(mi(nop), g_instruction_width);
     signal pipeline : instr_pipeline'subtype := (others => nop_instruction);
 
 begin

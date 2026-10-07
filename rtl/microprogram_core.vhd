@@ -41,6 +41,8 @@ architecture rtl of microprogram_core is
 
     constant idle_write : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
+    -- an instruction's address fields must not reach past the data ram
+
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
     signal instr_ram_write_in  : instr_ref_subtype.ram_write_in'subtype;
@@ -53,11 +55,16 @@ architecture rtl of microprogram_core is
 
     constant instruction_width : natural := g_program(g_program'low)'length;
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high)(instruction_width-1 downto 0)
-        := (0 to pipeline_high => resize_instruction(op(nop), instruction_width));
+        := (0 to pipeline_high => encode(mi(nop), instruction_width));
 
     signal write_buffer : mc_write_in'subtype := idle_write;
 
 begin
+
+    assert address_bits(instruction_width) <= address_width(g_data'length)
+        report "the " & integer'image(instruction_width) & " bit instructions' "
+            & integer'image(address_bits(instruction_width)) & " bit address fields reach past the "
+            & integer'image(g_data'length) & " word data ram" severity failure;
 
 ----------------------------------------------------------
     to_unit <= (data_read_out        => data_ram_read_out

@@ -2,7 +2,16 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    -- encode() returns a program ram's initial contents
+    use work.dual_port_ram_pkg.ram_array;
 
+-- the instruction format follows the instruction's width : a 4 bit command
+-- above four address fields of (width - 4) / 4 bits, dest, arg1, arg2 and
+-- arg3, packed from bit 0 up, any spare bits on top. 32 bits gives 7 bit
+-- fields in bits 31..0, the comm .. arg3 subtypes below. set_rpt and jump
+-- take one argument in the arg1 .. arg3 fields. decode() and the get_
+-- functions take the format from the length of the instruction they are
+-- given ; op() writes 32 bit instructions, mi() and encode() any width.
 package generic_microinstruction_pkg is
     generic(
             g_instruction_bit_width      : natural := 32
@@ -102,7 +111,7 @@ package generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_single_argument (
         input_register : std_logic_vector )
-    return t_instruction;
+    return std_logic_vector;
 
 ------------------------------------------------------------------------
     function get_single_argument (
@@ -133,12 +142,32 @@ package generic_microinstruction_pkg is
     function get_long_argument ( input_register : std_logic_vector )
         return natural;
     function get_long_argument ( input_register : std_logic_vector )
-        return t_instruction;
-------------------------------------------------------------------------
-    -- an instruction zero extended (or cut) to width bits, for a program
-    -- ram wider than instruction_bit_width
-    function resize_instruction ( instruction : std_logic_vector; width : natural)
         return std_logic_vector;
+------------------------------------------------------------------------
+    constant command_bits : natural := 4;
+    -- the address fields' width in an instruction of width bits
+    function address_bits ( width : natural) return natural;
+    -- set_rpt's and jump's argument, the three argument fields (at most 30)
+    function single_argument_bits ( width : natural) return natural;
+
+    -- an instruction before it is encoded for a width
+    type microinstruction is record
+        command : t_command;
+        dest    : natural;
+        arg1    : natural;
+        arg2    : natural;
+        arg3    : natural;
+        single  : boolean; -- one argument, arg1, across the argument fields
+    end record;
+    type microprogram is array (natural range <>) of microinstruction;
+
+    function mi ( command : t_command) return microinstruction;
+    function mi ( command : t_command; dest, arg1, arg2, arg3 : natural) return microinstruction;
+    -- set_rpt count, jump address
+    function mi ( command : t_command; argument : natural) return microinstruction;
+
+    function encode ( instruction : microinstruction; width : natural) return std_logic_vector;
+    function encode ( program : microprogram; width : natural) return ram_array;
 ------------------------------------------------------------------------
     function pipelined_block ( program : program_array)
         return program_array;
@@ -151,6 +180,66 @@ end package generic_microinstruction_pkg;
 package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     constant ref : std_logic_vector(dest'low-1 downto 0) := (others => '0');
+
+    -- bits low + bits - 1 downto low of an instruction of any range
+    function field ( instruction : std_logic_vector; low, bits : natural) return natural is
+    begin
+        return to_integer(resize(shift_right(unsigned(instruction), low), bits));
+    end field;
+
+    function address_bits ( width : natural) return natural is
+    begin
+        return (width - command_bits) / 4;
+    end address_bits;
+
+    function single_argument_bits ( width : natural) return natural is
+    begin
+        return minimum(3 * address_bits(width), 30);
+    end single_argument_bits;
+
+    function mi ( command : t_command) return microinstruction is
+    begin
+        return (command => command, dest => 0, arg1 => 0, arg2 => 0, arg3 => 0, single => false);
+    end mi;
+
+    function mi ( command : t_command; dest, arg1, arg2, arg3 : natural) return microinstruction is
+    begin
+        return (command => command, dest => dest, arg1 => arg1, arg2 => arg2, arg3 => arg3, single => false);
+    end mi;
+
+    function mi ( command : t_command; argument : natural) return microinstruction is
+    begin
+        return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true);
+    end mi;
+
+    function encode ( instruction : microinstruction; width : natural) return std_logic_vector is
+        constant a : natural := address_bits(width);
+        variable retval : unsigned(width-1 downto 0);
+    begin
+        assert instruction.dest < 2**a and instruction.arg2 < 2**a and instruction.arg3 < 2**a
+            and (instruction.arg1 < 2**a or (instruction.single and instruction.arg1 < 2**single_argument_bits(width)))
+            report "an argument of " & t_command'image(instruction.command) & " does not fit "
+                & integer'image(a) & " bit address fields" severity failure;
+        retval := to_unsigned(t_command'pos(instruction.command), width);
+        retval := shift_left(retval, a) + instruction.dest;
+        if instruction.single then
+            retval := shift_left(retval, 3*a) + instruction.arg1;
+        else
+            retval := shift_left(retval, a) + instruction.arg1;
+            retval := shift_left(retval, a) + instruction.arg2;
+            retval := shift_left(retval, a) + instruction.arg3;
+        end if;
+        return std_logic_vector(retval);
+    end encode;
+
+    function encode ( program : microprogram; width : natural) return ram_array is
+        variable retval : ram_array(program'range)(width-1 downto 0);
+    begin
+        for i in program'range loop
+            retval(i) := encode(program(i), width);
+        end loop;
+        return retval;
+    end encode;
 
     ---------------
     function op
@@ -253,10 +342,9 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(dest'range)));
+        return field(input_register, 3*a, a);
     end get_dest;
 ------------------------------------------------------------------------
     function get_arg1
@@ -265,10 +353,9 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(arg1'range)));
+        return field(input_register, 2*a, a);
     end get_arg1;
 ------------------------------------------------------------------------
     function get_arg2
@@ -277,10 +364,9 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(arg2'range)));
+        return field(input_register, a, a);
     end get_arg2;
 ------------------------------------------------------------------------
     function get_arg3
@@ -289,10 +375,9 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(arg3'range)));
+        return field(input_register, 0, a);
     end get_arg3;
 ------------------------------------------------------------------------
     function get_long_argument
@@ -301,11 +386,9 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(comm'low-1 downto 0)));
-        
+        return field(input_register, 0, minimum(4*a, 30));
     end get_long_argument;
 
 ------------------------------------------------------------------------
@@ -313,15 +396,11 @@ package body generic_microinstruction_pkg is
     (
         input_register : std_logic_vector 
     )
-    return t_instruction
+    return std_logic_vector
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
-        variable retval : t_instruction := (others => '0');
+        constant bits : natural := minimum(4*address_bits(input_register'length), input_register'length);
     begin
-        retval(comm'low-1 downto 0) := word(comm'low-1 downto 0);
-        return retval;
-        
+        return std_logic_vector(resize(resize(unsigned(input_register), bits), input_register'length));
     end get_long_argument;
 
 ------------------------------------------------------------------------
@@ -329,15 +408,11 @@ package body generic_microinstruction_pkg is
     (
         input_register : std_logic_vector 
     )
-    return t_instruction
+    return std_logic_vector
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
-        variable retval : t_instruction := (others => '0');
+        constant bits : natural := single_argument_bits(input_register'length);
     begin
-        retval(ref'range) := word(ref'range);
-        return retval;
-        
+        return std_logic_vector(resize(resize(unsigned(input_register), bits), input_register'length));
     end get_single_argument;
 
 ------------------------------------------------------------------------
@@ -347,13 +422,8 @@ package body generic_microinstruction_pkg is
     )
     return natural
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
-        variable retval : t_instruction := (others => '0');
     begin
-        retval(ref'range) := word(ref'range);
-        return to_integer(unsigned(retval));
-        
+        return field(input_register, 0, single_argument_bits(input_register'length));
     end get_single_argument;
 ------------------------------------------------------------------------
     function get_instruction
@@ -362,10 +432,9 @@ package body generic_microinstruction_pkg is
     )
     return integer
     is
-        -- descending whatever the caller's range
-        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
+        constant a : natural := address_bits(input_register'length);
     begin
-        return to_integer(unsigned(word(comm'range)));
+        return field(input_register, 4*a, command_bits);
     end get_instruction;
 ------------------------------------------------------------------------
     function decode
@@ -488,11 +557,5 @@ package body generic_microinstruction_pkg is
     end set;
 
 
-    function resize_instruction ( instruction : std_logic_vector; width : natural)
-        return std_logic_vector
-    is
-    begin
-        return std_logic_vector(resize(unsigned(instruction), width));
-    end resize_instruction;
 
 end package body generic_microinstruction_pkg;

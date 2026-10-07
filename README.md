@@ -41,26 +41,45 @@ vunit_run_sw_processor.py        VUnit run script
 
 ## Instructions
 
-An instruction is 32 bits: a 4 bit command, a 7 bit destination and three
-7 bit argument addresses into the data RAM, or for `set_rpt` and `jump` a
-single argument, the repeat count or the jump address, of which the
-sequencer reads the low 21 bits. The fields are in bits 31..0; a program
-RAM can be wider (`resize_instruction()` zero extends an `op()`), and the
-pipeline, `decode()` and the field functions take its width. The program
-and data RAMs' sizes and word widths come from their initial contents,
-`g_program` and `g_data` (a power of 2 words each); the data width sets
-the execution unit's. Programs and data are RAM initial values, written with
-`op()`:
+The instruction format follows the program RAM's word width: a 4 bit
+command above four address fields of (width − 4) / 4 bits — the
+destination and three arguments, addresses in the data RAM — packed from
+bit 0 up, any spare bits on top. `set_rpt` and `jump` take one argument,
+the repeat count or the jump address, across the three argument fields.
+
+| width | address fields | data words reached | `set_rpt` / `jump` argument |
+|------:|---------------:|-------------------:|----------------------------:|
+| 32    | 7 bits         | 128                | 21 bits                     |
+| 36    | 8 bits         | 256                | 24 bits                     |
+| 40    | 9 bits         | 512                | 27 bits                     |
+| 44    | 10 bits        | 1024               | 30 bits                     |
+
+`decode()` and the `get_` functions take the format from the length of
+the instruction they are given, so the sequencer and the execution units
+need no format setting. `microprogram_core` checks that the address fields
+do not reach past its data RAM. The program and data RAMs' sizes and word
+widths come from their initial contents, `g_program` and `g_data` (a power
+of 2 words each); the data width sets the execution unit's.
+
+Programs are RAM initial values. `mi()` builds an instruction and
+`encode()` encodes a program for a width:
 
 ```vhdl
-constant program : work.dual_port_ram_pkg.ram_array(0 to 1023)(31 downto 0) := (
-      128 => op(set_rpt     , 1500)
-    , 129 => op(neg_mpy_add , inductor_voltage , duty , cap_voltage      , input_voltage)
-    , 130 => op(mpy_sub     , cap_current      , duty , inductor_current , load)
+function make_program return microprogram is
+    variable program : microprogram(0 to 1023) := (others => mi(nop));
+begin
+    program(128) := mi(set_rpt     , 1500);
+    program(129) := mi(neg_mpy_add , inductor_voltage , duty , cap_voltage      , input_voltage);
+    program(130) := mi(mpy_sub     , cap_current      , duty , inductor_current , load);
     ...
-    , 158 => op(program_end)
-    , others => op(nop));
+    program(158) := mi(program_end);
+    return program;
+end make_program;
+
+constant program : work.dual_port_ram_pkg.ram_array(0 to 1023)(35 downto 0) := encode(make_program, 36);
 ```
+
+`op()`, with the same arguments, writes a 32 bit instruction directly.
 
 `mpy_add dest, a, b, c` is dest = a·b + c, and `mpy_sub`, `neg_mpy_add`,
 `neg_mpy_sub` change the signs of the product and c. `fixed_mult_add` runs

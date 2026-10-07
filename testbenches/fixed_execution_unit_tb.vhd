@@ -68,53 +68,60 @@ architecture vunit_simulation of fixed_execution_unit_tb is
         retval(96) := std_logic_vector(to_signed(0, w));
         retval(97) := std_logic_vector(to_signed(3 * 2**radix, w));
         retval(98) := std_logic_vector(to_signed(2**radix / 20, w));
+        for i in 200 to 205 loop
+            x := galois_step(x);
+            retval(i) := std_logic_vector(shift_left(resize(shift_right(signed(x), 2), w), w - 32));
+        end loop;
         return retval;
     end make_data;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := make_data;
 
-    constant program_32 : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(31 downto 0) := (
+    function make_program return microprogram is
+        variable retval : microprogram(0 to instr_ref_subtype.address_high) := (others => mi(nop));
+    begin
+        retval := (
         -- 0 : one of each multiply-add, the accumulator, the accumulator
         -- zeroed by get_acc_and_zero
-        0    => op(mpy_add          , 1 , 64 , 65 , 66)
-        , 1  => op(mpy_sub          , 2 , 67 , 68 , 69)
-        , 2  => op(neg_mpy_add      , 3 , 70 , 71 , 72)
-        , 3  => op(neg_mpy_sub      , 4 , 73 , 74 , 75)
-        , 4  => op(a_add_b_mpy_c    , 5 , 76 , 77 , 78)
-        , 5  => op(a_sub_b_mpy_c    , 6 , 79 , 80 , 81)
-        , 6  => op(lp_filter        , 7 , 82 , 83 , 84)
-        , 7  => op(acc              , 0 , 0  , 0  , 89)
-        , 8  => op(acc              , 0 , 0  , 0  , 90)
-        , 9  => op(get_acc_and_zero , 8 , 0  , 0  , 91)
-        , 20 => op(get_acc_and_zero , 9 , 0  , 0  , 0)
-        , 24 => op(program_end)
+        0    => mi(mpy_add          , 1 , 64 , 65 , 66)
+        , 1  => mi(mpy_sub          , 2 , 67 , 68 , 69)
+        , 2  => mi(neg_mpy_add      , 3 , 70 , 71 , 72)
+        , 3  => mi(neg_mpy_sub      , 4 , 73 , 74 , 75)
+        , 4  => mi(a_add_b_mpy_c    , 5 , 76 , 77 , 78)
+        , 5  => mi(a_sub_b_mpy_c    , 6 , 79 , 80 , 81)
+        , 6  => mi(lp_filter        , 7 , 82 , 83 , 84)
+        , 7  => mi(acc              , 0 , 0  , 0  , 89)
+        , 8  => mi(acc              , 0 , 0  , 0  , 90)
+        , 9  => mi(get_acc_and_zero , 8 , 0  , 0  , 91)
+        , 20 => mi(get_acc_and_zero , 9 , 0  , 0  , 0)
+        , 24 => mi(program_end)
 
         -- 32 : products into the accumulator, fixed_mult_acc only
-        , 32 => op(mpy_acc          , 0  , 85 , 86 , 0)
-        , 33 => op(mpy_acc          , 0  , 87 , 88 , 0)
-        , 34 => op(acc              , 0  , 0  , 0  , 92)
-        , 35 => op(get_acc_and_zero , 10 , 0  , 0  , 93)
-        , 40 => op(program_end)
+        , 32 => mi(mpy_acc          , 0  , 85 , 86 , 0)
+        , 33 => mi(mpy_acc          , 0  , 87 , 88 , 0)
+        , 34 => mi(acc              , 0  , 0  , 0  , 92)
+        , 35 => mi(get_acc_and_zero , 10 , 0  , 0  , 93)
+        , 40 => mi(program_end)
 
         -- 64 : 100 rounds of y <- (u - y) * g + y
-        , 64 => op(set_rpt   , 99)
-        , 65 => op(lp_filter , 96 , 97 , 96 , 98)
-        , 81 => op(jump      , 65)
-        , 85 => op(program_end)
+        , 64 => mi(set_rpt   , 99)
+        , 65 => mi(lp_filter , 96 , 97 , 96 , 98)
+        , 81 => mi(jump      , 65)
+        , 85 => mi(program_end)
 
-        , others => op(nop));
-
-    function widen (program : work.dual_port_ram_pkg.ram_array) return work.dual_port_ram_pkg.ram_array is
-        variable retval : work.dual_port_ram_pkg.ram_array(program'range)(instr_ref_subtype.data'range);
-    begin
-        for i in program'range loop
-            retval(i) := resize_instruction(program(i), g_instruction_width);
-        end loop;
+        , others => mi(nop));
+        -- 96 : operands and result above 127, for address fields of 8 bits
+        -- and up
+        if address_bits(g_instruction_width) >= 8 then
+            retval(96)  := mi(mpy_add, 250, 200, 201, 202);
+            retval(97)  := mi(mpy_sub, 251, 203, 204, 205);
+            retval(100) := mi(program_end);
+        end if;
         return retval;
-    end widen;
+    end make_program;
 
     constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range)
-        := widen(program_32);
+        := encode(make_program, g_instruction_width);
 
     signal mproc_in  : microprogram_processor_in_record := (processor_requested => false, start_address => 0);
     signal mproc_out : microprogram_processor_out_record;
@@ -126,7 +133,7 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (0 to 12 => resize_instruction(op(nop), g_instruction_width))
+        ,instr_pipeline    => (0 to 12 => encode(mi(nop), g_instruction_width))
     );
     constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
@@ -137,7 +144,7 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     signal instr_out : unit_out_ref'subtype := unit_out_ref;
 
     -- the data ram as the processor writes it
-    signal data_ram : word_array(0 to 127) := (others => (others => '0'));
+    signal data_ram : word_array(0 to ref_subtype.address_high) := (others => (others => '0'));
 
 begin
 
@@ -232,6 +239,12 @@ begin
         run_program(64);
         check_word(96, y);
 
+        if address_bits(g_instruction_width) >= 8 then
+            run_program(96);
+            check_word(250, mult_add(m(200), m(201), m(202)));
+            check_word(251, mult_sub(m(203), m(204), m(205)));
+        end if;
+
         test_runner_cleanup(runner);
         wait;
     end process stimulus;
@@ -242,7 +255,7 @@ begin
     begin
         if rising_edge(clock) then
             if mc_output.write_requested = '1' then
-                data_ram(to_integer(mc_output.address) mod 128) <= mc_output.data;
+                data_ram(to_integer(mc_output.address)) <= mc_output.data;
             end if;
         end if;
     end process capture_writes;

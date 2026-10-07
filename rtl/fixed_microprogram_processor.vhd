@@ -54,7 +54,7 @@ architecture rtl of fixed_microprogram_processor is
 
     signal command        : t_command                  := (program_end);
     constant instruction_width : natural := g_program(g_program'low)'length;
-    constant nop_instruction : std_logic_vector(instruction_width-1 downto 0) := resize_instruction(op(nop), instruction_width);
+    constant nop_instruction : std_logic_vector(instruction_width-1 downto 0) := encode(mi(nop), instruction_width);
     signal instr_pipeline : instruction_pipeline_array(0 to g_number_of_pipeline_stages-1)(instruction_width-1 downto 0)
         := (0 to g_number_of_pipeline_stages-1 => nop_instruction);
 
