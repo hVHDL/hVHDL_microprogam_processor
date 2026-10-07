@@ -25,6 +25,10 @@ package microprogram_interface_pkg is
     -- the program ram's output register, 2 without
     function jump_delay_slots (program_ram_output_register : boolean) return natural;
 
+    -- program start addresses, the programs microprogram_core caches from
+    -- the start
+    type program_start_array is array (natural range <>) of natural;
+
 end package microprogram_interface_pkg;
 
 ------------------

@@ -19,6 +19,15 @@ context vunit_lib.vunit_context;
 --   128 : 50 rounds of the boost converter step, repeat()
 --   256 : 100 rounds of the low pass filter y <- (u - y) * g + y, a one
 --         instruction body that reads its own result
+--
+-- and for the program cache, programs it must not cache :
+--
+--   400 : a jump in the cache line's span, at 401 on to 410 (an acc
+--         of 65 at 405 if it were not taken) : 2 * 64 + 65 into 9
+--   440 : a program_end in the line's span
+--   470 : the chain again, never a static line
+--
+-- 128 and 256 start with repeat()'s set_rpt, from the line on a hit
 entity portable_program_tb is
   generic (
       runner_cfg : string
@@ -29,6 +38,9 @@ entity portable_program_tb is
       -- the sequencer's program cache : every program runs twice, the
       -- second start from the cache line, jump_delay_slots() clocks shorter
       ;g_program_cache : boolean := false
+      -- static cache lines for programs 0 and 128 : a hit from the first
+      -- start on, the chain's first run the depth shorter than 470's
+      ;g_static_cache : boolean := false
       ;g_data_width        : natural := 32
       ;g_instruction_width : natural := 32
   );
@@ -87,6 +99,12 @@ architecture vunit_simulation of portable_program_tb is
         retval := place(retval, 0,   schedule(config, chain));
         retval := place(retval, 128, repeat(config, 50, boost_converter_step(boost)) & mi(program_end));
         retval := place(retval, 256, repeat(config, 100, (0 => mi(lp_filter, 96, 97, 96, 98))) & mi(program_end));
+        retval := place(retval, 400, (mi(set_rpt, 1), mi(jump, 410)));
+        retval := place(retval, 405, (0 => mi(acc, 0, 0, 0, 65)));
+        retval := place(retval, 410, schedule(config, (mi(acc, 0, 0, 0, 64), mi(acc, 0, 0, 0, 64)
+            , mi(get_acc_and_zero, 9, 0, 0, 65), mi(program_end))));
+        retval := place(retval, 440, (mi(acc, 0, 0, 0, 64), mi(program_end)));
+        retval := place(retval, 470, schedule(config, chain));
         return retval;
     end make_program;
 
@@ -117,6 +135,19 @@ architecture vunit_simulation of portable_program_tb is
     end make_data;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(w-1 downto 0) := make_data;
+
+    function cached_programs return program_start_array is
+    begin
+        if g_static_cache then
+            return (0, 128);
+        end if;
+        return (1 to 0 => 0);
+    end cached_programs;
+
+    function is_static (start : natural) return boolean is
+    begin
+        return g_static_cache and (start = 0 or start = 128);
+    end is_static;
 
     signal mproc_in  : microprogram_processor_in_record := (processor_requested => false, start_address => 0);
     signal mproc_out : microprogram_processor_out_record;
@@ -162,23 +193,28 @@ begin
             wait until rising_edge(clock);
         end run_program;
 
-        -- a program once, or with the cache twice : the second start hits
-        -- the line the first filled and is the line's depth shorter
+        -- a program once, or with a cache twice : a static line's program is
+        -- as long again, a dynamic one's second start hits the line its
+        -- first filled and is the line's depth shorter
         procedure run_cached (start : natural; clocks : out natural) is
             variable first, second : natural;
         begin
             run_program(start, first);
             clocks := first;
-            if g_program_cache then
+            if g_program_cache or g_static_cache then
                 run_program(start, second);
-                check_equal(second, first - config.delay_slots,
-                    "program " & integer'image(start) & " from the cache");
+                if is_static(start) or not g_program_cache then
+                    check_equal(second, first, "program " & integer'image(start) & " again");
+                else
+                    check_equal(second, first - config.delay_slots,
+                        "program " & integer'image(start) & " from the cache");
+                end if;
                 info("program " & integer'image(start) & " : " & integer'image(first)
-                    & " clocks, from the cache " & integer'image(second));
+                    & " clocks, again " & integer'image(second));
             end if;
         end run_cached;
 
-        constant runs : natural := 1 + boolean'pos(g_program_cache);
+        constant runs : natural := 1 + boolean'pos(g_program_cache or g_static_cache);
 
         function m (address : natural) return word is
         begin
@@ -219,6 +255,7 @@ begin
         variable r1, r2, r3, r4, r5 : word;
         variable i, u, vl, ic, y    : word;
         variable clocks : natural;
+        variable first, again, first_chain, chain_first : natural;
 
     begin
         test_runner_setup(runner, runner_cfg);
@@ -245,6 +282,7 @@ begin
 
         run_cached(0, clocks);
         info("chain : " & integer'image(clocks) & " clocks");
+        chain_first := clocks;
         r1 := mult_add(m(64), m(65), m(66));
         r2 := mult_sub(r1, m(67), m(68));
         r3 := mult_add(minus(r2), m(69), r1);
@@ -279,6 +317,55 @@ begin
             y := mult_add(sum(m(97), minus(y)), m(98), y);
         end loop;
         check_word(96, y);
+
+        if g_program_cache then
+            -- the spans the line would take hold a jump and a program_end
+            check(decode(test_program(401)) = jump and decode(test_program(441)) = program_end,
+                "programs 400 and 440 have a jump and a program_end in the line's span");
+
+            -- a jump in the span : not cached, the same length again, the
+            -- jump taken both times
+            for k in 1 to 2 loop
+                run_program(400, clocks);
+                if k = 1 then first := clocks; end if;
+                check_word(9, sum(sum(m(64), m(64)), m(65)));
+            end loop;
+            check_equal(clocks, first, "program 400, a jump in the line's span, not cached");
+
+            -- the abandoned fill left no line : 470 misses, then hits
+            run_program(470, first_chain);
+            run_program(470, again);
+            check_equal(again, first_chain - config.delay_slots, "program 470 after program 400");
+
+            -- a program_end in the span : not cached, and it evicts 470's line
+            run_program(440, first);
+            run_program(440, again);
+            check_equal(again, first, "program 440, a program_end in the line's span, not cached");
+            run_program(470, clocks);
+            check_equal(clocks, first_chain, "program 470 after program 440, a miss");
+            run_program(470, clocks);
+            check_equal(clocks, first_chain - config.delay_slots, "program 470 again, a hit");
+
+            -- one dynamic line : 256 evicts 470's, 128 with a static line does not
+            run_program(128, again);
+            run_program(470, clocks);
+            check_equal(clocks, first_chain - config.delay_slots * boolean'pos(is_static(128)),
+                "program 470 after program 128");
+            run_program(256, again);
+            run_program(470, clocks);
+            check_equal(clocks, first_chain, "program 470 after program 256, a miss");
+            info("programs 400 and 440 not cached, a start of another program evicts the line");
+        end if;
+
+        if g_static_cache then
+            -- 0 from its static line from the first start on, 470 the same
+            -- code from the ram
+            run_program(256, clocks); -- 470 not in a dynamic line
+            run_program(470, clocks);
+            check_equal(chain_first, clocks - config.delay_slots, "program 0 from its static line");
+            info("program 0 from its static line : " & integer'image(chain_first) & " clocks, 470 : "
+                & integer'image(clocks));
+        end if;
 
         check_equal(collisions, 0, "data ram reads in the clock of a write to the address");
 
@@ -319,7 +406,8 @@ begin
     generic map (g_program => test_program, g_data => program_data
         ,g_program_ram_output_register => g_program_ram_output_register
         ,g_data_ram_output_register => g_data_ram_output_register
-        ,g_program_cache => g_program_cache)
+        ,g_program_cache => g_program_cache
+        ,g_cached_programs => cached_programs)
     port map (
         clock        => clock
         ,mproc_in    => mproc_in

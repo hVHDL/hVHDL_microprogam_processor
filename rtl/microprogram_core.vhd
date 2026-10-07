@@ -7,6 +7,7 @@ LIBRARY ieee  ;
     use work.execution_unit_pkg.all;
     use work.microprogram_interface_pkg.address_width;
     use work.microprogram_interface_pkg.jump_delay_slots;
+    use work.microprogram_interface_pkg.program_start_array;
 
 -- the program and data rams take their sizes and word widths from the
 -- initial contents g_program and g_data, a power of 2 words each
@@ -20,9 +21,14 @@ entity microprogram_core is
             -- g_data_ram_output_register must match
             ;g_program_ram_output_register : boolean := true
             ;g_data_ram_output_register    : boolean := true
-            -- a one line program cache in the sequencer : starting the
-            -- program last started takes jump_delay_slots() clocks less
-            ;g_program_cache : boolean := false
+            -- the sequencer's program cache, jump_delay_slots()
+            -- instructions a line, a start from it that many clocks
+            -- sooner : g_program_cache, a dynamic line for the program
+            -- last started ; g_cached_programs, the programs at these
+            -- addresses cached from the start, their lines fixed from
+            -- g_program
+            ;g_program_cache   : boolean := false
+            ;g_cached_programs : program_start_array := (1 to 0 => 0)
            );
     port(
         clock        : in std_logic
@@ -74,11 +80,26 @@ architecture rtl of microprogram_core is
 
     function cache_depth return natural is
     begin
-        if g_program_cache then
+        if g_program_cache or g_cached_programs'length > 0 then
             return jump_delay_slots(g_program_ram_output_register);
         end if;
         return 0;
     end cache_depth;
+
+    -- the cached programs' first instructions, cache_depth a program
+    function static_words return work.dual_port_ram_pkg.ram_array is
+        variable retval : work.dual_port_ram_pkg.ram_array(0 to maximum(g_cached_programs'length * cache_depth, 1) - 1)
+            (instruction_width-1 downto 0) := (others => encode(mi(nop), instruction_width));
+        variable start : natural;
+    begin
+        for line in 0 to g_cached_programs'length-1 loop
+            start := g_cached_programs(g_cached_programs'low + line);
+            for word in 0 to cache_depth-1 loop
+                retval(line * cache_depth + word) := g_program(g_program'low + (start + word) mod g_program'length);
+            end loop;
+        end loop;
+        return retval;
+    end static_words;
 
 begin
 
@@ -96,7 +117,8 @@ begin
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(g_program_size => g_program'length, g_instruction_width => instruction_width
-        , g_cache_depth => cache_depth)
+        , g_cache_depth => cache_depth, g_dynamic_cache => g_program_cache
+        , g_static_starts => g_cached_programs, g_static_words => static_words)
     port map(clock 
     , instruction_ram_read_in  => instr_ram_read_in(0)
     , instruction_ram_read_out => instr_ram_read_out(0)

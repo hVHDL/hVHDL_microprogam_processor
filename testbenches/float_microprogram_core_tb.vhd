@@ -43,7 +43,7 @@ architecture vunit_simulation of float_microprogram_core_tb is
     signal mc_output   : ref_subtype.ram_write_in'subtype;
     signal mc_write_in : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
-    signal mproc_in     : microprogram_processor_in_record;
+    signal mproc_in     : microprogram_processor_in_record := (processor_requested => false, start_address => 0);
     signal mproc_out    : microprogram_processor_out_record;
 
     use work.execution_unit_pkg.all;
