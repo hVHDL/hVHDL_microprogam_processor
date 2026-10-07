@@ -1,35 +1,79 @@
+-- fixed point multiply-add on hVHDL_fixed_point's fixed_dsp :
+--
+--   mpy_add       dest <- a * b + c
+--   mpy_sub       dest <- a * b - c
+--   neg_mpy_add   dest <- -a * b + c
+--   neg_mpy_sub   dest <- -a * b - c
+--   a_add_b_mpy_c dest <- (a + b) * c
+--   a_sub_b_mpy_c dest <- (a - b) * c
+--   lp_filter     dest <- (a - b) * c + b
+--
+-- with a, b, c the instruction's arguments 1, 2, 3. The sums and
+-- differences of two arguments and -a are taken in fixed_dsp's pre-adder
+-- and wrap to the data width, the result is bits radix + data width - 1
+-- downto radix of the double width product. acc, get_acc_and_zero and
+-- check_and_saturate_acc work on a data width accumulator of their own.
 architecture fixed_mult_add of instruction is
 
-    use work.real_to_fixed_pkg.all;
+    use work.fixed_dsp_pkg.all;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    signal a, b, c , cbuf : signed(datawidth-1 downto 0);
-    signal mpy_res        : signed(2*datawidth-1 downto 0);
-    signal mpy_res2       : signed(2*datawidth-1 downto 0);
+
+    -- the request to fixed_dsp is registered here, the product is in P
+    -- two clocks later, three with the pre-adder registered
+    constant result_stage : natural := work.dual_port_ram_pkg.read_pipeline_delay + 3
+        + boolean'pos(g_pre_add_register) + g_read_delays + g_read_out_delays;
+
+    signal dsp_in : fixed_dsp_in_record(
+        a(datawidth-1 downto 0)
+        ,d(datawidth-1 downto 0)
+        ,b(datawidth-1 downto 0)
+        ,c(2*datawidth-1 downto 0)
+    ) := init_fixed_dsp_in(datawidth);
+
+    signal dsp_out : fixed_dsp_out_record(result(2*datawidth-1 downto 0));
 
     signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
 
 begin
 
+    u_fixed_dsp : entity work.fixed_dsp(rtl)
+    generic map (g_pre_add_register => g_pre_add_register)
+    port map (
+        clock          => clock
+        ,fixed_dsp_in  => dsp_in
+        ,fixed_dsp_out => dsp_out
+    );
+
     mpy_add_sub : process(clock) is
+        variable arg1, arg2, arg3 : signed(datawidth-1 downto 0);
+        variable zero : signed(datawidth-1 downto 0);
+
+        -- c scaled to the product's radix
+        impure function scaled (c : signed) return signed is
+        begin
+            return shift_left(resize(c, 2*datawidth), radix);
+        end scaled;
+
     begin
         if rising_edge(clock) then
             init_mp_ram_read(instruction_out.data_read_in);
             init_mp_write(instruction_out.ram_write_in);
+            init_fixed_dsp(dsp_in);
 
             ---------------
             if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
                 CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
-                    WHEN mpy_add 
-                        | neg_mpy_add 
-                        | neg_mpy_sub 
-                        | mpy_sub 
-                        | a_add_b_mpy_c 
-                        | a_sub_b_mpy_c 
-                        | lp_filter 
-                        | acc 
-                        | get_acc_and_zero 
-                        | check_and_saturate_acc 
+                    WHEN mpy_add
+                        | neg_mpy_add
+                        | neg_mpy_sub
+                        | mpy_sub
+                        | a_add_b_mpy_c
+                        | a_sub_b_mpy_c
+                        | lp_filter
+                        | acc
+                        | get_acc_and_zero
+                        | check_and_saturate_acc
                         =>
 
                         request_data_from_ram(instruction_out.data_read_in(arg1_mem)
@@ -46,88 +90,76 @@ begin
             end if;
 
             ---------------
-            mpy_res2 <= a * b;
-            cbuf     <= c;
-            mpy_res  <= mpy_res2 + shift_left(resize(cbuf , mpy_res'length), radix) ;
-            ---------------
+            arg1 := signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
+            arg2 := signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+            arg3 := signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+            zero := (others => '0');
 
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
+            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-
-                WHEN neg_mpy_add =>
-                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-
-                WHEN neg_mpy_sub =>
-                    a <= signed( not get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3));
 
                 WHEN mpy_sub =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= signed( not get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3)
+                        , post_subtract_with_1 => '1');
+
+                WHEN neg_mpy_add =>
+                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3)
+                        , pre_subtract_with_1 => '1');
+
+                WHEN neg_mpy_sub =>
+                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3)
+                        , pre_subtract_with_1 => '1', post_subtract_with_1 => '1');
 
                 WHEN a_add_b_mpy_c =>
-                    a <=   signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(zero));
 
                 WHEN a_sub_b_mpy_c =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(zero)
+                        , pre_subtract_with_1 => '1');
 
                 WHEN lp_filter =>
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)))
-                         + signed( not get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(arg2)
+                        , pre_subtract_with_1 => '1');
 
                 WHEN acc | get_acc_and_zero =>
-                    accumulator <= accumulator + signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+                    accumulator <= accumulator + arg3;
 
                 WHEN check_and_saturate_acc =>
 
-                    if signed(get_ram_data(instruction_in.data_read_out(arg3_mem))) < 0
+                    if arg3 < 0
                     then
-                        if accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
+                        if accumulator <= arg2
                         then
-                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                            accumulator <= arg2;
                         end if;
                     else
-                        if accumulator >= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)))
+                        if accumulator >= arg2
                         then
-                            accumulator <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+                            accumulator <= arg2;
                         end if;
                     end if;
 
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
-                WHEN mpy_add 
-                    | neg_mpy_add   
-                    | neg_mpy_sub   
+            CASE decode(instruction_in.instr_pipeline(result_stage)) is
+                WHEN mpy_add
+                    | neg_mpy_add
+                    | neg_mpy_sub
                     | mpy_sub
-                    | a_add_b_mpy_c 
-                    | a_sub_b_mpy_c 
+                    | a_add_b_mpy_c
+                    | a_sub_b_mpy_c
                     | lp_filter =>
 
-                    write_data_to_ram(instruction_out.ram_write_in 
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(mpy_res(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
+                    write_data_to_ram(instruction_out.ram_write_in
+                    , get_dest(instruction_in.instr_pipeline(result_stage))
+                    , std_logic_vector(dsp_out.result(radix + datawidth - 1 downto radix)));
 
                 WHEN get_acc_and_zero =>
 
                     write_data_to_ram(instruction_out.ram_write_in
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
+                    , get_dest(instruction_in.instr_pipeline(result_stage))
                     , std_logic_vector(accumulator));
 
                     accumulator <= (others => '0');

@@ -21,7 +21,7 @@ vhdl2008/
                                       instruction pipeline
   instruction_pkg.vhd                 entity instruction and its port records
   addsub.vhd                          architecture add_sub_mpy (fixed point)
-  arch_fixed_mult_add.vhd             architecture fixed_mult_add (a * b + c)
+  arch_fixed_mult_add.vhd             architecture fixed_mult_add (fixed_dsp)
   arch_float_mult_add.vhd             architecture float_mult_add (hfloat)
   microprogram_processor.vhd          sequencer + program and data RAMs +
                                       add_sub_mpy in one entity
@@ -51,9 +51,11 @@ constant program : work.dual_port_ram_pkg.ram_array(0 to 1023)(31 downto 0) := (
 ```
 
 `mpy_add dest, a, b, c` is dest = a·b + c, and `mpy_sub`, `neg_mpy_add`,
-`neg_mpy_sub` change the signs of the product and c (in `fixed_mult_add`
-with a bitwise `not`, −x − 1, and the result is bits radix + 31 … radix of
-a·b + c·2^radix). `a_add_b_mpy_c`,
+`neg_mpy_sub` change the signs of the product and c. `fixed_mult_add` runs
+on hVHDL_fixed_point's `fixed_dsp`: sums, differences and −a wrap to the
+data width in its pre-adder, and the result is bits radix + width − 1 …
+radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder,
+one clock more to the result. `a_add_b_mpy_c`,
 `a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
 point architectures. There is no hazard detection: a result is in the data
 RAM only after the pipeline delay, so a program spaces dependent

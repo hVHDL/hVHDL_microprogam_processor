@@ -37,6 +37,9 @@ entity instruction is
         ;g_read_out_delays   : natural := 0
         ;g_instruction_delay : natural := 9
         ;g_option            : string  := "hfloat"
+        -- fixed_mult_add : fixed_dsp's g_pre_add_register, one more clock
+        -- from the operands to the result
+        ;g_pre_add_register  : boolean := false
        );
     port(
         clock : in std_logic
