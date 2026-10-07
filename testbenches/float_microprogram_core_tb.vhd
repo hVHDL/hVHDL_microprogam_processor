@@ -7,14 +7,14 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.microprogram_processor_pkg.all;
+    use work.microprogram_interface_pkg.all;
     use work.microinstruction_pkg.all;
 
-entity float_microprocessor_tb is
+entity float_microprogram_core_tb is
   generic (runner_cfg : string);
 end;
 
-architecture vunit_simulation of float_microprocessor_tb is
+architecture vunit_simulation of float_microprogram_core_tb is
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 20000;
@@ -46,21 +46,21 @@ architecture vunit_simulation of float_microprocessor_tb is
     signal mproc_in     : microprogram_processor_in_record;
     signal mproc_out    : microprogram_processor_out_record;
 
-    use work.instruction_pkg.all;
+    use work.execution_unit_pkg.all;
 
-    constant instruction_in_ref : instruction_in_record := (
+    constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
         ,instr_pipeline    => (0 to 20 => op(nop))
         );
 
-    constant instruction_out_ref : instruction_out_record := (
+    constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
         ,ram_write_in => ref_subtype.ram_write_in
         );
 
-    signal addsub_in  : instruction_in_ref'subtype  := instruction_in_ref;
-    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+    signal unit_in  : unit_in_ref'subtype  := unit_in_ref;
+    signal unit_out : unit_out_ref'subtype := unit_out_ref;
 
     ----
 
@@ -226,21 +226,21 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    u_microprogram_processor : entity work.microprogram_controller
+    u_microprogram_processor : entity work.microprogram_core
     generic map(g_program => test_program, g_data => program_data, g_data_bit_width => word_length)
     port map(simulator_clock
     ,mproc_in
     ,mproc_out
     ,mc_output
     ,mc_write_in
-    ,instruction_in  => addsub_in
-    ,instruction_out => addsub_out);
+    ,to_unit  => unit_in
+    ,from_unit => unit_out);
 ------------------------------------------------------------------------
-    u_float_mult_add : entity work.instruction(float_mult_add)
-    generic map(radix => 20)
+    u_float_mult_add : entity work.execution_unit(float_mult_add)
+    generic map(g_radix => 20)
     port map(simulator_clock 
-    ,addsub_in
-    ,addsub_out);
+    ,unit_in
+    ,unit_out);
 ------------------------------------------------------------------------
 
 end vunit_simulation;

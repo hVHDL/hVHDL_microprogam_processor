@@ -22,15 +22,15 @@ LIBRARY ieee  ;
 --
 -- with a, b, c the instruction's arguments 1, 2, 3. The sums and
 -- differences of two arguments and -a are taken in fixed_dsp's pre-adder
--- and wrap to the data width, c is added at the product's radix and a
--- result is bits radix + data width - 1 downto radix of the double width
+-- and wrap to the data width, c is added at the product's g_radix and a
+-- result is bits g_radix + data width - 1 downto g_radix of the double width
 -- product or accumulator. Every command goes through the one fixed_dsp,
 -- the accumulator adds its results.
-architecture add_sub_mpy of instruction is
+architecture fixed_mult_acc of execution_unit is
 
     use work.fixed_dsp_pkg.all;
 
-    constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
+    constant datawidth : natural := unit_in.data_read_out(unit_in.data_read_out'left).data'length;
 
     -- the request to fixed_dsp is registered here, the product is in P
     -- two clocks later, three with the pre-adder registered
@@ -63,21 +63,21 @@ begin
         variable zero : signed(datawidth-1 downto 0);
         variable sum  : signed(2*datawidth-1 downto 0);
 
-        -- c scaled to the product's radix
+        -- c scaled to the product's g_radix
         impure function scaled (c : signed) return signed is
         begin
-            return shift_left(resize(c, 2*datawidth), radix);
+            return shift_left(resize(c, 2*datawidth), g_radix);
         end scaled;
 
     begin
         if rising_edge(clock) then
-            init_mp_ram_read(instruction_out.data_read_in);
-            init_mp_write(instruction_out.ram_write_in);
+            init_mp_ram_read(unit_out.data_read_in);
+            init_mp_write(unit_out.ram_write_in);
             init_fixed_dsp(dsp_in);
 
             ---------------
-            if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
-                CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
+            if ram_read_is_ready(unit_in.instr_ram_read_out(0)) then
+                CASE decode(get_ram_data(unit_in.instr_ram_read_out(0))) is
                     WHEN mpy_add
                         | neg_mpy_add
                         | neg_mpy_sub
@@ -90,26 +90,26 @@ begin
                         | mpy_acc
                         =>
 
-                        request_data_from_ram(instruction_out.data_read_in(arg1_mem)
-                            , get_arg1(get_ram_data(instruction_in.instr_ram_read_out(0))));
+                        request_data_from_ram(unit_out.data_read_in(g_arg1_port)
+                            , get_arg1(get_ram_data(unit_in.instr_ram_read_out(0))));
 
-                        request_data_from_ram(instruction_out.data_read_in(arg2_mem)
-                            , get_arg2(get_ram_data(instruction_in.instr_ram_read_out(0))));
+                        request_data_from_ram(unit_out.data_read_in(g_arg2_port)
+                            , get_arg2(get_ram_data(unit_in.instr_ram_read_out(0))));
 
-                        request_data_from_ram(instruction_out.data_read_in(arg3_mem)
-                            , get_arg3(get_ram_data(instruction_in.instr_ram_read_out(0))));
+                        request_data_from_ram(unit_out.data_read_in(g_arg3_port)
+                            , get_arg3(get_ram_data(unit_in.instr_ram_read_out(0))));
 
                     WHEN others => -- do nothing
                 end CASE;
             end if;
 
             ---------------
-            arg1 := signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-            arg2 := signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-            arg3 := signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+            arg1 := signed(get_ram_data(unit_in.data_read_out(g_arg1_port)));
+            arg2 := signed(get_ram_data(unit_in.data_read_out(g_arg2_port)));
+            arg3 := signed(get_ram_data(unit_in.data_read_out(g_arg3_port)));
             zero := (others => '0');
 
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_read_delays + g_read_out_delays)) is
+            CASE decode(unit_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
                     fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3));
 
@@ -147,7 +147,7 @@ begin
             ---------------
             sum := accumulator + dsp_out.result;
 
-            CASE decode(instruction_in.instr_pipeline(result_stage)) is
+            CASE decode(unit_in.instr_pipeline(result_stage)) is
                 WHEN mpy_add
                     | neg_mpy_add
                     | neg_mpy_sub
@@ -156,17 +156,17 @@ begin
                     | a_sub_b_mpy_c
                     | lp_filter =>
 
-                    write_data_to_ram(instruction_out.ram_write_in
-                    , get_dest(instruction_in.instr_pipeline(result_stage))
-                    , std_logic_vector(dsp_out.result(radix + datawidth - 1 downto radix)));
+                    write_data_to_ram(unit_out.ram_write_in
+                    , get_dest(unit_in.instr_pipeline(result_stage))
+                    , std_logic_vector(dsp_out.result(g_radix + datawidth - 1 downto g_radix)));
 
                 WHEN mpy_acc | acc =>
                     accumulator <= sum;
 
                 WHEN get_acc_and_zero =>
-                    write_data_to_ram(instruction_out.ram_write_in
-                    , get_dest(instruction_in.instr_pipeline(result_stage))
-                    , std_logic_vector(sum(radix + datawidth - 1 downto radix)));
+                    write_data_to_ram(unit_out.ram_write_in
+                    , get_dest(unit_in.instr_pipeline(result_stage))
+                    , std_logic_vector(sum(g_radix + datawidth - 1 downto g_radix)));
 
                     accumulator <= (others => '0');
 
@@ -177,4 +177,4 @@ begin
         end if;
     end process mpy_add_sub;
 
-end add_sub_mpy;
+end fixed_mult_acc;

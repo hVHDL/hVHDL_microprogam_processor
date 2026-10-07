@@ -66,20 +66,20 @@ architecture vunit_simulation of microprogram_sequencer_tb is
     signal processor_enabled : boolean := true;
     signal processor_requested : boolean := false;
 
-    use work.instruction_pkg.all;
-    constant instruction_in_ref : instruction_in_record := (
+    use work.execution_unit_pkg.all;
+    constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
         ,instr_pipeline    => (0 to 7 => op(nop))
         );
 
-    constant instruction_out_ref : instruction_out_record := (
+    constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
         ,ram_write_in => ref_subtype.ram_write_in
         );
 
-    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
-    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+    signal unit_in : unit_in_ref'subtype := unit_in_ref;
+    signal unit_out : unit_out_ref'subtype := unit_out_ref;
 
 begin
 
@@ -112,13 +112,13 @@ begin
     , processor_requested => processor_requested
     , start_address       => 0);
 -- ----------------------------------------------------------
-    add_sub_mpy : entity work.instruction(add_sub_mpy)
-    generic map(radix => used_radix)
+    fixed_mult_acc : entity work.execution_unit(fixed_mult_acc)
+    generic map(g_radix => used_radix)
     port map(simulator_clock 
-    ,addsub_in
-    ,addsub_out);
+    ,unit_in
+    ,unit_out);
 
-    addsub_in <= (ram_read_out, instr_ram_read_out, instr_pipeline);
+    unit_in <= (ram_read_out, instr_ram_read_out, instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 
@@ -134,8 +134,8 @@ begin
     generic map(test_data)
     port map(
         clock => simulator_clock
-        ,ram_read_in  => addsub_out.data_read_in
+        ,ram_read_in  => unit_out.data_read_in
         ,ram_read_out => ram_read_out
-        ,ram_write_in => addsub_out.ram_write_in);
+        ,ram_write_in => unit_out.ram_write_in);
 ------------------------------------------------------------------------
 end vunit_simulation;

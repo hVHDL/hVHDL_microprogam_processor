@@ -2,7 +2,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
 
-package microprogram_processor_pkg is
+package microprogram_interface_pkg is
 
     type microprogram_processor_in_record is record
         processor_requested  : boolean;
@@ -18,11 +18,11 @@ package microprogram_processor_pkg is
     procedure calculate (signal self_in : out microprogram_processor_in_record; start_address : in natural);
     function is_ready(self_out : microprogram_processor_out_record) return boolean;
 
-end package microprogram_processor_pkg;
+end package microprogram_interface_pkg;
 
 ------------------
 
-package body microprogram_processor_pkg is
+package body microprogram_interface_pkg is
 
     procedure init_mproc (signal self_in : out microprogram_processor_in_record) is
     begin
@@ -40,6 +40,6 @@ package body microprogram_processor_pkg is
         return self_out.is_ready;
     end is_ready;
 
-end package body microprogram_processor_pkg;
+end package body microprogram_interface_pkg;
 
 --------------------------------------------

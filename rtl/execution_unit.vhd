@@ -2,20 +2,20 @@
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
 
-package instruction_pkg is
+package execution_unit_pkg is
 
-    type instruction_in_record is record
+    type execution_unit_in_record is record
         data_read_out      : ram_read_out_array  ;
         instr_ram_read_out : ram_read_out_array ;
         instr_pipeline     : instruction_pipeline_array ;
     end record;
 
-    type instruction_out_record is record
+    type execution_unit_out_record is record
         data_read_in : ram_read_in_array  ;
         ram_write_in : ram_write_in_record ;
     end record;
 
-end package instruction_pkg;
+end package execution_unit_pkg;
 ----------------------------------
 ----------------------------------
 LIBRARY ieee  ; 
@@ -25,14 +25,14 @@ LIBRARY ieee  ;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
-    use work.instruction_pkg.all;
+    use work.execution_unit_pkg.all;
 
-entity instruction is
+entity execution_unit is
     generic(
-        arg1_mem             : natural := 0
-        ;arg2_mem            : natural := 1
-        ;arg3_mem            : natural := 2
-        ;radix               : natural := 14
+        g_arg1_port             : natural := 0
+        ;g_arg2_port            : natural := 1
+        ;g_arg3_port            : natural := 2
+        ;g_radix               : natural := 14
         ;g_read_delays       : natural := 0
         ;g_read_out_delays   : natural := 0
         ;g_instruction_delay : natural := 9
@@ -43,7 +43,7 @@ entity instruction is
        );
     port(
         clock : in std_logic
-        ;instruction_in : in instruction_in_record
-        ;instruction_out : out instruction_out_record
+        ;unit_in : in execution_unit_in_record
+        ;unit_out : out execution_unit_out_record
     );
 end;

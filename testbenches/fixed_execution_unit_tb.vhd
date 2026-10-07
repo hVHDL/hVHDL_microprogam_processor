@@ -7,12 +7,12 @@ context vunit_lib.vunit_context;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
-    use work.microprogram_processor_pkg.all;
+    use work.microprogram_interface_pkg.all;
 
--- runs programs on microprogram_controller with the fixed point
--- instruction architecture g_architecture (fixed_mult_add or add_sub_mpy)
+-- runs programs on microprogram_core with the fixed point
+-- instruction architecture g_architecture (fixed_mult_add or fixed_mult_acc)
 -- and checks every result against a model of the arithmetic
-entity fixed_instruction_tb is
+entity fixed_execution_unit_tb is
   generic (
       runner_cfg : string
       ;g_architecture     : string  := "fixed_mult_add"
@@ -20,7 +20,7 @@ entity fixed_instruction_tb is
   );
 end;
 
-architecture vunit_simulation of fixed_instruction_tb is
+architecture vunit_simulation of fixed_execution_unit_tb is
 
     constant clock_period : time := 1 ns;
     signal clock : std_logic := '0';
@@ -80,7 +80,7 @@ architecture vunit_simulation of fixed_instruction_tb is
         , 20 => op(get_acc_and_zero , 9 , 0  , 0  , 0)
         , 24 => op(program_end)
 
-        -- 32 : products into the accumulator, add_sub_mpy only
+        -- 32 : products into the accumulator, fixed_mult_acc only
         , 32 => op(mpy_acc          , 0  , 85 , 86 , 0)
         , 33 => op(mpy_acc          , 0  , 87 , 88 , 0)
         , 34 => op(acc              , 0  , 0  , 0  , 92)
@@ -101,19 +101,19 @@ architecture vunit_simulation of fixed_instruction_tb is
     signal mc_output   : ref_subtype.ram_write_in'subtype;
     signal mc_write_in : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
-    use work.instruction_pkg.all;
-    constant instruction_in_ref : instruction_in_record := (
+    use work.execution_unit_pkg.all;
+    constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
         ,instr_pipeline    => (0 to 12 => op(nop))
     );
-    constant instruction_out_ref : instruction_out_record := (
+    constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
         ,ram_write_in => ref_subtype.ram_write_in
     );
 
-    signal instr_in  : instruction_in_ref'subtype  := instruction_in_ref;
-    signal instr_out : instruction_out_ref'subtype := instruction_out_ref;
+    signal instr_in  : unit_in_ref'subtype  := unit_in_ref;
+    signal instr_out : unit_out_ref'subtype := unit_out_ref;
 
     -- the data ram as the processor writes it
     signal data_ram : word_array(0 to 127) := (others => (others => '0'));
@@ -192,7 +192,7 @@ begin
         check_word(8, sum(sum(m(89), m(90)), m(91)));
         check_word(9, x"00000000");
 
-        if g_architecture = "add_sub_mpy" then
+        if g_architecture = "fixed_mult_acc" then
             run_program(32);
             products := signed(m(85)) * signed(m(86)) + signed(m(87)) * signed(m(88))
                 + shift_left(resize(signed(m(92)), 64), radix)
@@ -222,7 +222,7 @@ begin
         end if;
     end process capture_writes;
 
-    u_microprogram_controller : entity work.microprogram_controller
+    u_microprogram_core : entity work.microprogram_core
     generic map (g_program => test_program, g_data => program_data, g_data_bit_width => 32)
     port map (
         clock            => clock
@@ -230,19 +230,19 @@ begin
         ,mproc_out       => mproc_out
         ,mc_output       => mc_output
         ,mc_write_in     => mc_write_in
-        ,instruction_in  => instr_in
-        ,instruction_out => instr_out
+        ,to_unit  => instr_in
+        ,from_unit => instr_out
     );
 
     fixed_mult_add : if g_architecture = "fixed_mult_add" generate
-        u_instruction : entity work.instruction(fixed_mult_add)
-        generic map (radix => radix, g_pre_add_register => g_pre_add_register)
+        u_instruction : entity work.execution_unit(fixed_mult_add)
+        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register)
         port map (clock, instr_in, instr_out);
     end generate;
 
-    add_sub_mpy : if g_architecture = "add_sub_mpy" generate
-        u_instruction : entity work.instruction(add_sub_mpy)
-        generic map (radix => radix, g_pre_add_register => g_pre_add_register)
+    fixed_mult_acc : if g_architecture = "fixed_mult_acc" generate
+        u_instruction : entity work.execution_unit(fixed_mult_acc)
+        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register)
         port map (clock, instr_in, instr_out);
     end generate;
 

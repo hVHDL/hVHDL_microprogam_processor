@@ -4,9 +4,9 @@ LIBRARY ieee  ;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
-    use work.instruction_pkg.all;
+    use work.execution_unit_pkg.all;
 
-entity microprogram_controller is
+entity microprogram_core is
     generic(
             g_addresswidth             : natural := 10
             ;g_data_bit_width           : natural := 32
@@ -17,25 +17,25 @@ entity microprogram_controller is
            );
     port(
         clock        : in std_logic
-        ;mproc_in    : in work.microprogram_processor_pkg.microprogram_processor_in_record
-        ;mproc_out   : out work.microprogram_processor_pkg.microprogram_processor_out_record
+        ;mproc_in    : in work.microprogram_interface_pkg.microprogram_processor_in_record
+        ;mproc_out   : out work.microprogram_interface_pkg.microprogram_processor_out_record
         ;mc_output   : out ram_write_in_record
         ;mc_write_in : in ram_write_in_record := g_idle_ram_write
         ------ instruction entity connection
-        ;instruction_in  : out instruction_in_record
-        ;instruction_out : in instruction_out_record
+        ;to_unit  : out execution_unit_in_record
+        ;from_unit : in execution_unit_out_record
     );
-end microprogram_controller;
+end microprogram_core;
 
-architecture rtl of microprogram_controller is
+architecture rtl of microprogram_core is
 
-    constant number_of_dataports : natural := instruction_in.data_read_out'length;
-    constant datawidth           : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    constant instruction_width   : natural := instruction_in.instr_ram_read_out(instruction_in.instr_ram_read_out'left).data'length;
-    constant pipeline_high       : natural := instruction_in.instr_pipeline'high;
+    constant number_of_dataports : natural := to_unit.data_read_out'length;
+    constant datawidth           : natural := to_unit.data_read_out(to_unit.data_read_out'left).data'length;
+    constant instruction_width   : natural := to_unit.instr_ram_read_out(to_unit.instr_ram_read_out'left).data'length;
+    constant pipeline_high       : natural := to_unit.instr_pipeline'high;
 
     constant ref_subtype       : subtype_ref_record := create_ref_subtypes(
-        readports => instruction_in.data_read_out'length 
+        readports => to_unit.data_read_out'length 
         , datawidth => g_data_bit_width);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => g_instruction_bit_width   , addresswidth => 10);
 
@@ -56,7 +56,7 @@ architecture rtl of microprogram_controller is
 begin
 
 ----------------------------------------------------------
-    instruction_in <= (data_read_out        => data_ram_read_out
+    to_unit <= (data_read_out        => data_ram_read_out
                        , instr_ram_read_out => instr_ram_read_out
                        , instr_pipeline     => instr_pipeline);
 
@@ -84,7 +84,7 @@ begin
     generic map(g_data)
     port map(
         clock => clock
-        ,ram_read_in  => instruction_out.data_read_in
+        ,ram_read_in  => from_unit.data_read_in
         ,ram_read_out => data_ram_read_out
         ,ram_write_in => ram_write_in);
 ------------------------------------------------------------------------
@@ -93,14 +93,14 @@ begin
     begin
         if rising_edge(clock) 
         then
-            if not write_requested(instruction_out.ram_write_in) 
+            if not write_requested(from_unit.ram_write_in) 
             and write_requested(write_buffer)
             then
                 init_mp_write(write_buffer);
             end if;
 
             if write_requested(mc_write_in)
-            and write_requested(instruction_out.ram_write_in)
+            and write_requested(from_unit.ram_write_in)
             then
                 write_buffer <= mc_write_in;
             end if;
@@ -112,9 +112,9 @@ begin
     begin
         -- if rising_edge(clock)
         -- then
-            ram_write_in <= combine((0 => instruction_out.ram_write_in));
+            ram_write_in <= combine((0 => from_unit.ram_write_in));
 
-            if not write_requested(instruction_out.ram_write_in)
+            if not write_requested(from_unit.ram_write_in)
             then
                 if write_requested(write_buffer)
                 then

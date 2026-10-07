@@ -5,7 +5,7 @@ LIBRARY ieee  ;
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
 
-entity microprogram_processor is
+entity fixed_microprogram_processor is
     generic(
             g_instruction_bit_width      : natural := 32
             ;g_data_bit_width            : natural := 32
@@ -18,16 +18,16 @@ entity microprogram_processor is
            );
     port(
         clock        : in std_logic
-        ;mproc_in    : in work.microprogram_processor_pkg.microprogram_processor_in_record
-        ;mproc_out   : out work.microprogram_processor_pkg.microprogram_processor_out_record
+        ;mproc_in    : in work.microprogram_interface_pkg.microprogram_processor_in_record
+        ;mproc_out   : out work.microprogram_interface_pkg.microprogram_processor_out_record
         ;mc_read_in  : out ram_read_in_array
         ;mc_read_out : in ram_read_out_array
         ;mc_output   : out ram_write_in_record
         ;mc_write_in : in ram_write_in_record := g_idle_ram_write
     );
-end microprogram_processor;
+end fixed_microprogram_processor;
 
-architecture rtl of microprogram_processor is
+architecture rtl of fixed_microprogram_processor is
 
     constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => g_data_bit_width);
     constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => 32   , addresswidth => 10);
@@ -50,20 +50,20 @@ architecture rtl of microprogram_processor is
 
     signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
 
-    use work.instruction_pkg.all;
-    constant instruction_in_ref : instruction_in_record := (
+    use work.execution_unit_pkg.all;
+    constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
         ,instr_pipeline    => (0 to g_number_of_pipeline_stages-1 => op(nop))
         );
 
-    constant instruction_out_ref : instruction_out_record := (
+    constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
         ,ram_write_in => ref_subtype.ram_write_in
         );
 
-    signal addsub_in : instruction_in_ref'subtype := instruction_in_ref;
-    signal addsub_out : instruction_out_ref'subtype := instruction_out_ref;
+    signal unit_in : unit_in_ref'subtype := unit_in_ref;
+    signal unit_out : unit_out_ref'subtype := unit_out_ref;
 
 begin
 
@@ -97,23 +97,23 @@ begin
 
 ---------------------------------------
 ---------------------------------------
-    add_sub_mpy : entity work.instruction(add_sub_mpy)
-    generic map(radix => g_used_radix)
+    fixed_mult_acc : entity work.execution_unit(fixed_mult_acc)
+    generic map(g_radix => g_used_radix)
     port map(clock 
-    ,addsub_in
-    ,addsub_out);
+    ,unit_in
+    ,unit_out);
 
-    addsub_in <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
+    unit_in <= (data_ram_read_out, instr_ram_read_out, instr_pipeline);
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
     combine_ram_buses : process(all) is
     begin
         -- if rising_edge(clock)
         -- then
-            mc_read_in   <= combine((0 => addsub_out.data_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
-            ram_read_in  <= combine((0 => addsub_out.data_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
+            mc_read_in   <= combine((0 => unit_out.data_read_in) , ref_subtype.address , no_map_range_low => 0   , no_map_range_hi => 118);
+            ram_read_in  <= combine((0 => unit_out.data_read_in) , ref_subtype.address , no_map_range_low => 119 , no_map_range_hi => 127);
 
-            ram_write_in <= combine((0 => addsub_out.ram_write_in));
+            ram_write_in <= combine((0 => unit_out.ram_write_in));
 
             -- add buffering for writing ram externally when not written by processor
             -- if write_requested(ram_write_in) then

@@ -6,14 +6,14 @@ LIBRARY ieee  ;
 library vunit_lib;
 context vunit_lib.vunit_context;
 
-    use work.microprogram_processor_pkg.all;
+    use work.microprogram_interface_pkg.all;
     use work.microinstruction_pkg.all;
 
-entity retry_microprogram_processor_tb is
+entity fixed_microprogram_processor_tb is
   generic (runner_cfg : string);
 end;
 
-architecture vunit_simulation of retry_microprogram_processor_tb is
+architecture vunit_simulation of fixed_microprogram_processor_tb is
 
     constant clock_period      : time    := 1 ns;
     constant simtime_in_clocks : integer := 1500;
@@ -200,7 +200,7 @@ begin
         end if; -- rising_edge
     end process stimulus;	
 ------------------------------------------------------------------------
-    u_microprogram_processor : entity work.microprogram_processor
+    u_microprogram_processor : entity work.fixed_microprogram_processor
     generic map(g_used_radix => used_radix, g_program => test_program, g_data => program_data)
     port map(simulator_clock, mproc_in, mproc_out, mc_read_in, mc_read_out, mc_output);
 ------------------------------------------------------------------------

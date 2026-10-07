@@ -2,36 +2,40 @@
 
 A small VHDL-2008 processor that runs microprograms written in VHDL: a
 sequencer steps through a program RAM and pushes each instruction into an
-instruction pipeline, and an `instruction` entity reads its operands from a
-data RAM, does the arithmetic and writes the result back. The arithmetic is
-an architecture of `instruction`, so the same sequencer runs fixed point or
+instruction pipeline, and an execution unit reads its operands from a data
+RAM, does the arithmetic and writes the result back. The arithmetic is an
+architecture of `execution_unit`, so the same sequencer runs fixed point or
 floating point programs.
 
 ```
 source/                          submodules: hVHDL_fixed_point,
                                  hVHDL_floating_point, hVHDL_memory_library
-vhdl2008/
-  vhdl2008_microinstruction_pkg.vhd   generic_microinstruction_pkg: commands,
-                                      instruction format, op() assembler
-  def_microinstruction_pkg.vhd        microinstruction_pkg, its default instance
-                                      (32 bit instructions and data)
-  microprogram_processor_pkg.vhd      start / ready interface: calculate(),
+rtl/
+  generic_microinstruction_pkg.vhd    commands, instruction format and the
+                                      op() assembler
+  microinstruction_pkg.vhd            its default instance (32 bit
+                                      instructions and data)
+  microprogram_interface_pkg.vhd      start / ready records: calculate(),
                                       is_ready()
   microprogram_sequencer.vhd          program counter, set_rpt / jump loops,
                                       instruction pipeline
-  instruction_pkg.vhd                 entity instruction and its port records
-  addsub.vhd                          architecture add_sub_mpy (fixed_dsp,
-                                      double width accumulator)
-  arch_fixed_mult_add.vhd             architecture fixed_mult_add (fixed_dsp)
-  arch_float_mult_add.vhd             architecture float_mult_add (hfloat)
-  microprogram_processor.vhd          sequencer + program and data RAMs +
-                                      add_sub_mpy in one entity
-  microprogram_controller.vhd         sequencer + RAMs, the instruction
-                                      entity connected from outside
+  execution_unit.vhd                  entity execution_unit and its port
+                                      records
+  arch_fixed_mult_add.vhd             fixed_mult_add : fixed_dsp, data width
+                                      accumulator
+  arch_fixed_mult_acc.vhd             fixed_mult_acc : fixed_dsp, double
+                                      width product accumulator
+  arch_float_mult_add.vhd             float_mult_add : hfloat
+  microprogram_core.vhd               sequencer + program and data RAMs, the
+                                      execution unit connected from outside
+                                      (to_unit / from_unit)
+  fixed_microprogram_processor.vhd    sequencer + RAMs + fixed_mult_acc in one
+                                      entity
   ram_connector_pkg.vhd               helpers for combining RAM ports
-testbenches/vhdl2008/            sequencer, processor and float controller,
-                                 fixed_instruction_tb checks both fixed point
-                                 architectures
+testbenches/                     fixed_execution_unit_tb checks both fixed
+                                 point architectures, the others run the
+                                 sequencer, fixed_microprogram_processor and
+                                 the float core
 vunit_run_sw_processor.py        VUnit run script
 ```
 
@@ -60,7 +64,7 @@ data width in its pre-adder, and the result is bits radix + width − 1 …
 radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder,
 one clock more to the result. `a_add_b_mpy_c`,
 `a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
-point architectures. `add_sub_mpy` runs the same multiply-adds on its
+point architectures. `fixed_mult_acc` runs the same multiply-adds on its
 `fixed_dsp`, and its accumulator is at the product's width: `mpy_acc` adds
 a·b, `acc` adds c, `get_acc_and_zero` writes the accumulator + c and zeroes
 it. In `fixed_mult_add` the accumulator is data width, `acc` and
@@ -80,7 +84,7 @@ git submodule update --init --recursive
 python3 vunit_run_sw_processor.py
 ```
 
-`fixed_instruction_tb` runs the multiply-add and accumulator commands and
+`fixed_execution_unit_tb` runs the multiply-add and accumulator commands and
 a `jump` loop on both fixed point architectures, with and without the
 pre-adder register, and checks every result against a model. The other
 testbenches run the processors without checking their results.

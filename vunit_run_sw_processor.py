@@ -26,29 +26,29 @@ v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/*.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/multiply_add_arch_agilex.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_floating_point/vhdl2008/altera/sim_native_fp32.vhd")
 
-v2008.add_source_files(ROOT / "vhdl2008/ram_connector_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/instruction_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/addsub.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/microprogram_sequencer.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/vhdl2008_microinstruction_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/def_microinstruction_pkg.vhd")
+v2008.add_source_files(ROOT / "rtl/ram_connector_pkg.vhd")
+v2008.add_source_files(ROOT / "rtl/execution_unit.vhd")
+v2008.add_source_files(ROOT / "rtl/arch_fixed_mult_acc.vhd")
+v2008.add_source_files(ROOT / "rtl/microprogram_sequencer.vhd")
+v2008.add_source_files(ROOT / "rtl/generic_microinstruction_pkg.vhd")
+v2008.add_source_files(ROOT / "rtl/microinstruction_pkg.vhd")
 
-v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor_pkg.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/microprogram_processor.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/microprogram_controller.vhd")
+v2008.add_source_files(ROOT / "rtl/microprogram_interface_pkg.vhd")
+v2008.add_source_files(ROOT / "rtl/fixed_microprogram_processor.vhd")
+v2008.add_source_files(ROOT / "rtl/microprogram_core.vhd")
 
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/fixed_dsp/fixed_dsp.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/fixed_dsp/arch_rtl_fixed_dsp.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/arch_float_mult_add.vhd")
-v2008.add_source_files(ROOT / "vhdl2008/arch_fixed_mult_add.vhd")
+v2008.add_source_files(ROOT / "rtl/arch_float_mult_add.vhd")
+v2008.add_source_files(ROOT / "rtl/arch_fixed_mult_add.vhd")
 
-v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
-v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
-v2008.add_source_files(ROOT / "testbenches/vhdl2008/float_microprocessor_tb.vhd")
-v2008.add_source_files(ROOT / "testbenches/vhdl2008/fixed_instruction_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/microprogram_sequencer_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/fixed_microprogram_processor_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/float_microprogram_core_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/fixed_execution_unit_tb.vhd")
 
-fixed_tb = v2008.test_bench("fixed_instruction_tb")
-for architecture in ["fixed_mult_add", "add_sub_mpy"]:
+fixed_tb = v2008.test_bench("fixed_execution_unit_tb")
+for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
     for pre_add_register in [False, True]:
         fixed_tb.add_config(
             name=architecture + ("_pre_add_register" if pre_add_register else ""),
