@@ -1,3 +1,6 @@
+library ieee;
+    use ieee.std_logic_1164.all;
+
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
@@ -34,6 +37,29 @@ package execution_unit_pkg is
     function fixed_point_result_latency (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true) return natural;
 
+    -- hVHDL_fixed_point's lut_divider, from the request at its input to
+    -- its ready, with its ram output and dsp request registers : 9 and 2
+    -- for each of its shifter stages (the input and output shifters have
+    -- one each) and for each of the pre-adder and product registers (two
+    -- fixed_dsps in series) ; 13 with 2 shifter stages
+    function lut_divider_latency (pre_add_register, product_register : boolean;
+        shifter_stages : positive := 2) return natural;
+
+    -- fixed_math : the stage a quotient is written in, the operands are
+    -- registered into the divider's request ; and its result latency, as
+    -- fixed_point_result_latency()
+    function fixed_math_result_stage (pre_add_register, product_register : boolean;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural;
+    function fixed_math_result_latency (pre_add_register, product_register : boolean;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural;
+
+    -- two execution units on one microprogram_core : the read requests of
+    -- either, and the write of the one writing. One instruction issues a
+    -- clock so only one unit reads at a time ; the program must not have
+    -- both write in one clock, microprogram_assembler_pkg's schedule()
+    -- keeps them apart
+    function merge_units (a, b : execution_unit_out_record) return execution_unit_out_record;
+
 end package execution_unit_pkg;
 
 package body execution_unit_pkg is
@@ -55,6 +81,40 @@ package body execution_unit_pkg is
     begin
         return fixed_point_result_stage(pre_add_register, product_register, data_ram_output_register) + 2;
     end fixed_point_result_latency;
+
+    function lut_divider_latency (pre_add_register, product_register : boolean;
+        shifter_stages : positive := 2) return natural is
+    begin
+        return 9 + 2 * shifter_stages + 2 * boolean'pos(pre_add_register) + 2 * boolean'pos(product_register);
+    end lut_divider_latency;
+
+    function fixed_math_result_stage (pre_add_register, product_register : boolean;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural is
+    begin
+        return data_read_latency(data_ram_output_register) + 1
+            + lut_divider_latency(pre_add_register, product_register, divider_shifter_stages);
+    end fixed_math_result_stage;
+
+    function fixed_math_result_latency (pre_add_register, product_register : boolean;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural is
+    begin
+        return fixed_math_result_stage(pre_add_register, product_register, data_ram_output_register,
+            divider_shifter_stages) + 2;
+    end fixed_math_result_latency;
+
+    function merge_units (a, b : execution_unit_out_record) return execution_unit_out_record is
+        variable retval : a'subtype := a;
+    begin
+        for i in a.data_read_in'range loop
+            if b.data_read_in(i).read_requested = '1' then
+                retval.data_read_in(i) := b.data_read_in(i);
+            end if;
+        end loop;
+        if b.ram_write_in.write_requested = '1' then
+            retval.ram_write_in := b.ram_write_in;
+        end if;
+        return retval;
+    end merge_units;
 
 end package body execution_unit_pkg;
 ----------------------------------
@@ -88,6 +148,9 @@ entity execution_unit is
         -- g_data_ram_output_register : the operands arrive a clock earlier
         -- without it
         ;g_data_ram_output_register : boolean := true
+        -- fixed_math : lut_divider's g_shifter_stages, more stages less
+        -- logic in each, 2 clocks more per stage
+        ;g_divider_shifter_stages : positive := 2
        );
     port(
         clock : in std_logic

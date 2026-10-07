@@ -41,6 +41,11 @@ v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/fixed_dsp/fixed_dsp.vhd"
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/fixed_dsp/arch_rtl_fixed_dsp.vhd")
 v2008.add_source_files(ROOT / "rtl/arch_float_mult_add.vhd")
 v2008.add_source_files(ROOT / "rtl/arch_fixed_mult_add.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/lut_interpolation/lut_reciprocal_pkg.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/reciprocal_calculator/reciprocal_calculator.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/fixed_point_scaling/fixed_point_scaling_pkg.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/lut_divider/lut_divider.vhd")
+v2008.add_source_files(ROOT / "rtl/arch_fixed_math.vhd")
 
 v2008.add_source_files(ROOT / "testbenches/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/float_microprogram_core_tb.vhd")
@@ -102,6 +107,19 @@ for registers in [False, True]:
                               g_data_width=width, g_instruction_width=width,
                               g_program_ram_output_register=program_ram_register,
                               g_data_ram_output_register=data_ram_register))
+
+v2008.add_source_files(ROOT / "testbenches/math_unit_tb.vhd")
+math_tb = v2008.test_bench("math_unit_tb")
+for width in [32, 36]:
+    for registers in [False, True]:
+        for data_ram_register in [True, False]:
+            math_tb.add_config(
+                name=f"{width}_bit{'_pre_add_and_product' if registers else ''}{'' if data_ram_register else '_no_data_ram_register'}",
+                generics=dict(g_data_width=width, g_pre_add_register=registers, g_product_register=registers,
+                              g_data_ram_output_register=data_ram_register))
+for width in [32, 36]:
+    math_tb.add_config(name=f"{width}_bit_3_divider_shifter_stages",
+        generics=dict(g_data_width=width, g_divider_shifter_stages=3))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

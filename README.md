@@ -23,6 +23,8 @@ rtl/
                                       records
   arch_fixed_mult_add.vhd             fixed_mult_add : fixed_dsp, data width
                                       accumulator
+  arch_fixed_math.vhd                 fixed_math : division by
+                                      hVHDL_fixed_point's lut_divider
   arch_float_mult_add.vhd             float_mult_add : hfloat
   microprogram_core.vhd               sequencer + program and data RAMs, the
                                       execution unit connected from outside
@@ -36,7 +38,8 @@ examples/
 testbenches/                     fixed_execution_unit_tb checks
                                  fixed_mult_add, result_latency_tb measures
                                  its result latency, portable_program_tb runs
-                                 one program source on four configurations ;
+                                 one program source on four configurations,
+                                 math_unit_tb runs fixed_math beside it ;
                                  the others run the sequencer and the float
                                  core
 vunit_run_sw_processor.py        VUnit run script
@@ -95,7 +98,36 @@ clock more to the result. `a_add_b_mpy_c`,
 `fixed_mult_add`; its accumulator is data width, `acc` adds c,
 `get_acc_and_zero` writes the accumulator + c and zeroes it and
 `check_and_saturate_acc` limits it. `mpy_acc` is an encoding with no
-execution unit. There is no hazard detection in the hardware: a result is in the data
+execution unit.
+
+## The math unit
+
+`ext` is a math unit's command: its function code in arg3, its operands in
+arg1 and arg2. `fixed_math` implements `ext_div`, written
+`mi_div(dest, numerator, denominator)`: dest ← numerator / denominator at
+the radix, by `hVHDL_fixed_point`'s `lut_divider` with a 512 × 18 bit
+reciprocal table. Division by zero is not handled and a quotient too large
+for the word wraps. Its result latency is
+`execution_unit_pkg.fixed_math_result_latency()`: 18, 2 more for each of the
+pre-adder and product registers (the divider has two `fixed_dsp`s in
+series), 1 less without the data RAM's output register, and 2 more for each
+divider shifter stage over 2 (`g_divider_shifter_stages`, `lut_divider`'s
+`g_shifter_stages`: more stages, less logic in each); `math_unit_tb`
+measures it. The instruction pipeline must reach its result stage, 15 or
+more stages.
+
+`fixed_math` runs beside `fixed_mult_add` on one `microprogram_core`:
+
+```vhdl
+u_fixed_mult_add : entity work.execution_unit(fixed_mult_add) ... port map (clock, unit_in, mult_add_out);
+u_fixed_math     : entity work.execution_unit(fixed_math)     ... port map (clock, unit_in, math_out);
+unit_out <= merge_units(mult_add_out, math_out);
+```
+
+Each unit acts on its own commands. `merge_units()` gives the core the read
+requests of either, as only one instruction issues a clock, and the write
+of the one writing: the data RAM has one write port, and the program must
+not have both units write in one clock. `schedule()` keeps them apart. There is no hazard detection in the hardware: a result is in the data
 RAM only after the pipeline delay, so dependent instructions are spaced
 with `nop`s, by hand or by `schedule()` below. A `jump` takes effect after
 the three (two without the program RAM's output register) instructions that follow it, which are already fetched and run
@@ -145,12 +177,14 @@ port.
 ## One program for any configuration
 
 `microprogram_assembler_pkg` lays a program out for a `processor_config`
-(instruction width, data width, radix, result latency, jump delay slots):
+(instruction width, data width, radix, result latency, jump delay slots,
+and the math unit's result latency, 0 without one):
 
 ```vhdl
 constant config : processor_config := (instruction_width => 36, data_width => 36, radix => 24,
     result_latency => fixed_point_result_latency(pre_add_register, product_register, data_ram_output_register),
-    delay_slots    => jump_delay_slots(program_ram_output_register));
+    delay_slots    => jump_delay_slots(program_ram_output_register),
+    math_latency   => fixed_math_result_latency(pre_add_register, product_register, data_ram_output_register));
 
 function boost_step (m : boost_map) return microprogram is
 begin
@@ -165,8 +199,10 @@ program := place(program, 128, repeat(config, 50, boost_step(boost)) & mi(progra
 ```
 
 - `schedule(config, code)` issues each instruction, in order, in the first
-  slot where the results it reads are readable, and pads the code's end
-  until all its results are, so scheduled code can follow other code with
+  slot where the results it reads are readable and where its write does not
+  land in the clock of another write (the units' latencies differ, the data
+  RAM has one write port), and pads the code's end until all its results
+  are, so scheduled code can follow other code with
   `&` and `program_end` after it means the results are in the RAM.
   `get_acc_and_zero` holds back a following accumulator command.
 - `repeat(config, count, code)` makes `set_rpt`, the scheduled code and a

@@ -41,7 +41,8 @@ package generic_microinstruction_pkg is
         ,get_acc_and_zero
         ,check_and_saturate_acc
         ,mpy_acc
-        ,res10
+        -- a math unit's function, its code in arg3, operands in arg1 and arg2
+        ,ext
     );
     function get(instr : t_command) return std_logic_vector;
     function sub(dest, a, b : natural) return std_logic_vector;
@@ -169,6 +170,11 @@ package generic_microinstruction_pkg is
     -- set_rpt count, jump address
     function mi ( command : t_command; argument : natural) return microinstruction;
 
+    -- the ext functions, in arg3
+    constant ext_div : natural := 0;
+    -- dest <- numerator / denominator at the radix
+    function mi_div ( dest, numerator, denominator : natural) return microinstruction;
+
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector;
     function encode ( program : microprogram; width : natural) return ram_array;
 ------------------------------------------------------------------------
@@ -214,6 +220,11 @@ package body generic_microinstruction_pkg is
     begin
         return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true, relative => false);
     end mi;
+
+    function mi_div ( dest, numerator, denominator : natural) return microinstruction is
+    begin
+        return mi(ext, dest, numerator, denominator, ext_div);
+    end mi_div;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector is
         constant a : natural := address_bits(width);

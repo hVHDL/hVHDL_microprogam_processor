@@ -3,9 +3,12 @@
 -- in order, and laid out for a processor configuration
 --
 --   schedule(config, code) : each instruction in the first slot where
---       the results it reads are readable, nops in between, and the block
---       padded at its end until all its results are readable, so blocks
---       can follow each other with &
+--       the results it reads are readable and its write does not meet
+--       another write, nops in between, and the block padded at its end
+--       until all its results are readable, so blocks can follow each
+--       other with &. ext (the math unit) has its own result latency ;
+--       the data ram has one write port, two units cannot write in one
+--       clock
 --   repeat(config, count, code) : set_rpt, the scheduled body and a jump
 --       back, count rounds ; a round starts when the last one's results
 --       are readable
@@ -44,6 +47,9 @@ package microprogram_assembler_pkg is
         -- the instructions after a jump that run before it is taken,
         -- microprogram_interface_pkg's jump_delay_slots()
         delay_slots       : natural;
+        -- the math unit's result latency, for ext, execution_unit_pkg's
+        -- fixed_math_result_latency() ; 0 without a math unit
+        math_latency      : natural;
     end record;
 
     function schedule (config : processor_config; code : microprogram) return microprogram;
@@ -80,7 +86,7 @@ package body microprogram_assembler_pkg is
     begin
         case command is
             when mpy_add | mpy_sub | neg_mpy_add | neg_mpy_sub
-                | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | get_acc_and_zero =>
+                | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter | get_acc_and_zero | ext =>
                 return true;
             when others =>
                 return false;
@@ -92,7 +98,7 @@ package body microprogram_assembler_pkg is
         case command is
             when mpy_add | mpy_sub | neg_mpy_add | neg_mpy_sub
                 | a_add_b_mpy_c | a_sub_b_mpy_c | lp_filter
-                | acc | get_acc_and_zero | check_and_saturate_acc | mpy_acc =>
+                | acc | get_acc_and_zero | check_and_saturate_acc | mpy_acc | ext =>
                 return true;
             when others =>
                 return false;
@@ -118,10 +124,26 @@ package body microprogram_assembler_pkg is
     -- the slot of each instruction of code, and after them the scheduled
     -- length : the slot after the last instruction or, if later, the slot
     -- from which all results are readable
+    function latency_of (config : processor_config; command : t_command) return natural is
+    begin
+        if command = ext then
+            assert config.math_latency > 0
+                report "ext in a program for a processor_config without a math unit" severity failure;
+            return config.math_latency;
+        end if;
+        return config.result_latency;
+    end latency_of;
+
+    type boolean_array is array (natural range <>) of boolean;
+
     function schedule_slots (config : processor_config; code : microprogram) return natural_array is
-        constant latency : natural := config.result_latency;
+        constant max_latency : natural := maximum(config.result_latency, config.math_latency);
         -- the slot from which each data address and the accumulator can be read
         variable ready     : natural_array(0 to 2**address_bits(config.instruction_width)-1) := (others => 0);
+        -- the slots the data ram's write port is taken in
+        -- each instruction waits at most a latency and a slot per earlier write
+        variable write_taken : boolean_array(0 to (code'length + 1) * (max_latency + 2)) := (others => false);
+        variable latency   : natural;
         variable acc_ready : natural := 0;
         variable slots     : natural_array(0 to code'length) := (others => 0);
         variable next_slot : natural := 0;
@@ -133,9 +155,14 @@ package body microprogram_assembler_pkg is
             i := code(code'low + k);
             assert i.command /= jump and i.command /= set_rpt
                 report "schedule() takes no jump or set_rpt, repeat() makes them" severity failure;
-            slot := next_slot;
+            slot    := next_slot;
+            latency := latency_of(config, i.command);
             if reads_arguments(i.command) then
-                slot := maximum(slot, maximum(ready(i.arg1), maximum(ready(i.arg2), ready(i.arg3))));
+                slot := maximum(slot, maximum(ready(i.arg1), ready(i.arg2)));
+                -- ext's arg3 is its function, not an address
+                if i.command /= ext then
+                    slot := maximum(slot, ready(i.arg3));
+                end if;
             end if;
             if uses_accumulator(i.command) then
                 slot := maximum(slot, acc_ready);
@@ -143,6 +170,12 @@ package body microprogram_assembler_pkg is
             if i.command = program_end then
                 -- ready when the results are in the data ram
                 slot := maximum(slot, tail);
+            end if;
+            if writes_result(i.command) then
+                while write_taken(slot + latency) loop
+                    slot := slot + 1;
+                end loop;
+                write_taken(slot + latency) := true;
             end if;
             if i.command /= nop then
                 slots(k)  := slot;

@@ -47,7 +47,8 @@ architecture vunit_simulation of portable_program_tb is
         ,data_width       => g_data_width
         ,radix            => radix
         ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register)
-        ,delay_slots      => jump_delay_slots(g_program_ram_output_register));
+        ,delay_slots      => jump_delay_slots(g_program_ram_output_register)
+        ,math_latency     => 0);
 
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => w, addresswidth => 10);
