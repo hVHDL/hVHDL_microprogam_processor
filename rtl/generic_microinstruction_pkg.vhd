@@ -162,6 +162,9 @@ package generic_microinstruction_pkg is
         -- a jump whose arg1 counts back from the jump itself, encode()
         -- turns it into the address
         relative : boolean;
+        -- in code placed by microprogram_assembler_pkg's place(), its nops
+        -- too, so a later place() cannot overlap it
+        placed   : boolean;
     end record;
     type microprogram is array (natural range <>) of microinstruction;
 
@@ -173,10 +176,15 @@ package generic_microinstruction_pkg is
     -- the ext functions, in arg3
     constant ext_div  : natural := 0;
     constant ext_sqrt : natural := 1;
+    constant ext_sin  : natural := 2;
+    constant ext_cos  : natural := 3;
     -- dest <- numerator / denominator at the radix
     function mi_div ( dest, numerator, denominator : natural) return microinstruction;
     -- dest <- sqrt(radicand) at the radix, the radicand unsigned
     function mi_sqrt ( dest, radicand : natural) return microinstruction;
+    -- dest <- sin(2 pi angle), cos(2 pi angle), the angle in turns
+    function mi_sin ( dest, angle : natural) return microinstruction;
+    function mi_cos ( dest, angle : natural) return microinstruction;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector;
     function encode ( program : microprogram; width : natural) return ram_array;
@@ -211,17 +219,17 @@ package body generic_microinstruction_pkg is
 
     function mi ( command : t_command) return microinstruction is
     begin
-        return (command => command, dest => 0, arg1 => 0, arg2 => 0, arg3 => 0, single => false, relative => false);
+        return (command => command, dest => 0, arg1 => 0, arg2 => 0, arg3 => 0, single => false, relative => false, placed => false);
     end mi;
 
     function mi ( command : t_command; dest, arg1, arg2, arg3 : natural) return microinstruction is
     begin
-        return (command => command, dest => dest, arg1 => arg1, arg2 => arg2, arg3 => arg3, single => false, relative => false);
+        return (command => command, dest => dest, arg1 => arg1, arg2 => arg2, arg3 => arg3, single => false, relative => false, placed => false);
     end mi;
 
     function mi ( command : t_command; argument : natural) return microinstruction is
     begin
-        return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true, relative => false);
+        return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true, relative => false, placed => false);
     end mi;
 
     function mi_div ( dest, numerator, denominator : natural) return microinstruction is
@@ -233,6 +241,16 @@ package body generic_microinstruction_pkg is
     begin
         return mi(ext, dest, radicand, 0, ext_sqrt);
     end mi_sqrt;
+
+    function mi_sin ( dest, angle : natural) return microinstruction is
+    begin
+        return mi(ext, dest, angle, 0, ext_sin);
+    end mi_sin;
+
+    function mi_cos ( dest, angle : natural) return microinstruction is
+    begin
+        return mi(ext, dest, angle, 0, ext_cos);
+    end mi_cos;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector is
         constant a : natural := address_bits(width);

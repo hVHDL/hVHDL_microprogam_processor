@@ -45,6 +45,10 @@ package execution_unit_pkg is
     function lut_divider_latency (pre_add_register, product_register : boolean;
         shifter_stages : positive := 2) return natural;
 
+    -- hVHDL_fixed_point's sine_calculator with its fixed_dsp, from the
+    -- request to its ready, with the ram output and dsp request registers
+    function sine_calculator_latency (pre_add_register, product_register : boolean) return natural;
+
     -- fixed_math : the stage a quotient is written in, the operands are
     -- registered into the divider's request ; and its result latency, as
     -- fixed_point_result_latency()
@@ -87,6 +91,11 @@ package body execution_unit_pkg is
     begin
         return 9 + 2 * shifter_stages + 2 * boolean'pos(pre_add_register) + 2 * boolean'pos(product_register);
     end lut_divider_latency;
+
+    function sine_calculator_latency (pre_add_register, product_register : boolean) return natural is
+    begin
+        return 6 + boolean'pos(pre_add_register) + boolean'pos(product_register);
+    end sine_calculator_latency;
 
     function fixed_math_result_stage (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural is

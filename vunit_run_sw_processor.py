@@ -48,6 +48,8 @@ v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/lut_divider/lut_divider.
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/lut_interpolation/lut_sqrt_pkg.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/sqrt_calculator/sqrt_calculator.vhd")
 v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/full_range_sqrt/full_range_sqrt.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/lut_interpolation/lut_sine_pkg.vhd")
+v2008.add_source_files(ROOT / "source/hVHDL_fixed_point/sine_calculator/sine_calculator.vhd")
 v2008.add_source_files(ROOT / "rtl/arch_fixed_math.vhd")
 
 v2008.add_source_files(ROOT / "testbenches/microprogram_sequencer_tb.vhd")

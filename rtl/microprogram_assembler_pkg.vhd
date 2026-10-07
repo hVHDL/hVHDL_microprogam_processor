@@ -12,7 +12,8 @@
 --   repeat(config, count, code) : set_rpt, the scheduled body and a jump
 --       back, count rounds ; a round starts when the last one's results
 --       are readable
---   place(program, at, code) : code into a program at an address
+--   place(program, at, code) : code into a program at an address, failing
+--       where it overlaps code placed before, nops included
 --   encode_data(entries, config, words) : a data ram's contents from
 --       (address, value) pairs, the values reals at the data width and
 --       radix ; set_data() writes pairs into existing contents
@@ -159,9 +160,9 @@ package body microprogram_assembler_pkg is
             latency := latency_of(config, i.command);
             if reads_arguments(i.command) then
                 slot := maximum(slot, ready(i.arg1));
-                -- ext's arg3 is its function, not an address, and its
-                -- square root reads arg1 only
-                if not (i.command = ext and i.arg3 = ext_sqrt) then
+                -- ext's arg3 is its function, not an address, and all
+                -- but its division read arg1 only
+                if not (i.command = ext and i.arg3 /= ext_div) then
                     slot := maximum(slot, ready(i.arg2));
                 end if;
                 if i.command /= ext then
@@ -242,13 +243,14 @@ package body microprogram_assembler_pkg is
     begin
         assert at + code'length - 1 <= program'high
             report "code at " & integer'image(at) & " does not fit the program" severity failure;
+        -- the code's whole span, its nops too : a program_end of earlier
+        -- code inside it would end this one
         for k in 0 to code'length-1 loop
-            if code(code'low + k).command /= nop then
-                assert retval(at + k).command = nop
-                    report "code at " & integer'image(at) & " overlaps an instruction at "
-                        & integer'image(at + k) severity failure;
-                retval(at + k) := code(code'low + k);
-            end if;
+            assert not retval(at + k).placed and retval(at + k).command = nop
+                report "code at " & integer'image(at) & " overlaps code placed before, at "
+                    & integer'image(at + k) severity failure;
+            retval(at + k)        := code(code'low + k);
+            retval(at + k).placed := true;
         end loop;
         return retval;
     end place;

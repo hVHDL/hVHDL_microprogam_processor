@@ -23,9 +23,10 @@ rtl/
                                       records
   arch_fixed_mult_add.vhd             fixed_mult_add : fixed_dsp, data width
                                       accumulator
-  arch_fixed_math.vhd                 fixed_math : division and square root
-                                      by hVHDL_fixed_point's lut_divider and
-                                      full_range_sqrt
+  arch_fixed_math.vhd                 fixed_math : division, square root,
+                                      sine and cosine by hVHDL_fixed_point's
+                                      lut_divider, full_range_sqrt and
+                                      sine_calculator
   arch_float_mult_add.vhd             float_mult_add : hfloat
   microprogram_core.vhd               sequencer + program and data RAMs, the
                                       execution unit connected from outside
@@ -112,10 +113,17 @@ arg1 and arg2. `fixed_math` implements
 - `ext_sqrt`, written `mi_sqrt(dest, radicand)`: dest ← √radicand at the
   radix, by `full_range_sqrt` with a 512 × 18 bit table at radix 17. The
   radicand is unsigned, a negative one is not handled.
+- `ext_sin` and `ext_cos`, written `mi_sin(dest, angle)` and
+  `mi_cos(dest, angle)`: dest ← sin(2π·angle), cos(2π·angle) at the radix,
+  the angle in turns. The 16 bits under the radix are the angle;
+  `sine_calculator`'s 16 bit quarter wave table, interpolated on a
+  `fixed_dsp`, gives 16 bits at radix 15, so about 15 bits of precision.
+  The cosine is the sine a quarter turn on. The radix must be 16 or more.
 
-Both have the same structure — a normalising shifter, an interpolated
-lookup on a `fixed_dsp`, a multiply on a second one and an output shifter —
-and the same latency, so they write in the same result stage. The result
+The divider and the square root have the same structure — a normalising
+shifter, an interpolated lookup on a `fixed_dsp`, a multiply on a second
+one and an output shifter — and the same latency; the sine is shorter and
+waits in a delay line, so all write in the same result stage. The result
 latency is
 `execution_unit_pkg.fixed_math_result_latency()`: 18, 2 more for each of the
 pre-adder and product registers (the divider has two `fixed_dsp`s in
@@ -218,8 +226,9 @@ program := place(program, 128, repeat(config, 50, boost_step(boost)) & mi(progra
   relative `jump`, placed so a round starts when the last round's results
   are readable; code can sit in the jump's delay slots. Repeats do not
   nest, the sequencer has one repeat counter.
-- `place(program, at, code)` puts code at an entry address and fails on an
-  overlap; `encode()` resolves the relative jumps.
+- `place(program, at, code)` puts code at an entry address and fails where
+  it overlaps code placed before, its padding `nop`s included (a
+  `program_end` of the earlier code inside it would end it); `encode()` resolves the relative jumps.
 - `encode_data(entries, config, words)` makes a data RAM's contents from
   (address, value) pairs of reals, at the configuration's data width and
   radix, rounded half away from zero; `set_data()` writes pairs into

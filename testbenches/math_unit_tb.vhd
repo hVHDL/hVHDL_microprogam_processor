@@ -13,6 +13,7 @@ context vunit_lib.vunit_context;
     use work.lut_divider_pkg.all;
     use work.lut_sqrt_pkg.all;
     use work.full_range_sqrt_pkg.all;
+    use work.lut_sine_pkg.all;
 
 -- fixed_mult_add and fixed_math on one microprogram_core through
 -- merge_units() :
@@ -89,6 +90,13 @@ architecture vunit_simulation of math_unit_tb is
         ,mi_sqrt(9, 8)                -- the root of a quotient
         ,mi(mpy_add, 10, 9, 9, 74)    -- reads the root
         ,mi_sqrt(11, 76)              -- a root next to a division
+        ,mi_sin(12, 77)               -- a quarter turn
+        ,mi_cos(13, 77)
+        ,mi_sin(14, 78)               -- an eighth
+        ,mi_cos(15, 79)               -- -a third
+        ,mi_div(16, 78, 74)           -- 0.125 / 2.25
+        ,mi_sin(17, 16)               -- the sine of a quotient
+        ,mi(mpy_add, 18, 17, 74, 13)  -- reads a sine and a cosine
         ,mi(program_end));
 
     function make_program return microprogram is
@@ -114,6 +122,7 @@ architecture vunit_simulation of math_unit_tb is
             (64, 1.5), (65, -0.75), (66, 0.5), (67, 0.25), (68, 1.25),
             (69, -2.0), (70, 3.0), (71, 0.125), (72, 7.0), (73, -0.375),
             (74, 2.25), (75, 10.0), (76, 1234.5678),
+            (77, 0.25), (78, 0.125), (79, -1.0 / 3.0),
             (80, 1.0), (81, 2.0)), config, ref_subtype.address_high + 1);
 
     -- the divider's table : 512 x 18 bits at radix 16, an 18 bit x_frac
@@ -189,6 +198,14 @@ begin
             return std_logic_vector(get_full_range_sqrt(unsigned(a), radix, sqrt_point_lut, sqrt_slope_lut, 17, 18));
         end square_root;
 
+        -- the angle the 16 bits under the radix, 16 bits at radix 15 back
+        function sine (a : word; quarter_turns : natural := 0) return word is
+            variable angle : unsigned(15 downto 0) := unsigned(a(radix-1 downto radix-16));
+        begin
+            angle := angle + quarter_turns * 2**14;
+            return std_logic_vector(shift_left(resize(get_sine_from_quarter_wave_lut(angle), w), radix - 15));
+        end sine;
+
         function mult_add (a, b, c : word) return word is
             variable result : signed(2*w-1 downto 0);
         begin
@@ -202,7 +219,7 @@ begin
         end check_word;
 
         variable latency : integer := -1;
-        variable q1, r2, q3, r4, q5, q6, q8, s9, x : word;
+        variable q1, r2, q3, r4, q5, q6, q8, s9, q16, c13, s17, x : word;
 
     begin
         test_runner_setup(runner, runner_cfg);
@@ -248,6 +265,18 @@ begin
         check_word(9, s9);
         check_word(10, mult_add(s9, s9, m(74)));
         check_word(11, square_root(m(76)));
+        c13 := sine(m(77), 1);
+        check_word(12, sine(m(77)));
+        check_word(13, c13);
+        check_word(14, sine(m(78)));
+        check_word(15, sine(m(79), 1));
+        q16 := divide(m(78), m(74));
+        s17 := sine(q16);
+        check_word(16, q16);
+        check_word(17, s17);
+        check_word(18, mult_add(s17, m(74), c13));
+        info("sin(1/4 turn) " & real'image(real(to_integer(signed(sine(m(77))))) / 2.0**radix)
+            & ", cos(-1/3 turn) " & real'image(real(to_integer(signed(sine(m(79), 1)))) / 2.0**radix));
 
         -- the loop
         run_program(loop_start);
