@@ -53,6 +53,17 @@ for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
         fixed_tb.add_config(
             name=architecture + ("_pre_add_register" if pre_add_register else ""),
             generics=dict(g_architecture=architecture, g_pre_add_register=pre_add_register))
+    fixed_tb.add_config(
+        name=architecture + "_pre_add_and_product_registers",
+        generics=dict(g_architecture=architecture, g_pre_add_register=True, g_product_register=True))
+    # 36 bit data and instructions
+    fixed_tb.add_config(
+        name=architecture + "_36_bit",
+        generics=dict(g_architecture=architecture, g_data_width=36, g_instruction_width=36))
+    fixed_tb.add_config(
+        name=architecture + "_36_bit_pre_add_and_product_registers",
+        generics=dict(g_architecture=architecture, g_data_width=36, g_instruction_width=36,
+                      g_pre_add_register=True, g_product_register=True))
     # a 128 word program ram
     fixed_tb.add_config(
         name=architecture + "_128_word_program",

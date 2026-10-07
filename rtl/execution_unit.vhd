@@ -40,6 +40,9 @@ entity execution_unit is
         -- fixed_mult_add : fixed_dsp's g_pre_add_register, one more clock
         -- from the operands to the result
         ;g_pre_add_register  : boolean := false
+        -- fixed_mult_add, fixed_mult_acc : fixed_dsp's g_product_register,
+        -- one clock more from the operands to the result
+        ;g_product_register  : boolean := false
        );
     port(
         clock : in std_logic

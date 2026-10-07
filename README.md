@@ -44,7 +44,12 @@ vunit_run_sw_processor.py        VUnit run script
 An instruction is 32 bits: a 4 bit command, a 7 bit destination and three
 7 bit argument addresses into the data RAM, or for `set_rpt` and `jump` a
 single argument, the repeat count or the jump address, of which the
-sequencer reads the low 21 bits. Programs and data are RAM initial values, written with
+sequencer reads the low 21 bits. The fields are in bits 31..0; a program
+RAM can be wider (`resize_instruction()` zero extends an `op()`), and the
+pipeline, `decode()` and the field functions take its width. The program
+and data RAMs' sizes and word widths come from their initial contents,
+`g_program` and `g_data` (a power of 2 words each); the data width sets
+the execution unit's. Programs and data are RAM initial values, written with
 `op()`:
 
 ```vhdl
@@ -61,8 +66,9 @@ constant program : work.dual_port_ram_pkg.ram_array(0 to 1023)(31 downto 0) := (
 `neg_mpy_sub` change the signs of the product and c. `fixed_mult_add` runs
 on hVHDL_fixed_point's `fixed_dsp`: sums, differences and −a wrap to the
 data width in its pre-adder, and the result is bits radix + width − 1 …
-radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder,
-one clock more to the result. `a_add_b_mpy_c`,
+radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder
+and `g_product_register` the product before the result adder, each one
+clock more to the result. `a_add_b_mpy_c`,
 `a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
 point architectures. `fixed_mult_acc` runs the same multiply-adds on its
 `fixed_dsp`, and its accumulator is at the product's width: `mpy_acc` adds
@@ -86,5 +92,6 @@ python3 vunit_run_sw_processor.py
 
 `fixed_execution_unit_tb` runs the multiply-add and accumulator commands and
 a `jump` loop on both fixed point architectures, with and without the
-pre-adder register, and checks every result against a model. The other
+pre-adder and product registers, with 32 and 36 bit data and instructions
+and a 128 word program RAM, and checks every result against a model. The other
 testbenches run the processors without checking their results.

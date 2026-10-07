@@ -17,8 +17,12 @@ entity fixed_execution_unit_tb is
       runner_cfg : string
       ;g_architecture     : string  := "fixed_mult_add"
       ;g_pre_add_register : boolean := false
+      ;g_product_register : boolean := false
       -- the program ram is 2**g_program_address_width words
       ;g_program_address_width : natural := 10
+      -- the data and program ram word widths
+      ;g_data_width        : natural := 32
+      ;g_instruction_width : natural := 32
   );
 end;
 
@@ -30,14 +34,15 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     constant radix : natural := 20;
 
     constant ref_subtype : subtype_ref_record :=
-        create_ref_subtypes(readports => 3, datawidth => 32, addresswidth => 10);
+        create_ref_subtypes(readports => 3, datawidth => g_data_width, addresswidth => 10);
     constant instr_ref_subtype : subtype_ref_record :=
-        create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => g_program_address_width);
+        create_ref_subtypes(readports => 1, datawidth => g_instruction_width, addresswidth => g_program_address_width);
 
-    subtype word is std_logic_vector(31 downto 0);
+    constant w : natural := g_data_width;
+    subtype word is std_logic_vector(w-1 downto 0);
     type word_array is array (natural range <>) of word;
 
-    function galois_step (x : word) return word is
+    function galois_step (x : std_logic_vector(31 downto 0)) return std_logic_vector is
     begin
         if x(0) = '1' then
             return ('0' & x(31 downto 1)) xor x"80200003";
@@ -50,23 +55,25 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     function make_data return work.dual_port_ram_pkg.ram_array is
         variable retval : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range)
             := (others => (others => '0'));
-        variable x : word := x"1234abcd";
+        variable x : std_logic_vector(31 downto 0) := x"1234abcd";
+        constant most_negative : word := '1' & (w-2 downto 0 => '0');
     begin
+        -- random 32 bit operands, shifted up to the data width
         for i in 64 to 95 loop
             x := galois_step(x);
-            retval(i) := std_logic_vector(shift_right(signed(x), 2));
+            retval(i) := std_logic_vector(shift_left(resize(shift_right(signed(x), 2), w), w - 32));
         end loop;
-        retval(70) := x"80000000";
-        retval(80) := x"80000000";
-        retval(96) := std_logic_vector(to_signed(0, 32));
-        retval(97) := std_logic_vector(to_signed(3 * 2**radix, 32));
-        retval(98) := std_logic_vector(to_signed(2**radix / 20, 32));
+        retval(70) := most_negative;
+        retval(80) := most_negative;
+        retval(96) := std_logic_vector(to_signed(0, w));
+        retval(97) := std_logic_vector(to_signed(3 * 2**radix, w));
+        retval(98) := std_logic_vector(to_signed(2**radix / 20, w));
         return retval;
     end make_data;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(ref_subtype.data'range) := make_data;
 
-    constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range) := (
+    constant program_32 : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(31 downto 0) := (
         -- 0 : one of each multiply-add, the accumulator, the accumulator
         -- zeroed by get_acc_and_zero
         0    => op(mpy_add          , 1 , 64 , 65 , 66)
@@ -97,6 +104,18 @@ architecture vunit_simulation of fixed_execution_unit_tb is
 
         , others => op(nop));
 
+    function widen (program : work.dual_port_ram_pkg.ram_array) return work.dual_port_ram_pkg.ram_array is
+        variable retval : work.dual_port_ram_pkg.ram_array(program'range)(instr_ref_subtype.data'range);
+    begin
+        for i in program'range loop
+            retval(i) := resize_instruction(program(i), g_instruction_width);
+        end loop;
+        return retval;
+    end widen;
+
+    constant test_program : work.dual_port_ram_pkg.ram_array(0 to instr_ref_subtype.address_high)(instr_ref_subtype.data'range)
+        := widen(program_32);
+
     signal mproc_in  : microprogram_processor_in_record := (processor_requested => false, start_address => 0);
     signal mproc_out : microprogram_processor_out_record;
 
@@ -107,7 +126,7 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (0 to 12 => op(nop))
+        ,instr_pipeline    => (0 to 12 => resize_instruction(op(nop), g_instruction_width))
     );
     constant unit_out_ref : execution_unit_out_record := (
         data_read_in  => ref_subtype.ram_read_in
@@ -145,22 +164,22 @@ begin
             return program_data(address);
         end m;
 
-        -- bits radix + 31 downto radix of a * b + c * 2**radix
+        -- bits radix + w - 1 downto radix of a * b + c * 2**radix
         function mult_add (a, b, c : word) return word is
-            variable result : signed(63 downto 0);
+            variable result : signed(2*w-1 downto 0);
         begin
-            result := signed(a) * signed(b) + shift_left(resize(signed(c), 64), radix);
-            return std_logic_vector(result(radix + 31 downto radix));
+            result := signed(a) * signed(b) + shift_left(resize(signed(c), 2*w), radix);
+            return std_logic_vector(result(radix + w - 1 downto radix));
         end mult_add;
 
         function mult_sub (a, b, c : word) return word is
-            variable result : signed(63 downto 0);
+            variable result : signed(2*w-1 downto 0);
         begin
-            result := signed(a) * signed(b) - shift_left(resize(signed(c), 64), radix);
-            return std_logic_vector(result(radix + 31 downto radix));
+            result := signed(a) * signed(b) - shift_left(resize(signed(c), 2*w), radix);
+            return std_logic_vector(result(radix + w - 1 downto radix));
         end mult_sub;
 
-        -- the pre-adder, wraps to 32 bits
+        -- the pre-adder, wraps to the data width
         function sum (a, b : word) return word is
         begin
             return std_logic_vector(signed(a) + signed(b));
@@ -176,31 +195,34 @@ begin
             check_equal(data_ram(address), expected, "data ram " & integer'image(address));
         end check_word;
 
-        variable products : signed(63 downto 0);
+        constant zero     : word := (others => '0');
+        variable products : signed(2*w-1 downto 0);
         variable y        : word;
 
     begin
         test_runner_setup(runner, runner_cfg);
         info(g_architecture & ", pre-adder register " & boolean'image(g_pre_add_register)
-            & ", " & integer'image(test_program'length) & " word program ram");
+            & ", product register " & boolean'image(g_product_register)
+            & ", " & integer'image(test_program'length) & " word program ram, "
+            & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width) & " bit instructions");
 
         run_program(0);
         check_word(1, mult_add(m(64), m(65), m(66)));
         check_word(2, mult_sub(m(67), m(68), m(69)));
         check_word(3, mult_add(minus(m(70)), m(71), m(72)));
         check_word(4, mult_sub(minus(m(73)), m(74), m(75)));
-        check_word(5, mult_add(sum(m(76), m(77)), m(78), x"00000000"));
-        check_word(6, mult_add(sum(m(79), minus(m(80))), m(81), x"00000000"));
+        check_word(5, mult_add(sum(m(76), m(77)), m(78), zero));
+        check_word(6, mult_add(sum(m(79), minus(m(80))), m(81), zero));
         check_word(7, mult_add(sum(m(82), minus(m(83))), m(84), m(83)));
         check_word(8, sum(sum(m(89), m(90)), m(91)));
-        check_word(9, x"00000000");
+        check_word(9, zero);
 
         if g_architecture = "fixed_mult_acc" then
             run_program(32);
             products := signed(m(85)) * signed(m(86)) + signed(m(87)) * signed(m(88))
-                + shift_left(resize(signed(m(92)), 64), radix)
-                + shift_left(resize(signed(m(93)), 64), radix);
-            check_word(10, std_logic_vector(products(radix + 31 downto radix)));
+                + shift_left(resize(signed(m(92)), 2*w), radix)
+                + shift_left(resize(signed(m(93)), 2*w), radix);
+            check_word(10, std_logic_vector(products(radix + w - 1 downto radix)));
         end if;
 
         y := m(96);
@@ -239,13 +261,13 @@ begin
 
     fixed_mult_add : if g_architecture = "fixed_mult_add" generate
         u_instruction : entity work.execution_unit(fixed_mult_add)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register)
+        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
         port map (clock, instr_in, instr_out);
     end generate;
 
     fixed_mult_acc : if g_architecture = "fixed_mult_acc" generate
         u_instruction : entity work.execution_unit(fixed_mult_acc)
-        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register)
+        generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
         port map (clock, instr_in, instr_out);
     end generate;
 

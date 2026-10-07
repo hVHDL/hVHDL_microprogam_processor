@@ -20,9 +20,11 @@ architecture fixed_mult_add of execution_unit is
     constant datawidth : natural := unit_in.data_read_out(unit_in.data_read_out'left).data'length;
 
     -- the request to fixed_dsp is registered here, the product is in P
-    -- two clocks later, three with the pre-adder registered
+    -- two clocks later, one more for each of the pre-adder and product
+    -- registers
     constant result_stage : natural := work.dual_port_ram_pkg.read_pipeline_delay + 3
-        + boolean'pos(g_pre_add_register) + g_read_delays + g_read_out_delays;
+        + boolean'pos(g_pre_add_register) + boolean'pos(g_product_register)
+        + g_read_delays + g_read_out_delays;
 
     signal dsp_in : fixed_dsp_in_record(
         a(datawidth-1 downto 0)
@@ -38,7 +40,7 @@ architecture fixed_mult_add of execution_unit is
 begin
 
     u_fixed_dsp : entity work.fixed_dsp(rtl)
-    generic map (g_pre_add_register => g_pre_add_register)
+    generic map (g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
     port map (
         clock          => clock
         ,fixed_dsp_in  => dsp_in

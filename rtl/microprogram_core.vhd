@@ -51,7 +51,9 @@ architecture rtl of microprogram_core is
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
-    signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
+    constant instruction_width : natural := g_program(g_program'low)'length;
+    signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high)(instruction_width-1 downto 0)
+        := (0 to pipeline_high => resize_instruction(op(nop), instruction_width));
 
     signal write_buffer : mc_write_in'subtype := idle_write;
 
@@ -65,7 +67,7 @@ begin
     mc_output <= ram_write_in;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(g_program_size => g_program'length)
+    generic map(g_program_size => g_program'length, g_instruction_width => instruction_width)
     port map(clock 
     , instruction_ram_read_in  => instr_ram_read_in(0)
     , instruction_ram_read_out => instr_ram_read_out(0)

@@ -53,7 +53,10 @@ architecture rtl of fixed_microprogram_processor is
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
 
     signal command        : t_command                  := (program_end);
-    signal instr_pipeline : instruction_pipeline_array(0 to g_number_of_pipeline_stages-1) := (0 to g_number_of_pipeline_stages-1 => op(nop));
+    constant instruction_width : natural := g_program(g_program'low)'length;
+    constant nop_instruction : std_logic_vector(instruction_width-1 downto 0) := resize_instruction(op(nop), instruction_width);
+    signal instr_pipeline : instruction_pipeline_array(0 to g_number_of_pipeline_stages-1)(instruction_width-1 downto 0)
+        := (0 to g_number_of_pipeline_stages-1 => nop_instruction);
 
     signal write_buffer : mc_write_in'subtype := idle_write;
 
@@ -61,7 +64,7 @@ architecture rtl of fixed_microprogram_processor is
     constant unit_in_ref : execution_unit_in_record := (
         instr_ram_read_out => instr_ref_subtype.ram_read_out
         ,data_read_out     => ref_subtype.ram_read_out
-        ,instr_pipeline    => (0 to g_number_of_pipeline_stages-1 => op(nop))
+        ,instr_pipeline    => (0 to g_number_of_pipeline_stages-1 => nop_instruction)
         );
 
     constant unit_out_ref : execution_unit_out_record := (
@@ -76,7 +79,7 @@ begin
 
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(g_program_size => g_program'length)
+    generic map(g_program_size => g_program'length, g_instruction_width => instruction_width)
     port map(clock 
     , instr_ram_read_in(0) 
     , instr_ram_read_out(0) 

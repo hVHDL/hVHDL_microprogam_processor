@@ -11,6 +11,8 @@ LIBRARY ieee  ;
 entity microprogram_sequencer is
     generic(
         g_program_size : positive := 1024
+        -- the program ram's word width
+        ;g_instruction_width : positive := 32
     );
     port(
         clock : in std_logic
@@ -36,7 +38,8 @@ architecture rtl of microprogram_sequencer is
     signal processor_state : t_processor_states := halted;
 
     -- nop from power up : an all zero instruction is mpy_add to address 0
-    signal pipeline : instr_pipeline'subtype := (others => op(nop));
+    constant nop_instruction : std_logic_vector(g_instruction_width-1 downto 0) := resize_instruction(op(nop), g_instruction_width);
+    signal pipeline : instr_pipeline'subtype := (others => nop_instruction);
 
 begin
 
@@ -50,7 +53,7 @@ begin
             init_mp_ram_read(instruction_ram_read_in);
 
             -------- instruction pipeline --------
-            pipeline <= op(nop) & pipeline(0 to pipeline'high-1);
+            pipeline <= nop_instruction & pipeline(0 to pipeline'high-1);
             --------------------------------------
             is_ready <= false;
                                      

@@ -50,7 +50,10 @@ package generic_microinstruction_pkg is
     subtype long_arg is std_logic_vector(27 downto 0);
 
     type reg_array                  is array (natural range 0 to number_of_registers-1) of std_logic_vector(data_bit_width-1 downto 0);
-    type instruction_pipeline_array is array (natural range <>) of std_logic_vector(instruction_bit_width-1 downto 0);
+    -- an instruction can be wider than the fields below, which are in its
+    -- low 32 bits : the pipeline takes the program ram's word width, and
+    -- decode() and the get_ functions take an instruction of any width
+    type instruction_pipeline_array is array (natural range <>) of std_logic_vector;
     
     subtype t_instruction           is std_logic_vector(instruction_bit_width-1 downto 0);
     type program_array              is array (natural range <>) of t_instruction;
@@ -98,39 +101,44 @@ package generic_microinstruction_pkg is
 
 ------------------------------------------------------------------------
     function get_single_argument (
-        input_register : t_instruction )
+        input_register : std_logic_vector )
     return t_instruction;
 
 ------------------------------------------------------------------------
     function get_single_argument (
-        input_register : t_instruction )
+        input_register : std_logic_vector )
     return natural;
 ------------------------------------------------------------------------
-    function get_instruction ( input_register : t_instruction )
+    function get_instruction ( input_register : std_logic_vector )
         return integer;
 ------------------------------------------------------------------------
     function decode ( number : natural)
         return t_command;
 ------------------------------------------------------------------------
-    function decode ( number : t_instruction)
+    function decode ( number : std_logic_vector)
         return t_command;
 ------------------------------------------------------------------------
-    function get_dest ( input_register : t_instruction )
+    function get_dest ( input_register : std_logic_vector )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg1 ( input_register : t_instruction )
+    function get_arg1 ( input_register : std_logic_vector )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg2 ( input_register : t_instruction )
+    function get_arg2 ( input_register : std_logic_vector )
         return natural;
 ------------------------------------------------------------------------
-    function get_arg3 ( input_register : t_instruction )
+    function get_arg3 ( input_register : std_logic_vector )
         return natural;
 ------------------------------------------------------------------------
-    function get_long_argument ( input_register : t_instruction )
+    function get_long_argument ( input_register : std_logic_vector )
         return natural;
-    function get_long_argument ( input_register : t_instruction )
+    function get_long_argument ( input_register : std_logic_vector )
         return t_instruction;
+------------------------------------------------------------------------
+    -- an instruction zero extended (or cut) to width bits, for a program
+    -- ram wider than instruction_bit_width
+    function resize_instruction ( instruction : std_logic_vector; width : natural)
+        return std_logic_vector;
 ------------------------------------------------------------------------
     function pipelined_block ( program : program_array)
         return program_array;
@@ -241,65 +249,77 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_dest
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(dest'range)));
+        return to_integer(unsigned(word(dest'range)));
     end get_dest;
 ------------------------------------------------------------------------
     function get_arg1
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(arg1'range)));
+        return to_integer(unsigned(word(arg1'range)));
     end get_arg1;
 ------------------------------------------------------------------------
     function get_arg2
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(arg2'range)));
+        return to_integer(unsigned(word(arg2'range)));
     end get_arg2;
 ------------------------------------------------------------------------
     function get_arg3
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(arg3'range)));
+        return to_integer(unsigned(word(arg3'range)));
     end get_arg3;
 ------------------------------------------------------------------------
     function get_long_argument
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(comm'low-1 downto 0)));
+        return to_integer(unsigned(word(comm'low-1 downto 0)));
         
     end get_long_argument;
 
 ------------------------------------------------------------------------
     function get_long_argument
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return t_instruction
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
         variable retval : t_instruction := (others => '0');
     begin
-        retval(comm'low-1 downto 0) := input_register(comm'low-1 downto 0);
+        retval(comm'low-1 downto 0) := word(comm'low-1 downto 0);
         return retval;
         
     end get_long_argument;
@@ -307,13 +327,15 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_single_argument
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return t_instruction
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
         variable retval : t_instruction := (others => '0');
     begin
-        retval(ref'range) := input_register(ref'range);
+        retval(ref'range) := word(ref'range);
         return retval;
         
     end get_single_argument;
@@ -321,25 +343,29 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function get_single_argument
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return natural
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
         variable retval : t_instruction := (others => '0');
     begin
-        retval(ref'range) := input_register(ref'range);
+        retval(ref'range) := word(ref'range);
         return to_integer(unsigned(retval));
         
     end get_single_argument;
 ------------------------------------------------------------------------
     function get_instruction
     (
-        input_register : t_instruction 
+        input_register : std_logic_vector 
     )
     return integer
     is
+        -- descending whatever the caller's range
+        constant word : std_logic_vector(input_register'length-1 downto 0) := input_register;
     begin
-        return to_integer(unsigned(input_register(comm'range)));
+        return to_integer(unsigned(word(comm'range)));
     end get_instruction;
 ------------------------------------------------------------------------
     function decode
@@ -354,7 +380,7 @@ package body generic_microinstruction_pkg is
 ------------------------------------------------------------------------
     function decode
     (
-        number : t_instruction
+        number : std_logic_vector
     )
     return t_command
     is
@@ -461,5 +487,12 @@ package body generic_microinstruction_pkg is
         return op(mpy_add, dest, a, 1, 0);
     end set;
 
+
+    function resize_instruction ( instruction : std_logic_vector; width : natural)
+        return std_logic_vector
+    is
+    begin
+        return std_logic_vector(resize(unsigned(instruction), width));
+    end resize_instruction;
 
 end package body generic_microinstruction_pkg;
