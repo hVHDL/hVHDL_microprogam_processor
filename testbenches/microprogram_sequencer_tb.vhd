@@ -65,6 +65,7 @@ architecture vunit_simulation of microprogram_sequencer_tb is
 
     signal processor_enabled : boolean := true;
     signal processor_requested : boolean := false;
+    signal sequencer_read_out  : ram_read_out_record(data(31 downto 0));
 
     use work.execution_unit_pkg.all;
     constant unit_in_ref : execution_unit_in_record := (
@@ -111,7 +112,8 @@ begin
     , processor_enabled   => processor_enabled
     , instr_pipeline      => instr_pipeline
     , processor_requested => processor_requested
-    , start_address       => 0);
+    , start_address       => 0
+    , instruction_read_out => sequencer_read_out);
 -- ----------------------------------------------------------
     fixed_mult_add : entity work.execution_unit(fixed_mult_add)
     generic map(g_radix => used_radix)

@@ -6,6 +6,7 @@ LIBRARY ieee  ;
     use work.microinstruction_pkg.all;
     use work.execution_unit_pkg.all;
     use work.microprogram_interface_pkg.address_width;
+    use work.microprogram_interface_pkg.jump_delay_slots;
 
 -- the program and data rams take their sizes and word widths from the
 -- initial contents g_program and g_data, a power of 2 words each
@@ -19,6 +20,9 @@ entity microprogram_core is
             -- g_data_ram_output_register must match
             ;g_program_ram_output_register : boolean := true
             ;g_data_ram_output_register    : boolean := true
+            -- a one line program cache in the sequencer : starting the
+            -- program last started takes jump_delay_slots() clocks less
+            ;g_program_cache : boolean := false
            );
     port(
         clock        : in std_logic
@@ -65,6 +69,17 @@ architecture rtl of microprogram_core is
 
     signal write_buffer : mc_write_in'subtype := idle_write;
 
+    -- the instruction going out of the sequencer, from its cache or the ram
+    signal instruction_read_out : instr_ref_subtype.ram_read_out'subtype;
+
+    function cache_depth return natural is
+    begin
+        if g_program_cache then
+            return jump_delay_slots(g_program_ram_output_register);
+        end if;
+        return 0;
+    end cache_depth;
+
 begin
 
     assert address_bits(instruction_width) <= address_width(g_data'length)
@@ -74,13 +89,14 @@ begin
 
 ----------------------------------------------------------
     to_unit <= (data_read_out        => data_ram_read_out
-                       , instr_ram_read_out => instr_ram_read_out
+                       , instr_ram_read_out => instruction_read_out
                        , instr_pipeline     => instr_pipeline);
 
     mc_output <= ram_write_in;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
-    generic map(g_program_size => g_program'length, g_instruction_width => instruction_width)
+    generic map(g_program_size => g_program'length, g_instruction_width => instruction_width
+        , g_cache_depth => cache_depth)
     port map(clock 
     , instruction_ram_read_in  => instr_ram_read_in(0)
     , instruction_ram_read_out => instr_ram_read_out(0)
@@ -88,7 +104,8 @@ begin
     , instr_pipeline           => instr_pipeline
     , processor_requested      => mproc_in.processor_requested
     , start_address            => mproc_in.start_address
-    , is_ready                 => mproc_out.is_ready);
+    , is_ready                 => mproc_out.is_ready
+    , instruction_read_out     => instruction_read_out(0));
 ----------------------------------------------------------
     u_program_ram : entity work.multi_port_ram
     generic map(g_program, g_program_ram_output_register)

@@ -26,6 +26,9 @@ entity portable_program_tb is
       ;g_product_register  : boolean := false
       ;g_program_ram_output_register : boolean := true
       ;g_data_ram_output_register    : boolean := true
+      -- the sequencer's program cache : every program runs twice, the
+      -- second start from the cache line, jump_delay_slots() clocks shorter
+      ;g_program_cache : boolean := false
       ;g_data_width        : natural := 32
       ;g_instruction_width : natural := 32
   );
@@ -159,6 +162,24 @@ begin
             wait until rising_edge(clock);
         end run_program;
 
+        -- a program once, or with the cache twice : the second start hits
+        -- the line the first filled and is the line's depth shorter
+        procedure run_cached (start : natural; clocks : out natural) is
+            variable first, second : natural;
+        begin
+            run_program(start, first);
+            clocks := first;
+            if g_program_cache then
+                run_program(start, second);
+                check_equal(second, first - config.delay_slots,
+                    "program " & integer'image(start) & " from the cache");
+                info("program " & integer'image(start) & " : " & integer'image(first)
+                    & " clocks, from the cache " & integer'image(second));
+            end if;
+        end run_cached;
+
+        constant runs : natural := 1 + boolean'pos(g_program_cache);
+
         function m (address : natural) return word is
         begin
             return program_data(address);
@@ -222,7 +243,7 @@ begin
                 std_logic_vector(shift_left(to_signed(-3000, w), radix) - 1), "to_fixed(-3000 - lsb)");
         end if;
 
-        run_program(0, clocks);
+        run_cached(0, clocks);
         info("chain : " & integer'image(clocks) & " clocks");
         r1 := mult_add(m(64), m(65), m(66));
         r2 := mult_sub(r1, m(67), m(68));
@@ -237,11 +258,11 @@ begin
         check_word(6, sum(sum(r5, r4), r3));
         check_word(7, sum(r1, r2));
 
-        run_program(128, clocks);
+        run_cached(128, clocks);
         info("50 boost converter steps : " & integer'image(clocks) & " clocks");
         i := m(boost.i);
         u := m(boost.u);
-        for k in 1 to 50 loop
+        for k in 1 to 50 * runs loop
             vl := mult_add(minus(m(boost.duty)), u, m(boost.vin));
             ic := mult_sub(m(boost.duty), i, m(boost.load));
             vl := mult_add(minus(m(boost.r)), i, vl);
@@ -251,10 +272,10 @@ begin
         check_word(boost.i, i);
         check_word(boost.u, u);
 
-        run_program(256, clocks);
+        run_cached(256, clocks);
         info("100 low pass filter rounds : " & integer'image(clocks) & " clocks");
         y := m(96);
-        for k in 1 to 100 loop
+        for k in 1 to 100 * runs loop
             y := mult_add(sum(m(97), minus(y)), m(98), y);
         end loop;
         check_word(96, y);
@@ -297,7 +318,8 @@ begin
     u_microprogram_core : entity work.microprogram_core
     generic map (g_program => test_program, g_data => program_data
         ,g_program_ram_output_register => g_program_ram_output_register
-        ,g_data_ram_output_register => g_data_ram_output_register)
+        ,g_data_ram_output_register => g_data_ram_output_register
+        ,g_program_cache => g_program_cache)
     port map (
         clock        => clock
         ,mproc_in    => mproc_in
