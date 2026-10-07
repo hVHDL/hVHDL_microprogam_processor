@@ -45,6 +45,14 @@ v2008.add_source_files(ROOT / "vhdl2008/arch_fixed_mult_add.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/microprogram_sequencer_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/retry_microprogram_processor_tb.vhd")
 v2008.add_source_files(ROOT / "testbenches/vhdl2008/float_microprocessor_tb.vhd")
+v2008.add_source_files(ROOT / "testbenches/vhdl2008/fixed_instruction_tb.vhd")
+
+fixed_tb = v2008.test_bench("fixed_instruction_tb")
+for architecture in ["fixed_mult_add", "add_sub_mpy"]:
+    for pre_add_register in [False, True]:
+        fixed_tb.add_config(
+            name=architecture + ("_pre_add_register" if pre_add_register else ""),
+            generics=dict(g_architecture=architecture, g_pre_add_register=pre_add_register))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

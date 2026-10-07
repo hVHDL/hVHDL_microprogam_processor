@@ -20,7 +20,8 @@ vhdl2008/
   microprogram_sequencer.vhd          program counter, set_rpt / jump loops,
                                       instruction pipeline
   instruction_pkg.vhd                 entity instruction and its port records
-  addsub.vhd                          architecture add_sub_mpy (fixed point)
+  addsub.vhd                          architecture add_sub_mpy (fixed_dsp,
+                                      double width accumulator)
   arch_fixed_mult_add.vhd             architecture fixed_mult_add (fixed_dsp)
   arch_float_mult_add.vhd             architecture float_mult_add (hfloat)
   microprogram_processor.vhd          sequencer + program and data RAMs +
@@ -28,7 +29,9 @@ vhdl2008/
   microprogram_controller.vhd         sequencer + RAMs, the instruction
                                       entity connected from outside
   ram_connector_pkg.vhd               helpers for combining RAM ports
-testbenches/vhdl2008/            sequencer, processor and float controller
+testbenches/vhdl2008/            sequencer, processor and float controller,
+                                 fixed_instruction_tb checks both fixed point
+                                 architectures
 vunit_run_sw_processor.py        VUnit run script
 ```
 
@@ -57,7 +60,11 @@ data width in its pre-adder, and the result is bits radix + width − 1 …
 radix of a·b ± c·2^radix; `g_pre_add_register` registers the pre-adder,
 one clock more to the result. `a_add_b_mpy_c`,
 `a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
-point architectures. There is no hazard detection: a result is in the data
+point architectures. `add_sub_mpy` runs the same multiply-adds on its
+`fixed_dsp`, and its accumulator is at the product's width: `mpy_acc` adds
+a·b, `acc` adds c, `get_acc_and_zero` writes the accumulator + c and zeroes
+it. In `fixed_mult_add` the accumulator is data width, `acc` and
+`get_acc_and_zero` add c, and there is no `mpy_acc`. There is no hazard detection: a result is in the data
 RAM only after the pipeline delay, so a program spaces dependent
 instructions with addresses left as `nop`. A `jump` takes effect after the
 three instructions that follow it, which are already fetched and run on
@@ -73,4 +80,7 @@ git submodule update --init --recursive
 python3 vunit_run_sw_processor.py
 ```
 
-The testbenches run the processors but do not check their results yet.
+`fixed_instruction_tb` runs the multiply-add and accumulator commands and
+a `jump` loop on both fixed point architectures, with and without the
+pre-adder register, and checks every result against a model. The other
+testbenches run the processors without checking their results.

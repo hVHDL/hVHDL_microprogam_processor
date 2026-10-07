@@ -1,4 +1,3 @@
-
 LIBRARY ieee  ;
     USE ieee.NUMERIC_STD.all  ;
     USE ieee.std_logic_1164.all  ;
@@ -7,86 +6,87 @@ LIBRARY ieee  ;
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
 
+-- fixed point multiply-add on hVHDL_fixed_point's fixed_dsp with a double
+-- width accumulator :
+--
+--   mpy_add          dest <- a * b + c
+--   mpy_sub          dest <- a * b - c
+--   neg_mpy_add      dest <- -a * b + c
+--   neg_mpy_sub      dest <- -a * b - c
+--   a_add_b_mpy_c    dest <- (a + b) * c
+--   a_sub_b_mpy_c    dest <- (a - b) * c
+--   lp_filter        dest <- (a - b) * c + b
+--   mpy_acc          accumulator <- accumulator + a * b
+--   acc              accumulator <- accumulator + c
+--   get_acc_and_zero dest <- accumulator + c, accumulator <- 0
+--
+-- with a, b, c the instruction's arguments 1, 2, 3. The sums and
+-- differences of two arguments and -a are taken in fixed_dsp's pre-adder
+-- and wrap to the data width, c is added at the product's radix and a
+-- result is bits radix + data width - 1 downto radix of the double width
+-- product or accumulator. Every command goes through the one fixed_dsp,
+-- the accumulator adds its results.
 architecture add_sub_mpy of instruction is
 
-    constant g_radix : natural := radix;
+    use work.fixed_dsp_pkg.all;
 
     constant datawidth : natural := instruction_in.data_read_out(instruction_in.data_read_out'left).data'length;
-    signal a, b, d     : signed(datawidth-1 downto 0);
-    -- c is added directly into the multiplier's output width now, so it
-    -- must already be pre-shifted/resized to that width (see the c <=
-    -- assignments below)
-    signal c           : signed(2*datawidth-1 downto 0);
-    signal dsp_result  : signed(2*datawidth-1 downto 0);
 
-    signal mac_mpy     : signed(2*datawidth-1 downto 0);
-    signal accumulator : mac_mpy'subtype := (others => '0');
+    -- the request to fixed_dsp is registered here, the product is in P
+    -- two clocks later, three with the pre-adder registered
+    constant result_stage : natural := work.dual_port_ram_pkg.read_pipeline_delay + 3
+        + boolean'pos(g_pre_add_register) + g_read_delays + g_read_out_delays;
 
-    signal accumulate        : std_logic := '0';-- 0=p <= p + (a*b)
-    signal pre_subtract      : std_logic := '0';-- 0=a+d
-    signal post_subtract     : std_logic := '0';-- 0=mpy_out+d, 1 => mpy_out-d
-    signal invert_result     : std_logic := '0'; -- 1 => negate multiplier result
-    signal buf_accumulate    : std_logic := '0';
-    signal reset_accumulator : std_logic := '0';
+    signal dsp_in : fixed_dsp_in_record(
+        a(datawidth-1 downto 0)
+        ,d(datawidth-1 downto 0)
+        ,b(datawidth-1 downto 0)
+        ,c(2*datawidth-1 downto 0)
+    ) := init_fixed_dsp_in(datawidth);
 
-    signal ready_with_1 : std_logic := '0';
+    signal dsp_out : fixed_dsp_out_record(result(2*datawidth-1 downto 0));
+
+    signal accumulator : signed(2*datawidth-1 downto 0) := (others => '0');
 
 begin
 
-    u_fixed_dsp : entity work.fixed_dsp
-    port map( clock => clock
-    ,fixed_dsp_in.a => a
-    ,fixed_dsp_in.d => d
-    ,fixed_dsp_in.b => b
-    ,fixed_dsp_in.c => c
-
-    ,fixed_dsp_in.request_with_1       => '1'
-    ,fixed_dsp_in.accumulate_with_1    => accumulate
-    ,fixed_dsp_in.pre_subtract_with_1  => pre_subtract
-    ,fixed_dsp_in.post_subtract_with_1 => post_subtract
-    ,fixed_dsp_in.invert_result_with_1 => invert_result
-
-    ,fixed_dsp_in.reset_accumulator_with_1 => reset_accumulator
-
-    ,fixed_dsp_out.ready_with_1 => ready_with_1
-    ,fixed_dsp_out.result       => dsp_result
+    u_fixed_dsp : entity work.fixed_dsp(rtl)
+    generic map (g_pre_add_register => g_pre_add_register)
+    port map (
+        clock          => clock
+        ,fixed_dsp_in  => dsp_in
+        ,fixed_dsp_out => dsp_out
     );
 
-
-    multiply_accumulate : process(clock) is
-    begin
-        if rising_edge(clock) then
-            mac_mpy        <= resize(a*b, mac_mpy'length);
-            buf_accumulate <= accumulate;
-
-            if buf_accumulate = '1' then
-                accumulator <= accumulator + mac_mpy;
-            end if;
-            if reset_accumulator= '1' then
-                accumulator <= (others => '0');
-            end if;
-        end if;
-    end process;
-
     mpy_add_sub : process(clock) is
+        variable arg1, arg2, arg3 : signed(datawidth-1 downto 0);
+        variable zero : signed(datawidth-1 downto 0);
+        variable sum  : signed(2*datawidth-1 downto 0);
+
+        -- c scaled to the product's radix
+        impure function scaled (c : signed) return signed is
+        begin
+            return shift_left(resize(c, 2*datawidth), radix);
+        end scaled;
+
     begin
         if rising_edge(clock) then
             init_mp_ram_read(instruction_out.data_read_in);
             init_mp_write(instruction_out.ram_write_in);
+            init_fixed_dsp(dsp_in);
 
             ---------------
             if ram_read_is_ready(instruction_in.instr_ram_read_out(0)) then
                 CASE decode(get_ram_data(instruction_in.instr_ram_read_out(0))) is
-                    WHEN mpy_add 
-                        | neg_mpy_add 
-                        | neg_mpy_sub 
-                        | mpy_sub 
-                        | a_add_b_mpy_c 
-                        | a_sub_b_mpy_c 
-                        | lp_filter 
-                        | acc 
-                        | get_acc_and_zero 
-                        | check_and_saturate_acc 
+                    WHEN mpy_add
+                        | neg_mpy_add
+                        | neg_mpy_sub
+                        | mpy_sub
+                        | a_add_b_mpy_c
+                        | a_sub_b_mpy_c
+                        | lp_filter
+                        | acc
+                        | get_acc_and_zero
                         | mpy_acc
                         =>
 
@@ -104,120 +104,71 @@ begin
             end if;
 
             ---------------
+            arg1 := signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
+            arg2 := signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
+            arg3 := signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
+            zero := (others => '0');
 
-            accumulate    <= '0';
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
+            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '0';
-                    post_subtract <= '0';
-                    invert_result <= '0';
-
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= (others => '0');
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
-
-                WHEN neg_mpy_add =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '1';
-                    post_subtract <= '0';
-                    invert_result <= '0';
-
-                    a <= (others => '0');
-                    d <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
-
-                WHEN neg_mpy_sub =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '0';
-                    post_subtract <= '1';
-                    invert_result <= '0';
-
-                    a <= (others => '0');
-                    d <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3));
 
                 WHEN mpy_sub =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '0';
-                    post_subtract <= '1';
-                    invert_result <= '0';
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3)
+                        , post_subtract_with_1 => '1');
 
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= (others => '0');
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg3_mem))), 2*datawidth), g_radix);
+                WHEN neg_mpy_add =>
+                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3)
+                        , pre_subtract_with_1 => '1');
+
+                WHEN neg_mpy_sub =>
+                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3)
+                        , pre_subtract_with_1 => '1', post_subtract_with_1 => '1');
 
                 WHEN a_add_b_mpy_c =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '0';
-                    post_subtract <= '0';
-                    invert_result <= '0';
-
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(zero));
 
                 WHEN a_sub_b_mpy_c =>
-                    accumulate    <= '0';
-                    pre_subtract  <= '1';
-                    post_subtract <= '0';
-                    invert_result <= '0';
-
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= (others => '0');
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(zero)
+                        , pre_subtract_with_1 => '1');
 
                 WHEN lp_filter =>
-                    accumulate    <= '1';
-                    pre_subtract  <= '1';
-                    post_subtract <= '0';
-                    invert_result <= '0';
+                    fmac(dsp_in, a => arg1, d => arg2, b => arg3, c => scaled(arg2)
+                        , pre_subtract_with_1 => '1');
 
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg3_mem)));
-                    c <= shift_left(resize(signed(get_ram_data(instruction_in.data_read_out(arg2_mem))), 2*datawidth), g_radix);
+                WHEN mpy_acc =>
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(zero));
 
-                WHEN mpy_acc | get_acc_and_zero =>
-                    accumulate    <= '1';
-                    pre_subtract  <= '0';
-                    post_subtract <= '0';
-                    invert_result <= '0';
-
-                    a <= signed(get_ram_data(instruction_in.data_read_out(arg1_mem)));
-                    d <= (others => '0');
-                    b <= signed(get_ram_data(instruction_in.data_read_out(arg2_mem)));
-                    c <= (others => '0');
+                WHEN acc | get_acc_and_zero =>
+                    fmac(dsp_in, a => zero, d => zero, b => zero, c => scaled(arg3));
 
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            reset_accumulator <= '0';
-            CASE decode(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays)) is
-                WHEN mpy_add 
-                    | neg_mpy_add   
-                    | neg_mpy_sub   
+            sum := accumulator + dsp_out.result;
+
+            CASE decode(instruction_in.instr_pipeline(result_stage)) is
+                WHEN mpy_add
+                    | neg_mpy_add
+                    | neg_mpy_sub
                     | mpy_sub
-                    | a_add_b_mpy_c 
-                    | a_sub_b_mpy_c 
+                    | a_add_b_mpy_c
+                    | a_sub_b_mpy_c
                     | lp_filter =>
 
-                    write_data_to_ram(instruction_out.ram_write_in 
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(dsp_result(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
+                    write_data_to_ram(instruction_out.ram_write_in
+                    , get_dest(instruction_in.instr_pipeline(result_stage))
+                    , std_logic_vector(dsp_out.result(radix + datawidth - 1 downto radix)));
+
+                WHEN mpy_acc | acc =>
+                    accumulator <= sum;
 
                 WHEN get_acc_and_zero =>
-
-                    reset_accumulator <= '1';
                     write_data_to_ram(instruction_out.ram_write_in
-                    , get_dest(instruction_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + 3 + g_read_delays+ g_read_out_delays))
-                    , std_logic_vector(accumulator(radix+instruction_in.data_read_out(instruction_in.data_read_out'left).data'length-1 downto radix)));
+                    , get_dest(instruction_in.instr_pipeline(result_stage))
+                    , std_logic_vector(sum(radix + datawidth - 1 downto radix)));
+
+                    accumulator <= (others => '0');
 
                 WHEN others => -- do nothing
             end CASE;
@@ -227,4 +178,3 @@ begin
     end process mpy_add_sub;
 
 end add_sub_mpy;
-----

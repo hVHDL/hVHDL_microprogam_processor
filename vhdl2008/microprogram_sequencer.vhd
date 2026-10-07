@@ -29,9 +29,13 @@ architecture rtl of microprogram_sequencer is
     type t_processor_states is (halted, running);
     signal processor_state : t_processor_states := halted;
 
+    -- nop from power up : an all zero instruction is mpy_add to address 0
+    signal pipeline : instr_pipeline'subtype := (others => op(nop));
+
 begin
 
     processor_enabled <= (processor_state = running);
+    instr_pipeline    <= pipeline;
 
     make_program_counter : process(clock)
 
@@ -40,7 +44,7 @@ begin
             init_mp_ram_read(instruction_ram_read_in);
 
             -------- instruction pipeline --------
-            instr_pipeline <= op(nop) & instr_pipeline(0 to instr_pipeline'high-1);
+            pipeline <= op(nop) & pipeline(0 to pipeline'high-1);
             --------------------------------------
             is_ready <= false;
                                      
@@ -70,7 +74,7 @@ begin
                     if ram_read_is_ready(instruction_ram_read_out)
                         and decode(get_ram_data(instruction_ram_read_out)) /= program_end
                     then
-                            instr_pipeline(0) <= get_ram_data(instruction_ram_read_out);
+                            pipeline(0) <= get_ram_data(instruction_ram_read_out);
                     end if;
                     ---
             end CASE;
