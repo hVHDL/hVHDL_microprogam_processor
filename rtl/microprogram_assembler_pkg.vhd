@@ -158,8 +158,12 @@ package body microprogram_assembler_pkg is
             slot    := next_slot;
             latency := latency_of(config, i.command);
             if reads_arguments(i.command) then
-                slot := maximum(slot, maximum(ready(i.arg1), ready(i.arg2)));
-                -- ext's arg3 is its function, not an address
+                slot := maximum(slot, ready(i.arg1));
+                -- ext's arg3 is its function, not an address, and its
+                -- square root reads arg1 only
+                if not (i.command = ext and i.arg3 = ext_sqrt) then
+                    slot := maximum(slot, ready(i.arg2));
+                end if;
                 if i.command /= ext then
                     slot := maximum(slot, ready(i.arg3));
                 end if;

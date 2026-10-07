@@ -23,8 +23,9 @@ rtl/
                                       records
   arch_fixed_mult_add.vhd             fixed_mult_add : fixed_dsp, data width
                                       accumulator
-  arch_fixed_math.vhd                 fixed_math : division by
-                                      hVHDL_fixed_point's lut_divider
+  arch_fixed_math.vhd                 fixed_math : division and square root
+                                      by hVHDL_fixed_point's lut_divider and
+                                      full_range_sqrt
   arch_float_mult_add.vhd             float_mult_add : hfloat
   microprogram_core.vhd               sequencer + program and data RAMs, the
                                       execution unit connected from outside
@@ -103,11 +104,19 @@ execution unit.
 ## The math unit
 
 `ext` is a math unit's command: its function code in arg3, its operands in
-arg1 and arg2. `fixed_math` implements `ext_div`, written
-`mi_div(dest, numerator, denominator)`: dest ← numerator / denominator at
-the radix, by `hVHDL_fixed_point`'s `lut_divider` with a 512 × 18 bit
-reciprocal table. Division by zero is not handled and a quotient too large
-for the word wraps. Its result latency is
+arg1 and arg2. `fixed_math` implements
+- `ext_div`, written `mi_div(dest, numerator, denominator)`: dest ←
+  numerator / denominator at the radix, by `hVHDL_fixed_point`'s
+  `lut_divider` with a 512 × 18 bit reciprocal table. Division by zero is
+  not handled and a quotient too large for the word wraps.
+- `ext_sqrt`, written `mi_sqrt(dest, radicand)`: dest ← √radicand at the
+  radix, by `full_range_sqrt` with a 512 × 18 bit table at radix 17. The
+  radicand is unsigned, a negative one is not handled.
+
+Both have the same structure — a normalising shifter, an interpolated
+lookup on a `fixed_dsp`, a multiply on a second one and an output shifter —
+and the same latency, so they write in the same result stage. The result
+latency is
 `execution_unit_pkg.fixed_math_result_latency()`: 18, 2 more for each of the
 pre-adder and product registers (the divider has two `fixed_dsp`s in
 series), 1 less without the data RAM's output register, and 2 more for each

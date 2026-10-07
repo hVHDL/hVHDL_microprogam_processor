@@ -11,6 +11,8 @@ context vunit_lib.vunit_context;
     use work.microprogram_assembler_pkg.all;
     use work.lut_reciprocal_pkg.all;
     use work.lut_divider_pkg.all;
+    use work.lut_sqrt_pkg.all;
+    use work.full_range_sqrt_pkg.all;
 
 -- fixed_mult_add and fixed_math on one microprogram_core through
 -- merge_units() :
@@ -83,6 +85,10 @@ architecture vunit_simulation of math_unit_tb is
         ,mi_div(5, 72, 73)
         ,mi_div(6, 73, 72)            -- back to back divisions
         ,mi(mpy_add, 7, 5, 6, 3)      -- reads three quotients
+        ,mi_div(8, 75, 74)            -- 10 / 2.25
+        ,mi_sqrt(9, 8)                -- the root of a quotient
+        ,mi(mpy_add, 10, 9, 9, 74)    -- reads the root
+        ,mi_sqrt(11, 76)              -- a root next to a division
         ,mi(program_end));
 
     function make_program return microprogram is
@@ -107,11 +113,15 @@ architecture vunit_simulation of math_unit_tb is
         := encode_data((
             (64, 1.5), (65, -0.75), (66, 0.5), (67, 0.25), (68, 1.25),
             (69, -2.0), (70, 3.0), (71, 0.125), (72, 7.0), (73, -0.375),
+            (74, 2.25), (75, 10.0), (76, 1234.5678),
             (80, 1.0), (81, 2.0)), config, ref_subtype.address_high + 1);
 
     -- the divider's table : 512 x 18 bits at radix 16, an 18 bit x_frac
     constant point_lut : reciprocal_lut_array := make_reciprocal_point_lut(9, 18, 16);
     constant slope_lut : reciprocal_lut_array := make_reciprocal_slope_lut(9, 18, 16);
+    -- the square root's : 512 x 18 bits at radix 17, an 18 bit x_frac
+    constant sqrt_point_lut : sqrt_lut_array := make_sqrt_point_lut(9, 18, 17);
+    constant sqrt_slope_lut : sqrt_lut_array := make_sqrt_slope_lut(9, 18, 17);
 
     signal mproc_in  : microprogram_processor_in_record := (processor_requested => false, start_address => 0);
     signal mproc_out : microprogram_processor_out_record;
@@ -174,6 +184,11 @@ begin
             return std_logic_vector(lut_divide(signed(a), signed(b), radix, point_lut, slope_lut, 16, 18));
         end divide;
 
+        function square_root (a : word) return word is
+        begin
+            return std_logic_vector(get_full_range_sqrt(unsigned(a), radix, sqrt_point_lut, sqrt_slope_lut, 17, 18));
+        end square_root;
+
         function mult_add (a, b, c : word) return word is
             variable result : signed(2*w-1 downto 0);
         begin
@@ -187,7 +202,7 @@ begin
         end check_word;
 
         variable latency : integer := -1;
-        variable q1, r2, q3, r4, q5, q6, x : word;
+        variable q1, r2, q3, r4, q5, q6, q8, s9, x : word;
 
     begin
         test_runner_setup(runner, runner_cfg);
@@ -227,6 +242,12 @@ begin
         check_word(5, q5);
         check_word(6, q6);
         check_word(7, mult_add(q5, q6, q3));
+        q8 := divide(m(75), m(74));
+        s9 := square_root(q8);
+        check_word(8, q8);
+        check_word(9, s9);
+        check_word(10, mult_add(s9, s9, m(74)));
+        check_word(11, square_root(m(76)));
 
         -- the loop
         run_program(loop_start);

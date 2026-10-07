@@ -171,9 +171,12 @@ package generic_microinstruction_pkg is
     function mi ( command : t_command; argument : natural) return microinstruction;
 
     -- the ext functions, in arg3
-    constant ext_div : natural := 0;
+    constant ext_div  : natural := 0;
+    constant ext_sqrt : natural := 1;
     -- dest <- numerator / denominator at the radix
     function mi_div ( dest, numerator, denominator : natural) return microinstruction;
+    -- dest <- sqrt(radicand) at the radix, the radicand unsigned
+    function mi_sqrt ( dest, radicand : natural) return microinstruction;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector;
     function encode ( program : microprogram; width : natural) return ram_array;
@@ -225,6 +228,11 @@ package body generic_microinstruction_pkg is
     begin
         return mi(ext, dest, numerator, denominator, ext_div);
     end mi_div;
+
+    function mi_sqrt ( dest, radicand : natural) return microinstruction is
+    begin
+        return mi(ext, dest, radicand, 0, ext_sqrt);
+    end mi_sqrt;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector is
         constant a : natural := address_bits(width);
