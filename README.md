@@ -21,7 +21,7 @@ vhdl2008/
                                       instruction pipeline
   instruction_pkg.vhd                 entity instruction and its port records
   addsub.vhd                          architecture add_sub_mpy (fixed point)
-  arch_fixed_mult_add.vhd             architecture fixed_mult_add (fixed_dsp)
+  arch_fixed_mult_add.vhd             architecture fixed_mult_add (a * b + c)
   arch_float_mult_add.vhd             architecture float_mult_add (hfloat)
   microprogram_processor.vhd          sequencer + program and data RAMs +
                                       add_sub_mpy in one entity
@@ -51,11 +51,15 @@ constant program : work.dual_port_ram_pkg.ram_array(0 to 1023)(31 downto 0) := (
 ```
 
 `mpy_add dest, a, b, c` is dest = a·b + c, and `mpy_sub`, `neg_mpy_add`,
-`neg_mpy_sub` change the signs of the product and c. `a_add_b_mpy_c`,
+`neg_mpy_sub` change the signs of the product and c (in `fixed_mult_add`
+with a bitwise `not`, −x − 1, and the result is bits radix + 31 … radix of
+a·b + c·2^radix). `a_add_b_mpy_c`,
 `a_sub_b_mpy_c`, `lp_filter` and the accumulator commands are in the fixed
 point architectures. There is no hazard detection: a result is in the data
 RAM only after the pipeline delay, so a program spaces dependent
-instructions with addresses left as `nop`.
+instructions with addresses left as `nop`. A `jump` takes effect after the
+three instructions that follow it, which are already fetched and run on
+every round; a `program_end` among them ends the program.
 
 `calculate(mproc_in, start_address)` starts the program at `start_address`;
 it runs until `program_end` and `is_ready(mproc_out)` is true for one clock.
