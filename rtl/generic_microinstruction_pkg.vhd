@@ -158,6 +158,9 @@ package generic_microinstruction_pkg is
         arg2    : natural;
         arg3    : natural;
         single  : boolean; -- one argument, arg1, across the argument fields
+        -- a jump whose arg1 counts back from the jump itself, encode()
+        -- turns it into the address
+        relative : boolean;
     end record;
     type microprogram is array (natural range <>) of microinstruction;
 
@@ -199,17 +202,17 @@ package body generic_microinstruction_pkg is
 
     function mi ( command : t_command) return microinstruction is
     begin
-        return (command => command, dest => 0, arg1 => 0, arg2 => 0, arg3 => 0, single => false);
+        return (command => command, dest => 0, arg1 => 0, arg2 => 0, arg3 => 0, single => false, relative => false);
     end mi;
 
     function mi ( command : t_command; dest, arg1, arg2, arg3 : natural) return microinstruction is
     begin
-        return (command => command, dest => dest, arg1 => arg1, arg2 => arg2, arg3 => arg3, single => false);
+        return (command => command, dest => dest, arg1 => arg1, arg2 => arg2, arg3 => arg3, single => false, relative => false);
     end mi;
 
     function mi ( command : t_command; argument : natural) return microinstruction is
     begin
-        return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true);
+        return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true, relative => false);
     end mi;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector is
@@ -236,7 +239,14 @@ package body generic_microinstruction_pkg is
         variable retval : ram_array(program'range)(width-1 downto 0);
     begin
         for i in program'range loop
-            retval(i) := encode(program(i), width);
+            if program(i).relative then
+                assert program(i).arg1 <= i
+                    report "a relative jump at " & integer'image(i) & " goes before the program"
+                    severity failure;
+                retval(i) := encode(mi(program(i).command, i - program(i).arg1), width);
+            else
+                retval(i) := encode(program(i), width);
+            end if;
         end loop;
         return retval;
     end encode;

@@ -32,6 +32,7 @@ v2008.add_source_files(ROOT / "rtl/arch_fixed_mult_acc.vhd")
 v2008.add_source_files(ROOT / "rtl/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "rtl/generic_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "rtl/microinstruction_pkg.vhd")
+v2008.add_source_files(ROOT / "rtl/microprogram_assembler_pkg.vhd")
 
 v2008.add_source_files(ROOT / "rtl/microprogram_interface_pkg.vhd")
 v2008.add_source_files(ROOT / "rtl/fixed_microprogram_processor.vhd")
@@ -68,6 +69,26 @@ for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
     fixed_tb.add_config(
         name=architecture + "_128_word_program",
         generics=dict(g_architecture=architecture, g_program_address_width=7))
+
+v2008.add_source_files(ROOT / "testbenches/result_latency_tb.vhd")
+latency_tb = v2008.test_bench("result_latency_tb")
+for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
+    for pre_add_register in [False, True]:
+        for product_register in [False, True]:
+            latency_tb.add_config(
+                name=architecture + ("_pre_add" if pre_add_register else "") + ("_product" if product_register else ""),
+                generics=dict(g_architecture=architecture, g_pre_add_register=pre_add_register,
+                              g_product_register=product_register))
+
+v2008.add_source_files(ROOT / "testbenches/portable_program_tb.vhd")
+portable_tb = v2008.test_bench("portable_program_tb")
+for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
+    for registers in [False, True]:
+        for width in [32, 36]:
+            portable_tb.add_config(
+                name=f"{architecture}{'_pre_add_and_product' if registers else ''}_{width}_bit",
+                generics=dict(g_architecture=architecture, g_pre_add_register=registers,
+                              g_product_register=registers, g_data_width=width, g_instruction_width=width))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

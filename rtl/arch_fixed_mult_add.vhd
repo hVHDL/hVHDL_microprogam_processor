@@ -22,8 +22,7 @@ architecture fixed_mult_add of execution_unit is
     -- the request to fixed_dsp is registered here, the product is in P
     -- two clocks later, one more for each of the pre-adder and product
     -- registers
-    constant result_stage : natural := work.dual_port_ram_pkg.read_pipeline_delay + 3
-        + boolean'pos(g_pre_add_register) + boolean'pos(g_product_register)
+    constant result_stage : natural := fixed_point_result_stage(g_pre_add_register, g_product_register)
         + g_read_delays + g_read_out_delays;
 
     signal dsp_in : fixed_dsp_in_record(
