@@ -43,7 +43,7 @@ architecture fixed_math of execution_unit is
         + g_read_delays + g_read_out_delays;
     -- the quotient is ready and written
     constant result_stage : natural := fixed_math_result_stage(g_pre_add_register, g_product_register, g_data_ram_output_register,
-        g_divider_shifter_stages)
+        g_divider_shifter_stages, g_math_ram_output_register, g_math_dsp_request_register)
         + g_read_delays + g_read_out_delays;
 
     signal divider_in : lut_divider_in_record(
@@ -63,8 +63,10 @@ architecture fixed_math of execution_unit is
     end is_division;
 
     -- the sine waits for the divider's latency
-    constant sine_delay : natural := lut_divider_latency(g_pre_add_register, g_product_register, g_divider_shifter_stages)
-        - sine_calculator_latency(g_pre_add_register, g_product_register);
+    constant sine_delay : natural := lut_divider_latency(g_pre_add_register, g_product_register, g_divider_shifter_stages,
+            g_math_ram_output_register, g_math_dsp_request_register)
+        - sine_calculator_latency(g_pre_add_register, g_product_register,
+            g_math_ram_output_register, g_math_dsp_request_register);
 
     signal sine_in  : sine_calculator_in_record := (angle => (others => '0'), request_with_1 => '0');
     signal sine_out : sine_calculator_out_record;
@@ -123,6 +125,8 @@ begin
         ,g_pre_add_register  => g_pre_add_register
         ,g_product_register  => g_product_register
         ,g_shifter_stages    => g_divider_shifter_stages
+        ,g_ram_output_register  => g_math_ram_output_register
+        ,g_dsp_request_register => g_math_dsp_request_register
     )
     port map (
         clock            => clock
@@ -140,6 +144,8 @@ begin
         ,g_pre_add_register  => g_pre_add_register
         ,g_product_register  => g_product_register
         ,g_shifter_stages    => g_divider_shifter_stages
+        ,g_ram_output_register  => g_math_ram_output_register
+        ,g_dsp_request_register => g_math_dsp_request_register
     )
     port map (
         clock                => clock
@@ -148,6 +154,10 @@ begin
     );
 
     u_sine_calculator : entity work.sine_calculator
+    generic map (
+        g_ram_output_register   => g_math_ram_output_register
+        ,g_dsp_request_register => g_math_dsp_request_register
+    )
     port map (
         clock                => clock
         ,sine_calculator_in  => sine_in

@@ -125,12 +125,19 @@ shifter, an interpolated lookup on a `fixed_dsp`, a multiply on a second
 one and an output shifter — and the same latency; the sine is shorter and
 waits in a delay line, so all write in the same result stage. The result
 latency is
-`execution_unit_pkg.fixed_math_result_latency()`: 18, 2 more for each of the
-pre-adder and product registers (the divider has two `fixed_dsp`s in
-series), 1 less without the data RAM's output register, and 2 more for each
-divider shifter stage over 2 (`g_divider_shifter_stages`, `lut_divider`'s
-`g_shifter_stages`: more stages, less logic in each); `math_unit_tb`
-measures it. The instruction pipeline must reach its result stage, 15 or
+`execution_unit_pkg.fixed_math_result_latency()`, 18 with the defaults:
+
+| setting (execution unit generic) | math latency |
+|---|---|
+| `g_pre_add_register`, `g_product_register` | +2 each (the divider and the square root have two `fixed_dsp`s in series) |
+| `g_divider_shifter_stages` (`lut_divider`'s and `full_range_sqrt`'s `g_shifter_stages`, default 2) | +2 per stage over 2 |
+| `g_math_ram_output_register` (the tables' RAMs, default on) | −1 when off |
+| `g_math_dsp_request_register` (the requests to the `fixed_dsp`s, default on) | −2 when off |
+| `g_data_ram_output_register` | −1 when off |
+
+`math_unit_tb` measures it for each. The shifter stages split the shifts,
+not the first normaliser stage's leading zero count, which counts the whole
+word. The instruction pipeline must reach its result stage, 15 or
 more stages.
 
 `fixed_math` runs beside `fixed_mult_add` on one `microprogram_core`:

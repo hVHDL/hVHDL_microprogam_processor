@@ -125,6 +125,12 @@ for width in [32, 36]:
 for width in [32, 36]:
     math_tb.add_config(name=f"{width}_bit_3_divider_shifter_stages",
         generics=dict(g_data_width=width, g_divider_shifter_stages=3))
+    math_tb.add_config(name=f"{width}_bit_no_math_registers",
+        generics=dict(g_data_width=width, g_math_ram_output_register=False, g_math_dsp_request_register=False))
+    math_tb.add_config(name=f"{width}_bit_no_math_ram_register_pre_add",
+        generics=dict(g_data_width=width, g_math_ram_output_register=False, g_pre_add_register=True))
+    math_tb.add_config(name=f"{width}_bit_no_math_request_register_4_shifter_stages",
+        generics=dict(g_data_width=width, g_math_dsp_request_register=False, g_divider_shifter_stages=4))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

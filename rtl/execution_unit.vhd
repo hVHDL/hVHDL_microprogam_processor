@@ -37,25 +37,31 @@ package execution_unit_pkg is
     function fixed_point_result_latency (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true) return natural;
 
-    -- hVHDL_fixed_point's lut_divider, from the request at its input to
-    -- its ready, with its ram output and dsp request registers : 9 and 2
-    -- for each of its shifter stages (the input and output shifters have
-    -- one each) and for each of the pre-adder and product registers (two
-    -- fixed_dsps in series) ; 13 with 2 shifter stages
+    -- hVHDL_fixed_point's lut_divider and full_range_sqrt, from the
+    -- request at the input to the ready : 6, 2 for each shifter stage (the
+    -- input and output shifters have one each), 1 for the table ram's
+    -- output register, and 2 for each of the dsp request, pre-adder and
+    -- product registers (two fixed_dsps in series) ; 13 with 2 shifter
+    -- stages and the ram output and dsp request registers
     function lut_divider_latency (pre_add_register, product_register : boolean;
-        shifter_stages : positive := 2) return natural;
+        shifter_stages : positive := 2;
+        ram_output_register, dsp_request_register : boolean := true) return natural;
 
     -- hVHDL_fixed_point's sine_calculator with its fixed_dsp, from the
-    -- request to its ready, with the ram output and dsp request registers
-    function sine_calculator_latency (pre_add_register, product_register : boolean) return natural;
+    -- request to its ready : 4, and 1 for each of the table ram's output,
+    -- the dsp request, the pre-adder and the product registers
+    function sine_calculator_latency (pre_add_register, product_register : boolean;
+        ram_output_register, dsp_request_register : boolean := true) return natural;
 
     -- fixed_math : the stage a quotient is written in, the operands are
     -- registered into the divider's request ; and its result latency, as
     -- fixed_point_result_latency()
     function fixed_math_result_stage (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
+        math_ram_output_register, math_dsp_request_register : boolean := true) return natural;
     function fixed_math_result_latency (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural;
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
+        math_ram_output_register, math_dsp_request_register : boolean := true) return natural;
 
     -- two execution units on one microprogram_core : the read requests of
     -- either, and the write of the one writing. One instruction issues a
@@ -87,28 +93,36 @@ package body execution_unit_pkg is
     end fixed_point_result_latency;
 
     function lut_divider_latency (pre_add_register, product_register : boolean;
-        shifter_stages : positive := 2) return natural is
+        shifter_stages : positive := 2;
+        ram_output_register, dsp_request_register : boolean := true) return natural is
     begin
-        return 9 + 2 * shifter_stages + 2 * boolean'pos(pre_add_register) + 2 * boolean'pos(product_register);
+        return 6 + 2 * shifter_stages + boolean'pos(ram_output_register)
+            + 2 * boolean'pos(dsp_request_register)
+            + 2 * boolean'pos(pre_add_register) + 2 * boolean'pos(product_register);
     end lut_divider_latency;
 
-    function sine_calculator_latency (pre_add_register, product_register : boolean) return natural is
+    function sine_calculator_latency (pre_add_register, product_register : boolean;
+        ram_output_register, dsp_request_register : boolean := true) return natural is
     begin
-        return 6 + boolean'pos(pre_add_register) + boolean'pos(product_register);
+        return 4 + boolean'pos(ram_output_register) + boolean'pos(dsp_request_register)
+            + boolean'pos(pre_add_register) + boolean'pos(product_register);
     end sine_calculator_latency;
 
     function fixed_math_result_stage (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural is
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
+        math_ram_output_register, math_dsp_request_register : boolean := true) return natural is
     begin
         return data_read_latency(data_ram_output_register) + 1
-            + lut_divider_latency(pre_add_register, product_register, divider_shifter_stages);
+            + lut_divider_latency(pre_add_register, product_register, divider_shifter_stages,
+                math_ram_output_register, math_dsp_request_register);
     end fixed_math_result_stage;
 
     function fixed_math_result_latency (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2) return natural is
+        data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
+        math_ram_output_register, math_dsp_request_register : boolean := true) return natural is
     begin
         return fixed_math_result_stage(pre_add_register, product_register, data_ram_output_register,
-            divider_shifter_stages) + 2;
+            divider_shifter_stages, math_ram_output_register, math_dsp_request_register) + 2;
     end fixed_math_result_latency;
 
     function merge_units (a, b : execution_unit_out_record) return execution_unit_out_record is
@@ -160,6 +174,11 @@ entity execution_unit is
         -- fixed_math : lut_divider's g_shifter_stages, more stages less
         -- logic in each, 2 clocks more per stage
         ;g_divider_shifter_stages : positive := 2
+        -- fixed_math : its lookup tables' ram output registers and the
+        -- registers on the requests to their fixed_dsps, each off takes
+        -- clocks off the math latency
+        ;g_math_ram_output_register  : boolean := true
+        ;g_math_dsp_request_register : boolean := true
        );
     port(
         clock : in std_logic

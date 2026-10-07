@@ -39,6 +39,8 @@ entity math_unit_tb is
       ;g_data_ram_output_register : boolean := true
       ;g_data_width : natural := 32
       ;g_divider_shifter_stages : positive := 2
+      ;g_math_ram_output_register  : boolean := true
+      ;g_math_dsp_request_register : boolean := true
   );
 end;
 
@@ -60,7 +62,7 @@ architecture vunit_simulation of math_unit_tb is
         ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register)
         ,delay_slots      => jump_delay_slots(true)
         ,math_latency     => fixed_math_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register,
-            g_divider_shifter_stages));
+            g_divider_shifter_stages, g_math_ram_output_register, g_math_dsp_request_register));
 
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => w, addresswidth => 10);
@@ -353,7 +355,8 @@ begin
 
     u_fixed_math : entity work.execution_unit(fixed_math)
     generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register
-        ,g_data_ram_output_register => g_data_ram_output_register, g_divider_shifter_stages => g_divider_shifter_stages)
+        ,g_data_ram_output_register => g_data_ram_output_register, g_divider_shifter_stages => g_divider_shifter_stages
+        ,g_math_ram_output_register => g_math_ram_output_register, g_math_dsp_request_register => g_math_dsp_request_register)
     port map (clock, unit_in, math_out);
 
 end vunit_simulation;
