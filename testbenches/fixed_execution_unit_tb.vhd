@@ -16,6 +16,8 @@ entity fixed_execution_unit_tb is
       runner_cfg : string
       ;g_pre_add_register : boolean := false
       ;g_product_register : boolean := false
+      ;g_program_ram_output_register : boolean := true
+      ;g_data_ram_output_register    : boolean := true
       -- the program ram is 2**g_program_address_width words
       ;g_program_address_width : natural := 10
       -- the data and program ram word widths
@@ -246,7 +248,9 @@ begin
     end process capture_writes;
 
     u_microprogram_core : entity work.microprogram_core
-    generic map (g_program => test_program, g_data => program_data)
+    generic map (g_program => test_program, g_data => program_data
+        ,g_program_ram_output_register => g_program_ram_output_register
+        ,g_data_ram_output_register => g_data_ram_output_register)
     port map (
         clock            => clock
         ,mproc_in        => mproc_in
@@ -258,7 +262,8 @@ begin
     );
 
     u_fixed_mult_add : entity work.execution_unit(fixed_mult_add)
-    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
+    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register
+            ,g_data_ram_output_register => g_data_ram_output_register)
     port map (clock, instr_in, instr_out);
 
 end vunit_simulation;

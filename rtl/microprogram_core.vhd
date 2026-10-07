@@ -13,6 +13,12 @@ entity microprogram_core is
     generic(
             g_program : work.dual_port_ram_pkg.ram_array
             ;g_data   : work.dual_port_ram_pkg.ram_array
+            -- the rams' output registers : without the program ram's, a
+            -- jump has 2 delay slots instead of 3 ; without the data ram's
+            -- the operands arrive a clock earlier, the execution unit's
+            -- g_data_ram_output_register must match
+            ;g_program_ram_output_register : boolean := true
+            ;g_data_ram_output_register    : boolean := true
            );
     port(
         clock        : in std_logic
@@ -85,7 +91,7 @@ begin
     , is_ready                 => mproc_out.is_ready);
 ----------------------------------------------------------
     u_program_ram : entity work.multi_port_ram
-    generic map(g_program)
+    generic map(g_program, g_program_ram_output_register)
     port map(
         clock => clock
         ,ram_read_in  => instr_ram_read_in(0 to 0)
@@ -93,7 +99,7 @@ begin
         ,ram_write_in => instr_ram_write_in);
 ----
     u_data_ram : entity work.multi_port_ram
-    generic map(g_data)
+    generic map(g_data, g_data_ram_output_register)
     port map(
         clock => clock
         ,ram_read_in  => from_unit.data_read_in

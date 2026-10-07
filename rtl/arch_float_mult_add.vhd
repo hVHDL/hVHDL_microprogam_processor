@@ -83,7 +83,7 @@ begin
             ---------------
             multiply_add(mpya_in,to_std_logic(hfloat_ref), to_std_logic(hfloat_ref), to_std_logic(hfloat_ref));
 
-            CASE decode(unit_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay+g_read_delays + g_read_out_delays)) is
+            CASE decode(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register)+g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
                     multiply_add(mpya_in
                     ,get_ram_data(unit_in.data_read_out(g_arg1_port))
@@ -111,7 +111,7 @@ begin
                 WHEN others => -- do nothing
             end CASE;
             ---------------
-            CASE decode(unit_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_instruction_delay + g_read_delays+ g_read_out_delays)) is
+            CASE decode(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register) + g_instruction_delay + g_read_delays+ g_read_out_delays)) is
                 WHEN mpy_add 
                     | neg_mpy_add   
                     | neg_mpy_sub   
@@ -119,7 +119,7 @@ begin
                     =>
 
                     write_data_to_ram(unit_out.ram_write_in 
-                    , get_dest(unit_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_instruction_delay + g_read_delays+ g_read_out_delays))
+                    , get_dest(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register) + g_instruction_delay + g_read_delays+ g_read_out_delays))
                     , get_mpya_result(mpya_out));
 
                 WHEN others => -- do nothing

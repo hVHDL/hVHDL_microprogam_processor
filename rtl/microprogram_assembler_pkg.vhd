@@ -41,6 +41,9 @@ package microprogram_assembler_pkg is
         radix             : natural;
         -- the instructions after an instruction that cannot read its result
         result_latency    : natural;
+        -- the instructions after a jump that run before it is taken,
+        -- microprogram_interface_pkg's jump_delay_slots()
+        delay_slots       : natural;
     end record;
 
     function schedule (config : processor_config; code : microprogram) return microprogram;
@@ -169,13 +172,11 @@ package body microprogram_assembler_pkg is
         return retval;
     end schedule;
 
-    constant delay_slots : natural := 3;
-
     -- where the jump goes in a scheduled body : a round, from the body's
-    -- first slot to the slot after the jump's three delay slots, is at
+    -- first slot to the slot after the jump's delay slots, is at
     -- least the body's length, so its results are readable when the next
     -- round starts ; body instructions can be in the delay slots
-    function jump_slot (scheduled : microprogram) return natural is
+    function jump_slot (scheduled : microprogram; delay_slots : natural) return natural is
         variable retval : natural := maximum(scheduled'length - (delay_slots + 1), 0);
     begin
         while retval < scheduled'length and scheduled(scheduled'low + retval).command /= nop loop
@@ -186,9 +187,9 @@ package body microprogram_assembler_pkg is
 
     function repeat (config : processor_config; count : positive; code : microprogram) return microprogram is
         constant scheduled : microprogram := schedule(config, code);
-        constant jump_at   : natural := jump_slot(scheduled);
+        constant jump_at   : natural := jump_slot(scheduled, config.delay_slots);
         -- set_rpt, the body and the jump with its delay slots
-        variable retval : microprogram(0 to maximum(scheduled'length, jump_at + delay_slots + 1)) := (others => mi(nop));
+        variable retval : microprogram(0 to maximum(scheduled'length, jump_at + config.delay_slots + 1)) := (others => mi(nop));
     begin
         retval(0) := mi(set_rpt, count - 1);
         for k in 0 to scheduled'length-1 loop

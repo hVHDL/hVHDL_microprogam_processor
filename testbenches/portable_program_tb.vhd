@@ -24,6 +24,8 @@ entity portable_program_tb is
       runner_cfg : string
       ;g_pre_add_register  : boolean := false
       ;g_product_register  : boolean := false
+      ;g_program_ram_output_register : boolean := true
+      ;g_data_ram_output_register    : boolean := true
       ;g_data_width        : natural := 32
       ;g_instruction_width : natural := 32
   );
@@ -44,7 +46,8 @@ architecture vunit_simulation of portable_program_tb is
         instruction_width => g_instruction_width
         ,data_width       => g_data_width
         ,radix            => radix
-        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register));
+        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register)
+        ,delay_slots      => jump_delay_slots(g_program_ram_output_register));
 
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => w, addresswidth => 10);
@@ -200,7 +203,10 @@ begin
         info("pre-adder register " & boolean'image(g_pre_add_register)
             & ", product register " & boolean'image(g_product_register)
             & ", " & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width)
-            & " bit instructions : result latency " & integer'image(config.result_latency));
+            & " bit instructions, program / data ram output registers "
+            & boolean'image(g_program_ram_output_register) & " / " & boolean'image(g_data_ram_output_register)
+            & " : result latency " & integer'image(config.result_latency)
+            & ", jump delay slots " & integer'image(config.delay_slots));
 
         -- to_fixed() at the data width : beyond a 32 bit integer, negative,
         -- half an lsb rounded away from zero
@@ -288,7 +294,9 @@ begin
     end process watch_ram;
 
     u_microprogram_core : entity work.microprogram_core
-    generic map (g_program => test_program, g_data => program_data)
+    generic map (g_program => test_program, g_data => program_data
+        ,g_program_ram_output_register => g_program_ram_output_register
+        ,g_data_ram_output_register => g_data_ram_output_register)
     port map (
         clock        => clock
         ,mproc_in    => mproc_in
@@ -300,7 +308,8 @@ begin
     );
 
     u_fixed_mult_add : entity work.execution_unit(fixed_mult_add)
-    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register)
+    generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register
+            ,g_data_ram_output_register => g_data_ram_output_register)
     port map (clock, unit_in, unit_out);
 
 end vunit_simulation;

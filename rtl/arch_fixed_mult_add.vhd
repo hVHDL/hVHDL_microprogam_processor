@@ -22,7 +22,7 @@ architecture fixed_mult_add of execution_unit is
     -- the request to fixed_dsp is registered here, the product is in P
     -- two clocks later, one more for each of the pre-adder and product
     -- registers
-    constant result_stage : natural := fixed_point_result_stage(g_pre_add_register, g_product_register)
+    constant result_stage : natural := fixed_point_result_stage(g_pre_add_register, g_product_register, g_data_ram_output_register)
         + g_read_delays + g_read_out_delays;
 
     signal dsp_in : fixed_dsp_in_record(
@@ -96,7 +96,7 @@ begin
             arg3 := signed(get_ram_data(unit_in.data_read_out(g_arg3_port)));
             zero := (others => '0');
 
-            CASE decode(unit_in.instr_pipeline(work.dual_port_ram_pkg.read_pipeline_delay + g_read_delays + g_read_out_delays)) is
+            CASE decode(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register) + g_read_delays + g_read_out_delays)) is
                 WHEN mpy_add =>
                     fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3));
 

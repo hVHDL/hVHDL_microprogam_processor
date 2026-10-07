@@ -63,6 +63,14 @@ fixed_tb.add_config(
     name=architecture + "_36_bit_pre_add_and_product_registers",
     generics=dict(g_data_width=36, g_instruction_width=36,
                   g_pre_add_register=True, g_product_register=True))
+# no ram output registers
+fixed_tb.add_config(
+    name=architecture + "_no_ram_output_registers",
+    generics=dict(g_program_ram_output_register=False, g_data_ram_output_register=False))
+fixed_tb.add_config(
+    name=architecture + "_36_bit_no_ram_output_registers",
+    generics=dict(g_data_width=36, g_instruction_width=36,
+                  g_program_ram_output_register=False, g_data_ram_output_register=False))
 # a 128 word program ram
 fixed_tb.add_config(
     name=architecture + "_128_word_program",
@@ -73,20 +81,27 @@ latency_tb = v2008.test_bench("result_latency_tb")
 architecture = "fixed_mult_add"
 for pre_add_register in [False, True]:
     for product_register in [False, True]:
-        latency_tb.add_config(
-            name=architecture + ("_pre_add" if pre_add_register else "") + ("_product" if product_register else ""),
-            generics=dict(g_pre_add_register=pre_add_register,
-                          g_product_register=product_register))
+        for data_ram_output_register in [True, False]:
+            latency_tb.add_config(
+                name=architecture + ("_pre_add" if pre_add_register else "") + ("_product" if product_register else "")
+                    + ("" if data_ram_output_register else "_no_data_ram_register"),
+                generics=dict(g_pre_add_register=pre_add_register, g_product_register=product_register,
+                              g_data_ram_output_register=data_ram_output_register))
 
 v2008.add_source_files(ROOT / "testbenches/portable_program_tb.vhd")
 portable_tb = v2008.test_bench("portable_program_tb")
 architecture = "fixed_mult_add"
 for registers in [False, True]:
     for width in [32, 36]:
-        portable_tb.add_config(
-            name=f"{architecture}{'_pre_add_and_product' if registers else ''}_{width}_bit",
-            generics=dict(g_pre_add_register=registers,
-                          g_product_register=registers, g_data_width=width, g_instruction_width=width))
+        for program_ram_register, data_ram_register in [(True, True), (False, True), (True, False), (False, False)]:
+            portable_tb.add_config(
+                name=f"{architecture}{'_pre_add_and_product' if registers else ''}_{width}_bit"
+                    + ("" if program_ram_register else "_no_program_ram_register")
+                    + ("" if data_ram_register else "_no_data_ram_register"),
+                generics=dict(g_pre_add_register=registers, g_product_register=registers,
+                              g_data_width=width, g_instruction_width=width,
+                              g_program_ram_output_register=program_ram_register,
+                              g_data_ram_output_register=data_ram_register))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

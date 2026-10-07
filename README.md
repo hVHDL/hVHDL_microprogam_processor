@@ -98,16 +98,31 @@ clock more to the result. `a_add_b_mpy_c`,
 execution unit. There is no hazard detection in the hardware: a result is in the data
 RAM only after the pipeline delay, so dependent instructions are spaced
 with `nop`s, by hand or by `schedule()` below. A `jump` takes effect after
-the three instructions that follow it, which are already fetched and run
+the three (two without the program RAM's output register) instructions that follow it, which are already fetched and run
 on every round; a `program_end` among them ends the program.
 
 ## Result latency and the RAM collision
 
 `execution_unit_pkg.fixed_point_result_latency(pre_add_register,
-product_register)` is how many instructions after an instruction the first
-one that reads its result can be: 7, plus 1 for each of the pre-adder and
-product registers, for `fixed_mult_add`.
-`result_latency_tb` measures it at the data RAM's ports.
+product_register, data_ram_output_register)` is how many instructions
+after an instruction the first one that reads its result can be: 7, plus 1
+for each of the pre-adder and product registers, minus 1 without the data
+RAM's output register, for `fixed_mult_add`. `result_latency_tb` measures
+it at the data RAM's ports.
+
+`microprogram_core`'s `g_program_ram_output_register` and
+`g_data_ram_output_register` (both on by default) set its RAMs' output
+registers; the execution unit's `g_data_ram_output_register` must match the
+data RAM's. Without them a RAM read takes one clock instead of two:
+
+| without the | effect |
+|---|---|
+| data RAM's output register | the operands arrive a clock earlier: the result latency is one less |
+| program RAM's output register | instructions are fetched a clock sooner: a `jump` has 2 delay slots instead of 3 (`microprogram_interface_pkg.jump_delay_slots()`), and a run one clock less |
+
+The RAM's clock-to-output delay is then in the next stage's path: the
+data RAM's into `fixed_dsp`'s request register, the program RAM's into the
+sequencer's decode and program counter.
 
 It is the result stage + 2: the RAM takes the write a clock after the
 execution unit's result stage, and a read must come in a later clock than
@@ -130,11 +145,12 @@ port.
 ## One program for any configuration
 
 `microprogram_assembler_pkg` lays a program out for a `processor_config`
-(instruction width, data width, radix, result latency):
+(instruction width, data width, radix, result latency, jump delay slots):
 
 ```vhdl
 constant config : processor_config := (instruction_width => 36, data_width => 36, radix => 24,
-    result_latency => fixed_point_result_latency(pre_add_register, product_register));
+    result_latency => fixed_point_result_latency(pre_add_register, product_register, data_ram_output_register),
+    delay_slots    => jump_delay_slots(program_ram_output_register));
 
 function boost_step (m : boost_map) return microprogram is
 begin
