@@ -227,7 +227,7 @@ begin
     end process stimulus;	
 ------------------------------------------------------------------------
     u_microprogram_processor : entity work.microprogram_core
-    generic map(g_program => test_program, g_data => program_data, g_data_bit_width => word_length)
+    generic map(g_program => test_program, g_data => program_data)
     port map(simulator_clock
     ,mproc_in
     ,mproc_out

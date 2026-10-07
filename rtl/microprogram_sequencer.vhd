@@ -6,7 +6,12 @@ LIBRARY ieee  ;
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
 
+-- g_program_size : the program ram's words, the program counter wraps
+-- around at its end and start and jump addresses are taken modulo it
 entity microprogram_sequencer is
+    generic(
+        g_program_size : positive := 1024
+    );
     port(
         clock : in std_logic
 
@@ -23,8 +28,9 @@ end entity microprogram_sequencer;
 
 architecture rtl of microprogram_sequencer is
 
-    signal program_counter : natural range 0 to 1023 := 0;
-    signal rpt_counter     : natural range 0 to 2**20  := 0;
+    signal program_counter : natural range 0 to g_program_size-1 := 0;
+    -- set_rpt's count, the low 21 bits of its argument
+    signal rpt_counter     : natural range 0 to 2**21-1 := 0;
 
     type t_processor_states is (halted, running);
     signal processor_state : t_processor_states := halted;
@@ -53,14 +59,14 @@ begin
 
                     if processor_requested 
                     then
-                        program_counter <= start_address;
+                        program_counter <= start_address mod g_program_size;
                         processor_state <= running;
                     end if;
 
                 WHEN running =>
 
                     request_data_from_ram(instruction_ram_read_in, program_counter);
-                    program_counter <= program_counter + 1;
+                    program_counter <= (program_counter + 1) mod g_program_size;
 
                     ---
                     if ram_read_is_ready( instruction_ram_read_out )
@@ -86,7 +92,7 @@ begin
                     when jump =>
                         if rpt_counter > 0 then
                             rpt_counter <= rpt_counter - 1;
-                            program_counter <= get_single_argument(get_ram_data(instruction_ram_read_out));
+                            program_counter <= get_single_argument(get_ram_data(instruction_ram_read_out)) mod g_program_size;
                         end if;
                     WHEN set_rpt =>
                         rpt_counter <= get_single_argument(get_ram_data(instruction_ram_read_out));

@@ -4,17 +4,16 @@ LIBRARY ieee  ;
 
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
+    use work.microprogram_interface_pkg.address_width;
 
+-- the program and data rams take their sizes and word widths from the
+-- initial contents g_program and g_data, a power of 2 words each
 entity fixed_microprogram_processor is
     generic(
-            g_instruction_bit_width      : natural := 32
-            ;g_data_bit_width            : natural := 32
-            ;g_number_of_pipeline_stages : natural := 10
-            ;g_used_radix                : natural
-            ;g_addresswidth              : natural := 10
-            ;g_program                   : work.dual_port_ram_pkg.ram_array
-            ;g_data                      : work.dual_port_ram_pkg.ram_array
-            ;g_idle_ram_write            : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
+            g_number_of_pipeline_stages : natural := 10
+            ;g_used_radix               : natural
+            ;g_program                  : work.dual_port_ram_pkg.ram_array
+            ;g_data                     : work.dual_port_ram_pkg.ram_array
            );
     port(
         clock        : in std_logic
@@ -23,14 +22,22 @@ entity fixed_microprogram_processor is
         ;mc_read_in  : out ram_read_in_array
         ;mc_read_out : in ram_read_out_array
         ;mc_output   : out ram_write_in_record
-        ;mc_write_in : in ram_write_in_record := g_idle_ram_write
+        ;mc_write_in : in ram_write_in_record := init_write_in(address_width(g_data'length), g_data(g_data'low)'length)
     );
 end fixed_microprogram_processor;
 
 architecture rtl of fixed_microprogram_processor is
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(readports => 3 , datawidth => g_data_bit_width);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => 32   , addresswidth => 10);
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(
+        readports     => 3
+        ,datawidth    => g_data(g_data'low)'length
+        ,addresswidth => address_width(g_data'length));
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(
+        readports     => 1
+        ,datawidth    => g_program(g_program'low)'length
+        ,addresswidth => address_width(g_program'length));
+
+    constant idle_write : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
@@ -48,7 +55,7 @@ architecture rtl of fixed_microprogram_processor is
     signal command        : t_command                  := (program_end);
     signal instr_pipeline : instruction_pipeline_array(0 to g_number_of_pipeline_stages-1) := (0 to g_number_of_pipeline_stages-1 => op(nop));
 
-    signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
+    signal write_buffer : mc_write_in'subtype := idle_write;
 
     use work.execution_unit_pkg.all;
     constant unit_in_ref : execution_unit_in_record := (
@@ -69,6 +76,7 @@ begin
 
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(g_program_size => g_program'length)
     port map(clock 
     , instr_ram_read_in(0) 
     , instr_ram_read_out(0) 

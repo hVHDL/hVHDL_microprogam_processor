@@ -18,6 +18,9 @@ package microprogram_interface_pkg is
     procedure calculate (signal self_in : out microprogram_processor_in_record; start_address : in natural);
     function is_ready(self_out : microprogram_processor_out_record) return boolean;
 
+    -- the address width of a ram of number_of_words words, a power of 2
+    function address_width (number_of_words : positive) return natural;
+
 end package microprogram_interface_pkg;
 
 ------------------
@@ -39,6 +42,15 @@ package body microprogram_interface_pkg is
     begin
         return self_out.is_ready;
     end is_ready;
+
+    function address_width (number_of_words : positive) return natural is
+        variable retval : natural := 0;
+    begin
+        while 2**retval < number_of_words loop
+            retval := retval + 1;
+        end loop;
+        return retval;
+    end address_width;
 
 end package body microprogram_interface_pkg;
 

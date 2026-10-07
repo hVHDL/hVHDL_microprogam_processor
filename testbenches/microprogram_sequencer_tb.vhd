@@ -104,6 +104,7 @@ begin
     end process stimulus;	
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(g_program_size => test_program'length)
     port map(simulator_clock 
     , instr_ram_read_in(0) 
     , instr_ram_read_out(0) 

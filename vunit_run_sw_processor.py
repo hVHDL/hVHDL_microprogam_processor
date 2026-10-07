@@ -53,6 +53,10 @@ for architecture in ["fixed_mult_add", "fixed_mult_acc"]:
         fixed_tb.add_config(
             name=architecture + ("_pre_add_register" if pre_add_register else ""),
             generics=dict(g_architecture=architecture, g_pre_add_register=pre_add_register))
+    # a 128 word program ram
+    fixed_tb.add_config(
+        name=architecture + "_128_word_program",
+        generics=dict(g_architecture=architecture, g_program_address_width=7))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

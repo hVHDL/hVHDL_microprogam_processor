@@ -17,6 +17,8 @@ entity fixed_execution_unit_tb is
       runner_cfg : string
       ;g_architecture     : string  := "fixed_mult_add"
       ;g_pre_add_register : boolean := false
+      -- the program ram is 2**g_program_address_width words
+      ;g_program_address_width : natural := 10
   );
 end;
 
@@ -30,7 +32,7 @@ architecture vunit_simulation of fixed_execution_unit_tb is
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => 32, addresswidth => 10);
     constant instr_ref_subtype : subtype_ref_record :=
-        create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => 10);
+        create_ref_subtypes(readports => 1, datawidth => 32, addresswidth => g_program_address_width);
 
     subtype word is std_logic_vector(31 downto 0);
     type word_array is array (natural range <>) of word;
@@ -179,7 +181,8 @@ begin
 
     begin
         test_runner_setup(runner, runner_cfg);
-        info(g_architecture & ", pre-adder register " & boolean'image(g_pre_add_register));
+        info(g_architecture & ", pre-adder register " & boolean'image(g_pre_add_register)
+            & ", " & integer'image(test_program'length) & " word program ram");
 
         run_program(0);
         check_word(1, mult_add(m(64), m(65), m(66)));
@@ -223,7 +226,7 @@ begin
     end process capture_writes;
 
     u_microprogram_core : entity work.microprogram_core
-    generic map (g_program => test_program, g_data => program_data, g_data_bit_width => 32)
+    generic map (g_program => test_program, g_data => program_data)
     port map (
         clock            => clock
         ,mproc_in        => mproc_in

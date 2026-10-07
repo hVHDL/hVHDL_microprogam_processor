@@ -5,22 +5,21 @@ LIBRARY ieee  ;
     use work.multi_port_ram_pkg.all;
     use work.microinstruction_pkg.all;
     use work.execution_unit_pkg.all;
+    use work.microprogram_interface_pkg.address_width;
 
+-- the program and data rams take their sizes and word widths from the
+-- initial contents g_program and g_data, a power of 2 words each
 entity microprogram_core is
     generic(
-            g_addresswidth             : natural := 10
-            ;g_data_bit_width           : natural := 32
-            ;g_instruction_bit_width    : natural := 32
-            ;g_program                  : work.dual_port_ram_pkg.ram_array
-            ;g_data                     : work.dual_port_ram_pkg.ram_array
-            ;g_idle_ram_write           : ram_write_in_record := init_write_in(g_addresswidth, g_data_bit_width)
+            g_program : work.dual_port_ram_pkg.ram_array
+            ;g_data   : work.dual_port_ram_pkg.ram_array
            );
     port(
         clock        : in std_logic
         ;mproc_in    : in work.microprogram_interface_pkg.microprogram_processor_in_record
         ;mproc_out   : out work.microprogram_interface_pkg.microprogram_processor_out_record
         ;mc_output   : out ram_write_in_record
-        ;mc_write_in : in ram_write_in_record := g_idle_ram_write
+        ;mc_write_in : in ram_write_in_record := init_write_in(address_width(g_data'length), g_data(g_data'low)'length)
         ------ instruction entity connection
         ;to_unit  : out execution_unit_in_record
         ;from_unit : in execution_unit_out_record
@@ -29,15 +28,18 @@ end microprogram_core;
 
 architecture rtl of microprogram_core is
 
-    constant number_of_dataports : natural := to_unit.data_read_out'length;
-    constant datawidth           : natural := to_unit.data_read_out(to_unit.data_read_out'left).data'length;
-    constant instruction_width   : natural := to_unit.instr_ram_read_out(to_unit.instr_ram_read_out'left).data'length;
-    constant pipeline_high       : natural := to_unit.instr_pipeline'high;
+    constant pipeline_high : natural := to_unit.instr_pipeline'high;
 
-    constant ref_subtype       : subtype_ref_record := create_ref_subtypes(
-        readports => to_unit.data_read_out'length 
-        , datawidth => g_data_bit_width);
-    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(readports => 1 , datawidth => g_instruction_bit_width   , addresswidth => 10);
+    constant ref_subtype : subtype_ref_record := create_ref_subtypes(
+        readports     => to_unit.data_read_out'length
+        ,datawidth    => g_data(g_data'low)'length
+        ,addresswidth => address_width(g_data'length));
+    constant instr_ref_subtype : subtype_ref_record := create_ref_subtypes(
+        readports     => 1
+        ,datawidth    => g_program(g_program'low)'length
+        ,addresswidth => address_width(g_program'length));
+
+    constant idle_write : ref_subtype.ram_write_in'subtype := ref_subtype.ram_write_in;
 
     signal instr_ram_read_in   : instr_ref_subtype.ram_read_in'subtype;
     signal instr_ram_read_out  : instr_ref_subtype.ram_read_out'subtype;
@@ -51,7 +53,7 @@ architecture rtl of microprogram_core is
 
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high) := (0 to pipeline_high => op(nop));
 
-    signal write_buffer : mc_write_in'subtype := g_idle_ram_write;
+    signal write_buffer : mc_write_in'subtype := idle_write;
 
 begin
 
@@ -63,6 +65,7 @@ begin
     mc_output <= ram_write_in;
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
+    generic map(g_program_size => g_program'length)
     port map(clock 
     , instruction_ram_read_in  => instr_ram_read_in(0)
     , instruction_ram_read_out => instr_ram_read_out(0)
