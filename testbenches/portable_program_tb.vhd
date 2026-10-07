@@ -9,6 +9,7 @@ context vunit_lib.vunit_context;
     use work.microinstruction_pkg.all;
     use work.microprogram_interface_pkg.all;
     use work.microprogram_assembler_pkg.all;
+    use work.boost_converter_pkg.all;
 
 -- one program source, laid out by microprogram_assembler_pkg for the
 -- configuration in the generics, every result checked against a model and
@@ -57,20 +58,9 @@ architecture vunit_simulation of portable_program_tb is
     ------------------------------------------------------------------------
     -- the program source, the same for every configuration
     ------------------------------------------------------------------------
-    type boost_map is record
-        vin, duty, load, r, i_gain, u_gain, i, u, vl, ic : natural;
-    end record;
-    constant boost : boost_map := (vin => 100, duty => 101, load => 102, r => 103, i_gain => 104,
-        u_gain => 105, i => 106, u => 107, vl => 108, ic => 109);
-
-    function boost_step (m : boost_map) return microprogram is
-    begin
-        return (mi(neg_mpy_add , m.vl , m.duty , m.u      , m.vin)
-               ,mi(mpy_sub     , m.ic , m.duty , m.i      , m.load)
-               ,mi(neg_mpy_add , m.vl , m.r    , m.i      , m.vl)
-               ,mi(mpy_add     , m.u  , m.ic   , m.u_gain , m.u)
-               ,mi(mpy_add     , m.i  , m.vl   , m.i_gain , m.i));
-    end boost_step;
+    constant boost : boost_converter_map := boost_converter_at(100);
+    constant boost_values : boost_converter_values := (vin => 10.0, duty => 0.5, load => 0.25, r => 0.8,
+        i_gain => 0.7 / 3.0, u_gain => 0.7 / 3.0, i => 1.0, u => 5.0);
 
     constant chain : microprogram := (
          mi(mpy_add          , 1 , 64 , 65 , 66)
@@ -89,7 +79,7 @@ architecture vunit_simulation of portable_program_tb is
         variable retval : microprogram(0 to instr_ref_subtype.address_high) := empty_program(instr_ref_subtype.address_high + 1);
     begin
         retval := place(retval, 0,   schedule(config, chain));
-        retval := place(retval, 128, repeat(config, 50, boost_step(boost)) & mi(program_end));
+        retval := place(retval, 128, repeat(config, 50, boost_converter_step(boost)) & mi(program_end));
         retval := place(retval, 256, repeat(config, 100, (0 => mi(lp_filter, 96, 97, 96, 98))) & mi(program_end));
         return retval;
     end make_program;
@@ -106,11 +96,6 @@ architecture vunit_simulation of portable_program_tb is
         return '0' & x(31 downto 1);
     end galois_step;
 
-    function to_fixed (x : real) return word is
-    begin
-        return std_logic_vector(to_signed(integer(x * 2.0**radix), w));
-    end to_fixed;
-
     function make_data return work.dual_port_ram_pkg.ram_array is
         variable retval : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(w-1 downto 0)
             := (others => (others => '0'));
@@ -121,18 +106,8 @@ architecture vunit_simulation of portable_program_tb is
             x := galois_step(x);
             retval(i) := std_logic_vector(resize(signed(x(23 downto 0)) / 4 + 2**radix, w));
         end loop;
-        retval(boost.vin)    := to_fixed(10.0);
-        retval(boost.duty)   := to_fixed(0.5);
-        retval(boost.load)   := to_fixed(0.25);
-        retval(boost.r)      := to_fixed(0.8);
-        retval(boost.i_gain) := to_fixed(0.7 / 3.0);
-        retval(boost.u_gain) := to_fixed(0.7 / 3.0);
-        retval(boost.i)      := to_fixed(1.0);
-        retval(boost.u)      := to_fixed(5.0);
-        retval(96) := to_fixed(0.0);
-        retval(97) := to_fixed(3.0);
-        retval(98) := to_fixed(0.05);
-        return retval;
+        return set_data(retval, boost_converter_data(boost, boost_values)
+            & data_list'((96, 0.0), (97, 3.0), (98, 0.05)), config);
     end make_data;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(w-1 downto 0) := make_data;
@@ -227,6 +202,19 @@ begin
             & ", product register " & boolean'image(g_product_register)
             & ", " & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width)
             & " bit instructions : result latency " & integer'image(config.result_latency));
+
+        -- to_fixed() at the data width : beyond a 32 bit integer, negative,
+        -- half an lsb rounded away from zero
+        check_equal(to_fixed(-2.5, config), std_logic_vector(shift_left(to_signed(-5, w), radix - 1)), "to_fixed(-2.5)");
+        check_equal(to_fixed(2.0**(-radix-1), config), std_logic_vector(to_signed(1, w)), "to_fixed(half an lsb)");
+        check_equal(to_fixed(-2.0**(-radix-1), config), std_logic_vector(to_signed(-1, w)), "to_fixed(-half an lsb)");
+        check_equal(to_fixed(1000.0 + 2.0**(-radix), config),
+            std_logic_vector(shift_left(to_signed(1000, w), radix) + 1), "to_fixed(1000 + lsb)");
+        if w > 32 then
+            check_equal(to_fixed(3000.0, config), std_logic_vector(shift_left(to_signed(3000, w), radix)), "to_fixed(3000)");
+            check_equal(to_fixed(-3000.0 - 2.0**(-radix), config),
+                std_logic_vector(shift_left(to_signed(-3000, w), radix) - 1), "to_fixed(-3000 - lsb)");
+        end if;
 
         run_program(0, clocks);
         info("chain : " & integer'image(clocks) & " clocks");

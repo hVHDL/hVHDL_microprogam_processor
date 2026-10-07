@@ -33,6 +33,7 @@ v2008.add_source_files(ROOT / "rtl/microprogram_sequencer.vhd")
 v2008.add_source_files(ROOT / "rtl/generic_microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "rtl/microinstruction_pkg.vhd")
 v2008.add_source_files(ROOT / "rtl/microprogram_assembler_pkg.vhd")
+v2008.add_source_files(ROOT / "examples/boost_converter_pkg.vhd")
 
 v2008.add_source_files(ROOT / "rtl/microprogram_interface_pkg.vhd")
 v2008.add_source_files(ROOT / "rtl/fixed_microprogram_processor.vhd")

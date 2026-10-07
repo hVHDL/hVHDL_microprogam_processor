@@ -10,6 +10,9 @@
 --       back, count rounds ; a round starts when the last one's results
 --       are readable
 --   place(program, at, code) : code into a program at an address
+--   encode_data(entries, config, words) : a data ram's contents from
+--       (address, value) pairs, the values reals at the data width and
+--       radix ; set_data() writes pairs into existing contents
 --
 -- and encode(program, width) from microinstruction_pkg makes the ram
 -- contents. The configuration's result_latency is the execution unit's,
@@ -25,8 +28,10 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
     use work.microinstruction_pkg.all;
+    use work.dual_port_ram_pkg.ram_array;
 
 package microprogram_assembler_pkg is
 
@@ -44,6 +49,18 @@ package microprogram_assembler_pkg is
 
     -- a program ram of size words of nop
     function empty_program (size : natural) return microprogram;
+
+    -- data ram contents
+    type data_entry is record
+        address : natural;
+        value   : real;
+    end record;
+    type data_list is array (natural range <>) of data_entry;
+
+    -- value * 2**radix rounded, at the data width (up to 60 bits)
+    function to_fixed (value : real; config : processor_config) return std_logic_vector;
+    function encode_data (entries : data_list; config : processor_config; words : positive) return ram_array;
+    function set_data (data : ram_array; entries : data_list; config : processor_config) return ram_array;
 
     -- the commands' data ram use
     function writes_result (command : t_command) return boolean;
@@ -197,5 +214,43 @@ package body microprogram_assembler_pkg is
         end loop;
         return retval;
     end place;
+
+    function to_fixed (value : real; config : processor_config) return std_logic_vector is
+        constant w      : natural := config.data_width;
+        constant scaled : real := round(value * 2.0**config.radix);
+        -- in two parts, an integer has only 32 bits
+        constant high   : real := floor(scaled / 2.0**30);
+        constant low    : real := scaled - high * 2.0**30;
+    begin
+        assert w <= 60 report "to_fixed() takes data up to 60 bits" severity failure;
+        assert scaled >= -(2.0**(w-1)) and scaled < 2.0**(w-1)
+            report real'image(value) & " does not fit " & integer'image(w) & " bits at radix "
+                & integer'image(config.radix) severity failure;
+        return std_logic_vector(shift_left(resize(to_signed(integer(high), 34), w), 30)
+            + resize(to_signed(integer(low), 32), w));
+    end to_fixed;
+
+    function set_data (data : ram_array; entries : data_list; config : processor_config) return ram_array is
+        variable retval : ram_array(data'range)(config.data_width-1 downto 0) := data;
+    begin
+        for k in entries'range loop
+            assert entries(k).address >= data'low and entries(k).address <= data'high
+                report "data at " & integer'image(entries(k).address) & " is outside the data ram"
+                severity failure;
+            for j in entries'low to k-1 loop
+                assert entries(j).address /= entries(k).address
+                    report "data at " & integer'image(entries(k).address) & " is given twice"
+                    severity failure;
+            end loop;
+            retval(entries(k).address) := to_fixed(entries(k).value, config);
+        end loop;
+        return retval;
+    end set_data;
+
+    function encode_data (entries : data_list; config : processor_config; words : positive) return ram_array is
+        constant zeros : ram_array(0 to words-1)(config.data_width-1 downto 0) := (others => (others => '0'));
+    begin
+        return set_data(zeros, entries, config);
+    end encode_data;
 
 end package body microprogram_assembler_pkg;

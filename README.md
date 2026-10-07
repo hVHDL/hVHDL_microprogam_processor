@@ -34,6 +34,9 @@ rtl/
   microprogram_assembler_pkg.vhd      schedule(), repeat(), place() : one
                                       program source for any configuration
   ram_connector_pkg.vhd               helpers for combining RAM ports
+examples/
+  boost_converter_pkg.vhd             an averaged boost converter model : its
+                                      address map, program step and data
 testbenches/                     fixed_execution_unit_tb checks both fixed
                                  point architectures, result_latency_tb
                                  measures their result latency,
@@ -162,6 +165,23 @@ program := place(program, 128, repeat(config, 50, boost_step(boost)) & mi(progra
   nest, the sequencer has one repeat counter.
 - `place(program, at, code)` puts code at an entry address and fails on an
   overlap; `encode()` resolves the relative jumps.
+- `encode_data(entries, config, words)` makes a data RAM's contents from
+  (address, value) pairs of reals, at the configuration's data width and
+  radix, rounded half away from zero; `set_data()` writes pairs into
+  existing contents and `to_fixed(value, config)` converts one value, up to
+  60 bit data. Each fails on an address outside the RAM, an address given
+  twice or a value that does not fit.
+
+A model is written once as functions of an address map record, so the
+same source places it anywhere in any configuration's RAMs.
+`examples/boost_converter_pkg.vhd`:
+
+```vhdl
+constant boost : boost_converter_map := boost_converter_at(100); -- 100..109
+
+program := place(program, 128, schedule(config, boost_converter_step(boost)) & mi(program_end));
+data    := encode_data(boost_converter_data(boost, boost_converter_example), config, 1024);
+```
 
 At latency 7 the boost converter step above takes 21 clocks a round and
 the low pass filter 7, against 36 and 20 for the same programs spaced by
