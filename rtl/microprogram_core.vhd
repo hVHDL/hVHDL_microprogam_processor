@@ -23,11 +23,12 @@ entity microprogram_core is
             ;g_data_ram_output_register    : boolean := true
             -- the sequencer's program cache, jump_delay_slots()
             -- instructions a line, a start from it that many clocks
-            -- sooner : g_program_cache, a dynamic line for the program
-            -- last started ; g_cached_programs, the programs at these
+            -- sooner : g_program_cache, g_dynamic_lines dynamic lines for
+            -- the programs last started ; g_cached_programs, the programs at these
             -- addresses cached from the start, their lines fixed from
             -- g_program
             ;g_program_cache   : boolean := false
+            ;g_dynamic_lines   : positive := 1
             ;g_cached_programs : program_start_array := (1 to 0 => 0)
            );
     port(
@@ -117,7 +118,7 @@ begin
 ----------------------------------------------------------
     u_microprogram_sequencer : entity work.microprogram_sequencer
     generic map(g_program_size => g_program'length, g_instruction_width => instruction_width
-        , g_cache_depth => cache_depth, g_dynamic_cache => g_program_cache
+        , g_cache_depth => cache_depth, g_dynamic_lines => g_dynamic_lines * boolean'pos(g_program_cache)
         , g_static_starts => g_cached_programs, g_static_words => static_words)
     port map(clock 
     , instruction_ram_read_in  => instr_ram_read_in(0)

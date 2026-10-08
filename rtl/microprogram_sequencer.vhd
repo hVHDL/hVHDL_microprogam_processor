@@ -21,9 +21,12 @@ LIBRARY ieee  ;
 --   static : the programs at g_static_starts, their first instructions
 --       g_static_words (g_cache_depth a program, in g_static_starts'
 --       order) fixed at elaboration, a hit from the first start on
---   dynamic, with g_dynamic_cache : one line, the first instructions of
---       the last program started that has no static line, filled on its
---       miss for the next start
+--   dynamic, g_dynamic_lines of them : the first instructions of the
+--       programs last started that have no static line, each line filled
+--       on its program's miss for the next start. A miss takes the lines
+--       in turn (round robin), whatever their use : with n lines, n
+--       programs started in any order stay cached, a start of an n+1th
+--       replaces the line filled longest ago
 --
 -- A program with a jump (its delay slots would differ) or a program_end
 -- (it would end the run while the line goes out) among its first
@@ -37,7 +40,7 @@ entity microprogram_sequencer is
         -- the program ram's word width
         ;g_instruction_width : positive := 32
         ;g_cache_depth : natural := 0
-        ;g_dynamic_cache : boolean := true
+        ;g_dynamic_lines : natural := 1
         ;g_static_starts : program_start_array := (1 to 0 => 0)
         ;g_static_words  : work.dual_port_ram_pkg.ram_array := (0 to 0 => (g_instruction_width-1 downto 0 => '0'))
     );
@@ -73,9 +76,11 @@ architecture rtl of microprogram_sequencer is
     constant depth : natural := g_cache_depth;
     type word_array is array (natural range <>) of std_logic_vector(g_instruction_width-1 downto 0);
 
-    -- the static lines 0 to static_lines-1, the dynamic line is line static_lines
-    constant static_lines : natural := g_static_starts'length * boolean'pos(depth > 0);
-    constant dynamic_line : natural := static_lines;
+    -- the static lines 0 to static_lines-1, the dynamic ones after them
+    constant static_lines  : natural := g_static_starts'length * boolean'pos(depth > 0);
+    constant dynamic_lines : natural := g_dynamic_lines * boolean'pos(depth > 0);
+    constant dynamic_line  : natural := static_lines; -- the first
+    constant line_count    : natural := static_lines + dynamic_lines;
 
     function static_start (line : natural) return natural is
     begin
@@ -87,7 +92,7 @@ architecture rtl of microprogram_sequencer is
         return g_static_words(g_static_words'low + line * depth + word);
     end static_word;
 
-    -- the static line of a start address, dynamic_line for none
+    -- the static line of a start address, static_lines for none
     function static_line_of (address : natural) return natural is
     begin
         for line in 0 to static_lines-1 loop
@@ -98,14 +103,22 @@ architecture rtl of microprogram_sequencer is
         return dynamic_line;
     end static_line_of;
 
-    signal cache_words : word_array(0 to maximum(depth, 1)-1) := (others => nop_instruction);
-    signal cache_tag   : natural range 0 to g_program_size-1 := 0;
-    signal cache_valid : boolean := false;
+    subtype line_words is word_array(0 to maximum(depth, 1)-1);
+    type line_array is array (natural range <>) of line_words;
+    type tag_array is array (natural range <>) of natural range 0 to g_program_size-1;
+    type flag_array is array (natural range <>) of boolean;
+    -- the dynamic lines, their programs' start addresses and whether filled
+    signal cache_words : line_array(0 to maximum(dynamic_lines, 1)-1) := (others => (others => nop_instruction));
+    signal cache_tags  : tag_array(0 to maximum(dynamic_lines, 1)-1) := (others => 0);
+    signal cache_valid : flag_array(0 to maximum(dynamic_lines, 1)-1) := (others => false);
+    -- the dynamic line the next miss takes, the one filling
+    signal next_line   : natural range 0 to maximum(dynamic_lines, 1)-1 := 0;
+    signal fill_line   : natural range 0 to maximum(dynamic_lines, 1)-1 := 0;
     signal filling     : boolean := false;
     signal fill_count  : natural range 0 to maximum(depth, 1) := 0;
     signal serving     : boolean := false;
     signal serve_count : natural range 0 to maximum(depth, 1) := 0;
-    signal serve_line  : natural range 0 to dynamic_line := 0;
+    signal serve_line  : natural range 0 to maximum(line_count, 1)-1 := 0;
     -- the line's instruction going out, and the one going out from either
     signal cache_out   : instruction_ram_read_out'subtype := (data => nop_instruction, data_is_ready => '0');
     signal read_out    : instruction_ram_read_out'subtype;
@@ -115,13 +128,13 @@ architecture rtl of microprogram_sequencer is
         return decode(instruction) = jump or decode(instruction) = program_end;
     end is_control;
 
-    -- a word of a line, static or the dynamic one
-    function line_word (line, word : natural; dynamic_words : word_array) return std_logic_vector is
+    -- a word of a line, static or dynamic
+    function line_word (line, word : natural; dynamic_words : line_array) return std_logic_vector is
     begin
         if line < static_lines then
             return static_word(line, word);
         end if;
-        return dynamic_words(word);
+        return dynamic_words(line - static_lines)(word);
     end line_word;
 
     -- the static lines' programs have no jump or program_end in them
@@ -155,6 +168,8 @@ begin
     instr_pipeline    <= pipeline;
 
     make_program_counter : process(clock)
+        -- the start's line, line_count for none
+        variable hit_line : natural range 0 to line_count;
     begin
         if rising_edge(clock) then
             init_mp_ram_read(instruction_ram_read_in);
@@ -183,21 +198,31 @@ begin
 
                     if processor_requested
                     then
-                        if static_line_of(start_address) < static_lines
-                            or (depth > 0 and g_dynamic_cache and cache_valid and cache_tag = start_address mod g_program_size)
-                        then
+                        hit_line := line_count;
+                        if static_line_of(start_address) < static_lines then
+                            hit_line := static_line_of(start_address);
+                        end if;
+                        for line in 0 to dynamic_lines-1 loop
+                            if cache_valid(line) and cache_tags(line) = start_address mod g_program_size then
+                                hit_line := dynamic_line + line;
+                            end if;
+                        end loop;
+
+                        if hit_line < line_count then
                             -- hit : the line goes out from the next clock
                             program_counter <= (start_address + depth) mod g_program_size;
-                            cache_out       <= (data => line_word(static_line_of(start_address), 0, cache_words), data_is_ready => '1');
+                            cache_out       <= (data => line_word(hit_line, 0, cache_words), data_is_ready => '1');
                             serving         <= true;
                             serve_count     <= 1;
-                            serve_line      <= static_line_of(start_address);
+                            serve_line      <= hit_line;
                         else
                             program_counter <= start_address mod g_program_size;
-                            if depth > 0 and g_dynamic_cache then
-                                -- miss : fill the line from the ram
-                                cache_tag   <= start_address mod g_program_size;
-                                cache_valid <= false;
+                            if dynamic_lines > 0 then
+                                -- miss : the next dynamic line fills from the ram
+                                cache_tags(next_line)  <= start_address mod g_program_size;
+                                cache_valid(next_line) <= false;
+                                fill_line   <= next_line;
+                                next_line   <= (next_line + 1) mod dynamic_lines;
                                 filling     <= true;
                                 fill_count  <= 0;
                             end if;
@@ -232,11 +257,11 @@ begin
                         if is_control(get_ram_data(instruction_ram_read_out)) then
                             filling <= false;
                         else
-                            cache_words(fill_count) <= get_ram_data(instruction_ram_read_out);
+                            cache_words(fill_line)(fill_count) <= get_ram_data(instruction_ram_read_out);
                             fill_count <= fill_count + 1;
                             if fill_count = depth - 1 then
                                 filling     <= false;
-                                cache_valid <= true;
+                                cache_valid(fill_line) <= true;
                             end if;
                         end if;
                     end if;

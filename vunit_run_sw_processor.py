@@ -129,6 +129,14 @@ for dynamic in [False, True]:
             generics=dict(g_program_ram_output_register=program_ram_register,
                           g_program_cache=dynamic, g_static_cache=True))
 
+for lines in [2, 4]:
+    for static in [False, True]:
+        portable_tb.add_config(
+            name=f"{architecture}_{lines}_dynamic_lines" + ("_and_static_cache" if static else "")
+                + ("_no_program_ram_register" if lines == 2 else ""),
+            generics=dict(g_program_ram_output_register=lines != 2, g_program_cache=True,
+                          g_dynamic_lines=lines, g_static_cache=static))
+
 v2008.add_source_files(ROOT / "testbenches/math_unit_tb.vhd")
 math_tb = v2008.test_bench("math_unit_tb")
 for width in [32, 36]:

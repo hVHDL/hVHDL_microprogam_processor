@@ -26,8 +26,12 @@ context vunit_lib.vunit_context;
 --         of 65 at 405 if it were not taken) : 2 * 64 + 65 into 9
 --   440 : a program_end in the line's span
 --   470 : the chain again, never a static line
+--   600, 620 .. 680 : a multiply-add each, for the dynamic lines
 --
--- 128 and 256 start with repeat()'s set_rpt, from the line on a hit
+-- 128 and 256 start with repeat()'s set_rpt, from the line on a hit.
+-- Every run's length is checked against a model of the cache : with the
+-- line depth added back on a predicted hit, a program's runs are all as
+-- long.
 entity portable_program_tb is
   generic (
       runner_cfg : string
@@ -38,6 +42,7 @@ entity portable_program_tb is
       -- the sequencer's program cache : every program runs twice, the
       -- second start from the cache line, jump_delay_slots() clocks shorter
       ;g_program_cache : boolean := false
+      ;g_dynamic_lines : positive := 1
       -- static cache lines for programs 0 and 128 : a hit from the first
       -- start on, the chain's first run the depth shorter than 470's
       ;g_static_cache : boolean := false
@@ -105,6 +110,9 @@ architecture vunit_simulation of portable_program_tb is
             , mi(get_acc_and_zero, 9, 0, 0, 65), mi(program_end))));
         retval := place(retval, 440, (mi(acc, 0, 0, 0, 64), mi(program_end)));
         retval := place(retval, 470, schedule(config, chain));
+        for k in 0 to 4 loop
+            retval := place(retval, 600 + 20 * k, schedule(config, (mi(mpy_add, 20 + k, 64, 65, 66), mi(program_end))));
+        end loop;
         return retval;
     end make_program;
 
@@ -171,6 +179,9 @@ architecture vunit_simulation of portable_program_tb is
     signal data_ram   : word_array(0 to ref_subtype.address_high) := (others => (others => '0'));
     signal collisions : natural := 0;
 
+    type natural_list is array (natural range <>) of natural;
+    type boolean_list is array (natural range <>) of boolean;
+
 begin
 
     clock <= not clock after clock_period/2;
@@ -193,22 +204,78 @@ begin
             wait until rising_edge(clock);
         end run_program;
 
+        ------------------------------------------------------------------
+        -- the cache's model : the static lines, the dynamic lines filled in
+        -- turn on a miss, not by a program with a jump or program_end in
+        -- its line's span
+        ------------------------------------------------------------------
+        variable tags      : natural_list(0 to g_dynamic_lines-1) := (others => 0);
+        variable valid     : boolean_list(0 to g_dynamic_lines-1) := (others => false);
+        variable next_line : natural := 0;
+        -- a program's length without the cache, 0 before its first run
+        variable uncached  : natural_list(0 to 1023) := (others => 0);
+        variable hits      : natural := 0;
+
+        function cacheable (start : natural) return boolean is
+        begin
+            return start /= 400 and start /= 440;
+        end cacheable;
+
+        procedure predict (start : natural; hit : out boolean) is
+        begin
+            hit := is_static(start);
+            if g_program_cache and not hit then
+                for line in tags'range loop
+                    if valid(line) and tags(line) = start then
+                        hit := true;
+                    end if;
+                end loop;
+                if not hit then
+                    tags(next_line)  := start;
+                    valid(next_line) := cacheable(start);
+                    next_line        := (next_line + 1) mod g_dynamic_lines;
+                end if;
+            end if;
+        end predict;
+
+        -- a run, its length checked against the model's
+        procedure run_checked (start : natural; clocks : out natural; hit : out boolean) is
+            variable predicted : boolean;
+            variable length    : natural;
+        begin
+            predict(start, predicted);
+            run_program(start, length);
+            length := length + config.delay_slots * boolean'pos(predicted);
+            if uncached(start) = 0 then
+                uncached(start) := length;
+            end if;
+            check_equal(length, uncached(start), "program " & integer'image(start)
+                & ", the cache model's hit " & boolean'image(predicted));
+            hits   := hits + boolean'pos(predicted);
+            clocks := length - config.delay_slots * boolean'pos(predicted);
+            hit    := predicted;
+        end run_checked;
+
+        procedure run_checked (start : natural) is
+            variable clocks : natural;
+            variable hit    : boolean;
+        begin
+            run_checked(start, clocks, hit);
+        end run_checked;
+
         -- a program once, or with a cache twice : a static line's program is
         -- as long again, a dynamic one's second start hits the line its
         -- first filled and is the line's depth shorter
         procedure run_cached (start : natural; clocks : out natural) is
             variable first, second : natural;
+            variable hit : boolean;
         begin
-            run_program(start, first);
+            run_checked(start, first, hit);
             clocks := first;
             if g_program_cache or g_static_cache then
-                run_program(start, second);
-                if is_static(start) or not g_program_cache then
-                    check_equal(second, first, "program " & integer'image(start) & " again");
-                else
-                    check_equal(second, first - config.delay_slots,
-                        "program " & integer'image(start) & " from the cache");
-                end if;
+                run_checked(start, second, hit);
+                check(hit or not (g_program_cache or is_static(start)),
+                    "program " & integer'image(start) & " from the cache the second time");
                 info("program " & integer'image(start) & " : " & integer'image(first)
                     & " clocks, again " & integer'image(second));
             end if;
@@ -256,6 +323,9 @@ begin
         variable i, u, vl, ic, y    : word;
         variable clocks : natural;
         variable first, again, first_chain, chain_first : natural;
+        variable hit : boolean;
+        -- the cacheable programs the dynamic lines take in turn
+        constant dynamic_programs : natural_list := (470, 600, 620, 640, 660, 680);
 
     begin
         test_runner_setup(runner, runner_cfg);
@@ -323,50 +393,59 @@ begin
             check(decode(test_program(401)) = jump and decode(test_program(441)) = program_end,
                 "programs 400 and 440 have a jump and a program_end in the line's span");
 
-            -- a jump in the span : not cached, the same length again, the
-            -- jump taken both times
+            -- a jump or a program_end in the span : not cached, the same
+            -- length again, 400's jump taken both times
+            -- (440 leaves the accumulator at 64, after 400's checks)
             for k in 1 to 2 loop
-                run_program(400, clocks);
-                if k = 1 then first := clocks; end if;
+                run_checked(400, clocks, hit);
+                check(not hit, "program 400, a jump in the line's span, not cached");
                 check_word(9, sum(sum(m(64), m(64)), m(65)));
             end loop;
-            check_equal(clocks, first, "program 400, a jump in the line's span, not cached");
+            for k in 1 to 2 loop
+                run_checked(440, clocks, hit);
+                check(not hit, "program 440, a program_end in the line's span, not cached");
+            end loop;
 
-            -- the abandoned fill left no line : 470 misses, then hits
-            run_program(470, first_chain);
-            run_program(470, again);
-            check_equal(again, first_chain - config.delay_slots, "program 470 after program 400");
+            -- as many programs as dynamic lines in turn stay cached, one
+            -- more and each start replaces the line its next start needs
+            for programs in g_dynamic_lines to g_dynamic_lines + 1 loop
+                for round in 1 to 3 loop
+                    for k in 0 to programs-1 loop
+                        run_checked(dynamic_programs(k), clocks, hit);
+                        if round > 1 then
+                            check(hit = (programs = g_dynamic_lines), "program " & integer'image(dynamic_programs(k))
+                                & " with " & integer'image(programs) & " programs in turn");
+                        end if;
+                    end loop;
+                end loop;
+            end loop;
 
-            -- a program_end in the span : not cached, and it evicts 470's line
-            run_program(440, first);
-            run_program(440, again);
-            check_equal(again, first, "program 440, a program_end in the line's span, not cached");
-            run_program(470, clocks);
-            check_equal(clocks, first_chain, "program 470 after program 440, a miss");
-            run_program(470, clocks);
-            check_equal(clocks, first_chain - config.delay_slots, "program 470 again, a hit");
-
-            -- one dynamic line : 256 evicts 470's, 128 with a static line does not
-            run_program(128, again);
-            run_program(470, clocks);
-            check_equal(clocks, first_chain - config.delay_slots * boolean'pos(is_static(128)),
-                "program 470 after program 128");
-            run_program(256, again);
-            run_program(470, clocks);
-            check_equal(clocks, first_chain, "program 470 after program 256, a miss");
-            info("programs 400 and 440 not cached, a start of another program evicts the line");
+            -- a static line's program does not take a dynamic line
+            for k in 0 to g_dynamic_lines-1 loop
+                run_checked(dynamic_programs(k));
+            end loop;
+            run_checked(128, clocks, hit);
+            check(hit = is_static(128), "program 128");
+            for k in 0 to g_dynamic_lines-1 loop
+                run_checked(dynamic_programs(k), clocks, hit);
+                if is_static(128) then
+                    check(hit, "program " & integer'image(dynamic_programs(k)) & " after the static 128");
+                end if;
+            end loop;
+            info(integer'image(g_dynamic_lines) & " dynamic lines : " & integer'image(g_dynamic_lines)
+                & " programs in turn cached, " & integer'image(g_dynamic_lines + 1) & " not, 400 and 440 never");
         end if;
 
         if g_static_cache then
             -- 0 from its static line from the first start on, 470 the same
             -- code from the ram
-            run_program(256, clocks); -- 470 not in a dynamic line
-            run_program(470, clocks);
-            check_equal(chain_first, clocks - config.delay_slots, "program 0 from its static line");
+            run_checked(470);
+            check_equal(chain_first, uncached(470) - config.delay_slots, "program 0 from its static line");
             info("program 0 from its static line : " & integer'image(chain_first) & " clocks, 470 : "
-                & integer'image(clocks));
+                & integer'image(uncached(470)));
         end if;
 
+        info(integer'image(hits) & " runs from the cache");
         check_equal(collisions, 0, "data ram reads in the clock of a write to the address");
 
         test_runner_cleanup(runner);
@@ -407,6 +486,7 @@ begin
         ,g_program_ram_output_register => g_program_ram_output_register
         ,g_data_ram_output_register => g_data_ram_output_register
         ,g_program_cache => g_program_cache
+        ,g_dynamic_lines => g_dynamic_lines
         ,g_cached_programs => cached_programs)
     port map (
         clock        => clock
