@@ -19,8 +19,10 @@ context vunit_lib.vunit_context;
 -- the clock the second instruction reads it. The read port and the write
 -- port are separate ram ports, a read in the clock of the write is a port
 -- collision, so the latency is the smallest k with the read after the
--- write. The results must be right from that k up, and the latency must
--- be what execution_unit_pkg's fixed_point_result_latency() says.
+-- write. With g_data_forwarding the write goes to the reads that would
+-- miss it, the latency is the smallest k with the right result. The
+-- results must be right from that k up, and the latency must be what
+-- execution_unit_pkg's fixed_point_result_latency() says.
 entity result_latency_tb is
   generic (
       runner_cfg : string
@@ -28,6 +30,7 @@ entity result_latency_tb is
       ;g_product_register : boolean := false
       ;g_program_ram_output_register : boolean := true
       ;g_data_ram_output_register    : boolean := true
+      ;g_data_forwarding : boolean := false
   );
 end;
 
@@ -143,6 +146,9 @@ begin
             run_program(32*k);
             check_equal(data_ram(70 + k), first, "first result, k = " & integer'image(k));
             read_after_write := read_clock(70 + k) > write_clock(70 + k);
+            if g_data_forwarding then
+                read_after_write := data_ram(100 + k) = second;
+            end if;
             if read_after_write and latency < 0 then
                 latency := k;
             end if;
@@ -163,7 +169,8 @@ begin
             & " : result latency " & integer'image(latency)
             & ", right results from " & integer'image(first_correct));
         check(latency > 0, "no read after the write within " & integer'image(max_k) & " instructions");
-        check_equal(latency, fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register),
+        check_equal(latency, fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register
+            , g_data_forwarding),
             "fixed_point_result_latency()");
 
         test_runner_cleanup(runner);
@@ -199,7 +206,8 @@ begin
     u_microprogram_core : entity work.microprogram_core
     generic map (g_program => test_program, g_data => program_data
         ,g_program_ram_output_register => g_program_ram_output_register
-        ,g_data_ram_output_register => g_data_ram_output_register)
+        ,g_data_ram_output_register => g_data_ram_output_register
+        ,g_data_forwarding => g_data_forwarding)
     port map (
         clock      => clock
         ,mproc_in  => mproc_in

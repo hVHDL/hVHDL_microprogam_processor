@@ -41,6 +41,9 @@ entity math_unit_tb is
       ;g_divider_shifter_stages : positive := 2
       ;g_math_ram_output_register  : boolean := true
       ;g_math_dsp_request_register : boolean := true
+      -- forwarded data ram writes : the latencies the smallest k with the
+      -- right result, a read in the clock of a write no collision
+      ;g_data_forwarding : boolean := false
   );
 end;
 
@@ -59,10 +62,12 @@ architecture vunit_simulation of math_unit_tb is
         instruction_width => w
         ,data_width       => w
         ,radix            => radix
-        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register)
+        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register
+            , g_data_forwarding)
         ,delay_slots      => jump_delay_slots(true)
         ,math_latency     => fixed_math_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register,
-            g_divider_shifter_stages, g_math_ram_output_register, g_math_dsp_request_register));
+            g_divider_shifter_stages, g_math_ram_output_register, g_math_dsp_request_register, g_data_forwarding)
+        ,forwarded        => forwarded_clocks(g_data_ram_output_register, g_data_forwarding));
 
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => w, addresswidth => 10);
@@ -235,7 +240,10 @@ begin
         for k in 1 to max_k loop
             run_program(stride*k);
             check_word(10 + k, divide(m(64), m(65)));
-            if read_clock(10 + k) > write_clock(10 + k) and latency < 0 then
+            if (read_clock(10 + k) > write_clock(10 + k)
+                    or (g_data_forwarding and data_ram(100 + k) = divide(divide(m(64), m(65)), m(68))))
+                and latency < 0
+            then
                 latency := k;
             end if;
             if latency > 0 then
@@ -246,7 +254,7 @@ begin
         check_equal(latency, config.math_latency, "fixed_math_result_latency()");
 
         -- the scheduled program
-        watch_collisions <= true;
+        watch_collisions <= not g_data_forwarding;
         run_program(mixed_start);
         q1 := divide(m(64), m(65));
         r2 := mult_add(q1, m(66), m(67));
@@ -337,7 +345,8 @@ begin
 
     u_microprogram_core : entity work.microprogram_core
     generic map (g_program => test_program, g_data => program_data
-        ,g_data_ram_output_register => g_data_ram_output_register)
+        ,g_data_ram_output_register => g_data_ram_output_register
+        ,g_data_forwarding => g_data_forwarding)
     port map (
         clock        => clock
         ,mproc_in    => mproc_in

@@ -25,6 +25,10 @@
 -- the write in, and a read in that clock is a collision between the
 -- ram's write and read ports, which gives no defined data on the FPGAs
 -- the processor is tested on, so a result is never read in that clock.
+-- With microprogram_core's g_data_forwarding the write goes to such reads
+-- and the latency is forwarded clocks shorter : schedule() and repeat()
+-- end their code that much after the last result is readable, so a
+-- program_end after them still marks the results as in the data ram.
 --
 -- The instructions keep their order. repeat() takes the sequencer's one
 -- repeat counter, repeats do not nest.
@@ -51,6 +55,10 @@ package microprogram_assembler_pkg is
         -- the math unit's result latency, for ext, execution_unit_pkg's
         -- fixed_math_result_latency() ; 0 without a math unit
         math_latency      : natural;
+        -- the clocks data forwarding takes off the latencies,
+        -- execution_unit_pkg's forwarded_clocks() : program_end waits them
+        -- too, its ready marking the results as in the data ram
+        forwarded         : natural;
     end record;
 
     function schedule (config : processor_config; code : microprogram) return microprogram;
@@ -137,7 +145,10 @@ package body microprogram_assembler_pkg is
 
     type boolean_array is array (natural range <>) of boolean;
 
-    function schedule_slots (config : processor_config; code : microprogram) return natural_array is
+    -- the slot of each instruction, and after them the code's length :
+    -- to the last result readable, or with landed the results in the
+    -- data ram, config.forwarded later
+    function schedule_slots (config : processor_config; code : microprogram; landed : boolean := true) return natural_array is
         constant max_latency : natural := maximum(config.result_latency, config.math_latency);
         -- the slot from which each data address and the accumulator can be read
         variable ready     : natural_array(0 to 2**address_bits(config.instruction_width)-1) := (others => 0);
@@ -173,8 +184,9 @@ package body microprogram_assembler_pkg is
                 slot := maximum(slot, acc_ready);
             end if;
             if i.command = program_end then
-                -- ready when the results are in the data ram
-                slot := maximum(slot, tail);
+                -- ready when the results are in the data ram, forwarded
+                -- clocks after they are readable
+                slot := maximum(slot, tail + config.forwarded);
             end if;
             if writes_result(i.command) then
                 while write_taken(slot + latency) loop
@@ -195,11 +207,16 @@ package body microprogram_assembler_pkg is
             end if;
         end loop;
         slots(code'length) := maximum(next_slot, tail);
+        if landed and tail > 0 then
+            slots(code'length) := maximum(next_slot, tail + config.forwarded);
+        end if;
         return slots;
     end schedule_slots;
 
-    function schedule (config : processor_config; code : microprogram) return microprogram is
-        constant slots  : natural_array := schedule_slots(config, code);
+    -- the code at its slots, nops between : with landed its results are
+    -- in the data ram at its end, a loop body ends when they are readable
+    function schedule_code (config : processor_config; code : microprogram; landed : boolean) return microprogram is
+        constant slots  : natural_array := schedule_slots(config, code, landed);
         variable retval : microprogram(0 to slots(code'length)-1) := (others => mi(nop));
     begin
         for k in 0 to code'length-1 loop
@@ -208,6 +225,11 @@ package body microprogram_assembler_pkg is
             end if;
         end loop;
         return retval;
+    end schedule_code;
+
+    function schedule (config : processor_config; code : microprogram) return microprogram is
+    begin
+        return schedule_code(config, code, landed => true);
     end schedule;
 
     -- where the jump goes in a scheduled body : a round, from the body's
@@ -224,10 +246,14 @@ package body microprogram_assembler_pkg is
     end jump_slot;
 
     function repeat (config : processor_config; count : positive; code : microprogram) return microprogram is
-        constant scheduled : microprogram := schedule(config, code);
+        -- each round reads the last one's results when they are readable
+        constant scheduled : microprogram := schedule_code(config, code, landed => false);
         constant jump_at   : natural := jump_slot(scheduled, config.delay_slots);
-        -- set_rpt, the body and the jump with its delay slots
-        variable retval : microprogram(0 to maximum(scheduled'length, jump_at + config.delay_slots + 1)) := (others => mi(nop));
+        -- set_rpt, the body and the jump with its delay slots, and the
+        -- forwarded clocks after the last round : a program_end after the
+        -- loop marks its results as in the data ram
+        variable retval : microprogram(0 to maximum(scheduled'length, jump_at + config.delay_slots + 1) + config.forwarded)
+            := (others => mi(nop));
     begin
         retval(0) := mi(set_rpt, count - 1);
         for k in 0 to scheduled'length-1 loop

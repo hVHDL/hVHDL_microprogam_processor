@@ -39,6 +39,9 @@ entity portable_program_tb is
       ;g_product_register  : boolean := false
       ;g_program_ram_output_register : boolean := true
       ;g_data_ram_output_register    : boolean := true
+      -- forwarded data ram writes, the programs laid out for the shorter
+      -- latency, a read in the clock of a write no collision
+      ;g_data_forwarding : boolean := false
       -- the sequencer's program cache : every program runs twice, the
       -- second start from the cache line, jump_delay_slots() clocks shorter
       ;g_program_cache : boolean := false
@@ -66,9 +69,11 @@ architecture vunit_simulation of portable_program_tb is
         instruction_width => g_instruction_width
         ,data_width       => g_data_width
         ,radix            => radix
-        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register)
+        ,result_latency   => fixed_point_result_latency(g_pre_add_register, g_product_register, g_data_ram_output_register
+            , g_data_forwarding)
         ,delay_slots      => jump_delay_slots(g_program_ram_output_register)
-        ,math_latency     => 0);
+        ,math_latency     => 0
+        ,forwarded        => forwarded_clocks(g_data_ram_output_register, g_data_forwarding));
 
     constant ref_subtype : subtype_ref_record :=
         create_ref_subtypes(readports => 3, datawidth => w, addresswidth => 10);
@@ -216,9 +221,16 @@ begin
         variable uncached  : natural_list(0 to 1023) := (others => 0);
         variable hits      : natural := 0;
 
+        -- no jump or program_end in the line's span : with forwarding the
+        -- low pass filter's shorter loop puts its jump there
         function cacheable (start : natural) return boolean is
         begin
-            return start /= 400 and start /= 440;
+            for k in 0 to config.delay_slots-1 loop
+                if decode(test_program(start + k)) = jump or decode(test_program(start + k)) = program_end then
+                    return false;
+                end if;
+            end loop;
+            return true;
         end cacheable;
 
         procedure predict (start : natural; hit : out boolean) is
@@ -274,7 +286,7 @@ begin
             clocks := first;
             if g_program_cache or g_static_cache then
                 run_checked(start, second, hit);
-                check(hit or not (g_program_cache or is_static(start)),
+                check(hit or not ((g_program_cache and cacheable(start)) or is_static(start)),
                     "program " & integer'image(start) & " from the cache the second time");
                 info("program " & integer'image(start) & " : " & integer'image(first)
                     & " clocks, again " & integer'image(second));
@@ -469,7 +481,8 @@ begin
             if mc_output.write_requested = '1' then
                 data_ram(to_integer(mc_output.address)) <= mc_output.data;
                 for port_index in unit_out.data_read_in'range loop
-                    if unit_out.data_read_in(port_index).read_requested = '1'
+                    if not g_data_forwarding
+                        and unit_out.data_read_in(port_index).read_requested = '1'
                         and unit_out.data_read_in(port_index).address = mc_output.address
                     then
                         collisions <= collisions + 1;
@@ -485,6 +498,7 @@ begin
     generic map (g_program => test_program, g_data => program_data
         ,g_program_ram_output_register => g_program_ram_output_register
         ,g_data_ram_output_register => g_data_ram_output_register
+        ,g_data_forwarding => g_data_forwarding
         ,g_program_cache => g_program_cache
         ,g_dynamic_lines => g_dynamic_lines
         ,g_cached_programs => cached_programs)

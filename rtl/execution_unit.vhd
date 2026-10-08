@@ -29,13 +29,20 @@ package execution_unit_pkg is
     function fixed_point_result_stage (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true) return natural;
 
+    -- microprogram_core's g_data_forwarding : a written word goes to the
+    -- reads that would miss it, a read in the clock of the write (a port
+    -- collision without it) and, with the data ram's output register, one
+    -- the clock before, a result readable data_read_latency() clocks
+    -- sooner. The clocks it takes off a result latency, 0 without it.
+    function forwarded_clocks (data_ram_output_register, data_forwarding : boolean) return natural;
+
     -- the instructions after an instruction that its result is not yet
     -- readable to : an instruction this many after it, or more, reads it.
     -- The ram takes the write a clock after the result stage and a read in
     -- the clock of the write is a port collision, so 2 more than the
-    -- stage. result_latency_tb measures it.
+    -- stage, less forwarded_clocks(). result_latency_tb measures it.
     function fixed_point_result_latency (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true) return natural;
+        data_ram_output_register : boolean := true; data_forwarding : boolean := false) return natural;
 
     -- hVHDL_fixed_point's lut_divider and full_range_sqrt, from the
     -- request at the input to the ready : 6, 2 for each shifter stage (the
@@ -61,7 +68,8 @@ package execution_unit_pkg is
         math_ram_output_register, math_dsp_request_register : boolean := true) return natural;
     function fixed_math_result_latency (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
-        math_ram_output_register, math_dsp_request_register : boolean := true) return natural;
+        math_ram_output_register, math_dsp_request_register : boolean := true;
+        data_forwarding : boolean := false) return natural;
 
     -- two execution units on one microprogram_core : the read requests of
     -- either, and the write of the one writing. One instruction issues a
@@ -86,10 +94,16 @@ package body execution_unit_pkg is
             + boolean'pos(pre_add_register) + boolean'pos(product_register);
     end fixed_point_result_stage;
 
-    function fixed_point_result_latency (pre_add_register, product_register : boolean;
-        data_ram_output_register : boolean := true) return natural is
+    function forwarded_clocks (data_ram_output_register, data_forwarding : boolean) return natural is
     begin
-        return fixed_point_result_stage(pre_add_register, product_register, data_ram_output_register) + 2;
+        return data_read_latency(data_ram_output_register) * boolean'pos(data_forwarding);
+    end forwarded_clocks;
+
+    function fixed_point_result_latency (pre_add_register, product_register : boolean;
+        data_ram_output_register : boolean := true; data_forwarding : boolean := false) return natural is
+    begin
+        return fixed_point_result_stage(pre_add_register, product_register, data_ram_output_register) + 2
+            - forwarded_clocks(data_ram_output_register, data_forwarding);
     end fixed_point_result_latency;
 
     function lut_divider_latency (pre_add_register, product_register : boolean;
@@ -119,10 +133,12 @@ package body execution_unit_pkg is
 
     function fixed_math_result_latency (pre_add_register, product_register : boolean;
         data_ram_output_register : boolean := true; divider_shifter_stages : positive := 2;
-        math_ram_output_register, math_dsp_request_register : boolean := true) return natural is
+        math_ram_output_register, math_dsp_request_register : boolean := true;
+        data_forwarding : boolean := false) return natural is
     begin
         return fixed_math_result_stage(pre_add_register, product_register, data_ram_output_register,
-            divider_shifter_stages, math_ram_output_register, math_dsp_request_register) + 2;
+            divider_shifter_stages, math_ram_output_register, math_dsp_request_register) + 2
+            - forwarded_clocks(data_ram_output_register, data_forwarding);
     end fixed_math_result_latency;
 
     function merge_units (a, b : execution_unit_out_record) return execution_unit_out_record is

@@ -98,6 +98,15 @@ for pre_add_register in [False, True]:
                 generics=dict(g_pre_add_register=pre_add_register, g_product_register=product_register,
                               g_data_ram_output_register=data_ram_output_register))
 
+for pre_add_register in [False, True]:
+    for product_register in [False, True]:
+        for data_ram_output_register in [True, False]:
+            latency_tb.add_config(
+                name=architecture + ("_pre_add" if pre_add_register else "") + ("_product" if product_register else "")
+                    + ("" if data_ram_output_register else "_no_data_ram_register") + "_data_forwarding",
+                generics=dict(g_pre_add_register=pre_add_register, g_product_register=product_register,
+                              g_data_ram_output_register=data_ram_output_register, g_data_forwarding=True))
+
 v2008.add_source_files(ROOT / "testbenches/portable_program_tb.vhd")
 portable_tb = v2008.test_bench("portable_program_tb")
 architecture = "fixed_mult_add"
@@ -137,6 +146,20 @@ for lines in [2, 4]:
             generics=dict(g_program_ram_output_register=lines != 2, g_program_cache=True,
                           g_dynamic_lines=lines, g_static_cache=static))
 
+for registers in [False, True]:
+    for width in [32, 36]:
+        for program_ram_register, data_ram_register in [(True, True), (False, False)]:
+            portable_tb.add_config(
+                name=f"{architecture}{'_pre_add_and_product' if registers else ''}_{width}_bit"
+                    + ("" if program_ram_register else "_no_program_ram_register")
+                    + ("" if data_ram_register else "_no_data_ram_register") + "_data_forwarding",
+                generics=dict(g_pre_add_register=registers, g_product_register=registers,
+                              g_data_width=width, g_instruction_width=width,
+                              g_program_ram_output_register=program_ram_register,
+                              g_data_ram_output_register=data_ram_register, g_data_forwarding=True))
+portable_tb.add_config(name=f"{architecture}_data_forwarding_static_cache_and_4_dynamic_lines",
+    generics=dict(g_data_forwarding=True, g_program_cache=True, g_dynamic_lines=4, g_static_cache=True))
+
 v2008.add_source_files(ROOT / "testbenches/math_unit_tb.vhd")
 math_tb = v2008.test_bench("math_unit_tb")
 for width in [32, 36]:
@@ -155,6 +178,11 @@ for width in [32, 36]:
         generics=dict(g_data_width=width, g_math_ram_output_register=False, g_pre_add_register=True))
     math_tb.add_config(name=f"{width}_bit_no_math_request_register_4_shifter_stages",
         generics=dict(g_data_width=width, g_math_dsp_request_register=False, g_divider_shifter_stages=4))
+for width in [32, 36]:
+    for data_ram_register in [True, False]:
+        math_tb.add_config(
+            name=f"{width}_bit{'' if data_ram_register else '_no_data_ram_register'}_data_forwarding",
+            generics=dict(g_data_width=width, g_data_ram_output_register=data_ram_register, g_data_forwarding=True))
 
 if args.dump_arrays:
     VU.set_sim_option("nvc.sim_flags", ["-w", "--dump-arrays"])

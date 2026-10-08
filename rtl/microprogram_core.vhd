@@ -27,6 +27,10 @@ entity microprogram_core is
             -- the programs last started ; g_cached_programs, the programs at these
             -- addresses cached from the start, their lines fixed from
             -- g_program
+            -- the data ram's writes forwarded to the reads that would miss
+            -- them, execution_unit_pkg's forwarded_clocks() off the result
+            -- latencies
+            ;g_data_forwarding : boolean := false
             ;g_program_cache   : boolean := false
             ;g_dynamic_lines   : positive := 1
             ;g_cached_programs : program_start_array := (1 to 0 => 0)
@@ -69,6 +73,21 @@ architecture rtl of microprogram_core is
     signal ram_write_in : ref_subtype.ram_write_in'subtype;
 
     signal data_ram_read_out : ref_subtype.ram_read_out'subtype;
+    -- and the words to the execution units, forwarded or from the ram
+    signal unit_read_out     : ref_subtype.ram_read_out'subtype;
+
+    -- data forwarding : for each read port and each clock of the ram's
+    -- read latency, the address read and the latest write to it since
+    constant read_latency : natural := data_read_latency(g_data_ram_output_register);
+    subtype data_word is std_logic_vector(g_data(g_data'low)'length-1 downto 0);
+    type forward_record is record
+        address : natural;
+        hit     : boolean;
+        data    : data_word;
+    end record;
+    type forward_array is array (natural range <>, natural range <>) of forward_record;
+    signal forward : forward_array(0 to to_unit.data_read_out'length-1, 0 to read_latency-1)
+        := (others => (others => (address => 0, hit => false, data => (others => '0'))));
 
     constant instruction_width : natural := g_program(g_program'low)'length;
     signal instr_pipeline : instruction_pipeline_array(0 to pipeline_high)(instruction_width-1 downto 0)
@@ -110,7 +129,7 @@ begin
             & integer'image(g_data'length) & " word data ram" severity failure;
 
 ----------------------------------------------------------
-    to_unit <= (data_read_out        => data_ram_read_out
+    to_unit <= (data_read_out        => unit_read_out
                        , instr_ram_read_out => instruction_read_out
                        , instr_pipeline     => instr_pipeline);
 
@@ -165,6 +184,49 @@ begin
 
         end if;
     end process;
+------------------------------------------------------------------------
+    -- a read samples its address in stage 0 and its word leaves the ram
+    -- read_latency clocks later : a write to the address in the clock of
+    -- the read, which the ram leaves undefined, or in a clock after it
+    -- before the word leaves, which the word misses, replaces the word
+    forward_writes : process(clock) is
+        constant ports : natural := to_unit.data_read_out'length;
+        variable write_address : natural;
+    begin
+        if rising_edge(clock) then
+            write_address := to_integer(ram_write_in.address);
+            for p in 0 to ports-1 loop
+                forward(p, 0).address <= to_integer(from_unit.data_read_in(p).address);
+                forward(p, 0).hit     <= false;
+                if ram_write_in.write_requested = '1'
+                    and write_address = to_integer(from_unit.data_read_in(p).address)
+                then
+                    forward(p, 0).hit  <= true;
+                    forward(p, 0).data <= ram_write_in.data;
+                end if;
+                for stage in 1 to read_latency-1 loop
+                    forward(p, stage) <= forward(p, stage-1);
+                    if ram_write_in.write_requested = '1' and write_address = forward(p, stage-1).address then
+                        forward(p, stage).hit  <= true;
+                        forward(p, stage).data <= ram_write_in.data;
+                    end if;
+                end loop;
+            end loop;
+        end if;
+    end process forward_writes;
+
+    forward_reads : process(all) is
+    begin
+        unit_read_out <= data_ram_read_out;
+        if g_data_forwarding then
+            for p in 0 to to_unit.data_read_out'length-1 loop
+                if forward(p, read_latency-1).hit then
+                    unit_read_out(p).data <= forward(p, read_latency-1).data;
+                end if;
+            end loop;
+        end if;
+    end process forward_reads;
+
 ------------------------------------------------------------------------
     combine_ram_buses : process(all) is
     begin
