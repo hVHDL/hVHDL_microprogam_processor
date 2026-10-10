@@ -7,11 +7,18 @@
 --   a_add_b_mpy_c dest <- (a + b) * c
 --   a_sub_b_mpy_c dest <- (a - b) * c
 --   lp_filter     dest <- (a - b) * c + b
+--   ext, ext_limit  dest <- a limited to +-b                 (mi_limit)
+--   ext, ext_block  dest <- a, or 0 when a and b > 0 or a and b < 0 (mi_block)
+--
+-- The two ext functions are computed here and pass the fixed_dsp as a * 1.0, so they write at
+-- the multiply-add's result stage (a math unit beside it ignores them).
 --
 -- with a, b, c the instruction's arguments 1, 2, 3. The sums and
 -- differences of two arguments and -a are taken in fixed_dsp's pre-adder
 -- and wrap to the data width, the result is bits g_radix + data width - 1
--- downto g_radix of the double width product. acc, get_acc_and_zero and
+-- downto g_radix of the double width product, rounded to the nearest with
+-- g_round_result (half a bit added in the post-adder), truncated without it.
+-- acc, get_acc_and_zero and
 -- check_and_saturate_acc work on a data width accumulator of their own.
 architecture fixed_mult_add of execution_unit is
 
@@ -36,6 +43,15 @@ architecture fixed_mult_add of execution_unit is
 
     signal accumulator : signed(datawidth-1 downto 0) := (others => '0');
 
+    -- 1.0 at the radix: the own ext functions pass the dsp as value * one
+    constant one : signed(datawidth-1 downto 0) := shift_left(to_signed(1, datawidth), g_radix);
+
+    -- an ext instruction of this unit's own: limit, block
+    function is_own_ext (instruction : std_logic_vector) return boolean is
+    begin
+        return decode(instruction) = ext and (get_arg3(instruction) = ext_limit or get_arg3(instruction) = ext_block);
+    end is_own_ext;
+
 begin
 
     u_fixed_dsp : entity work.fixed_dsp(rtl)
@@ -50,10 +66,15 @@ begin
         variable arg1, arg2, arg3 : signed(datawidth-1 downto 0);
         variable zero : signed(datawidth-1 downto 0);
 
-        -- c scaled to the product's g_radix
-        impure function scaled (c : signed) return signed is
+        -- c scaled to the product's g_radix, with g_round_result half a bit
+        -- of the result added : subtracted from c when c is subtracted
+        impure function scaled (c : signed; subtracted : boolean := false) return signed is
+            constant half : signed(2*datawidth-1 downto 0) := shift_left(to_signed(boolean'pos(g_round_result), 2*datawidth), g_radix - 1);
         begin
-            return shift_left(resize(c, 2*datawidth), g_radix);
+            if subtracted then
+                return shift_left(resize(c, 2*datawidth), g_radix) - half;
+            end if;
+            return shift_left(resize(c, 2*datawidth), g_radix) + half;
         end scaled;
 
     begin
@@ -86,6 +107,14 @@ begin
                         request_data_from_ram(unit_out.data_read_in(g_arg3_port)
                             , get_arg3(get_ram_data(unit_in.instr_ram_read_out(0))));
 
+                    WHEN ext =>
+                        if is_own_ext(get_ram_data(unit_in.instr_ram_read_out(0))) then
+                            request_data_from_ram(unit_out.data_read_in(g_arg1_port)
+                                , get_arg1(get_ram_data(unit_in.instr_ram_read_out(0))));
+                            request_data_from_ram(unit_out.data_read_in(g_arg2_port)
+                                , get_arg2(get_ram_data(unit_in.instr_ram_read_out(0))));
+                        end if;
+
                     WHEN others => -- do nothing
                 end CASE;
             end if;
@@ -101,7 +130,7 @@ begin
                     fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3));
 
                 WHEN mpy_sub =>
-                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3)
+                    fmac(dsp_in, a => arg1, d => zero, b => arg2, c => scaled(arg3, subtracted => true)
                         , post_subtract_with_1 => '1');
 
                 WHEN neg_mpy_add =>
@@ -109,7 +138,7 @@ begin
                         , pre_subtract_with_1 => '1');
 
                 WHEN neg_mpy_sub =>
-                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3)
+                    fmac(dsp_in, a => zero, d => arg1, b => arg2, c => scaled(arg3, subtracted => true)
                         , pre_subtract_with_1 => '1', post_subtract_with_1 => '1');
 
                 WHEN a_add_b_mpy_c =>
@@ -125,6 +154,24 @@ begin
 
                 WHEN acc | get_acc_and_zero =>
                     accumulator <= accumulator + arg3;
+
+                WHEN ext =>
+                    -- the own ext functions, through the dsp as value * 1.0
+                    if get_arg3(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register) + g_read_delays + g_read_out_delays)) = ext_limit then
+                        if arg1 > arg2 then
+                            fmac(dsp_in, a => arg2, d => zero, b => one, c => scaled(zero));
+                        elsif arg1 < -arg2 then
+                            fmac(dsp_in, a => -arg2, d => zero, b => one, c => scaled(zero));
+                        else
+                            fmac(dsp_in, a => arg1, d => zero, b => one, c => scaled(zero));
+                        end if;
+                    elsif get_arg3(unit_in.instr_pipeline(data_read_latency(g_data_ram_output_register) + g_read_delays + g_read_out_delays)) = ext_block then
+                        if (arg1 > 0 and arg2 > 0) or (arg1 < 0 and arg2 < 0) then
+                            fmac(dsp_in, a => zero, d => zero, b => one, c => scaled(zero));
+                        else
+                            fmac(dsp_in, a => arg1, d => zero, b => one, c => scaled(zero));
+                        end if;
+                    end if;
 
                 WHEN check_and_saturate_acc =>
 
@@ -156,6 +203,13 @@ begin
                     write_data_to_ram(unit_out.ram_write_in
                     , get_dest(unit_in.instr_pipeline(result_stage))
                     , std_logic_vector(dsp_out.result(g_radix + datawidth - 1 downto g_radix)));
+
+                WHEN ext =>
+                    if is_own_ext(unit_in.instr_pipeline(result_stage)) then
+                        write_data_to_ram(unit_out.ram_write_in
+                        , get_dest(unit_in.instr_pipeline(result_stage))
+                        , std_logic_vector(dsp_out.result(g_radix + datawidth - 1 downto g_radix)));
+                    end if;
 
                 WHEN get_acc_and_zero =>
 

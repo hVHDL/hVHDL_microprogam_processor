@@ -178,6 +178,11 @@ package generic_microinstruction_pkg is
     constant ext_sqrt : natural := 1;
     constant ext_sin  : natural := 2;
     constant ext_cos  : natural := 3;
+    -- fixed_mult_add's own, at its result latency: dest <- value limited to +-limit; dest <- value,
+    -- or 0 when value and direction push the same way (both > 0 or both < 0), e.g. a PI's
+    -- integral increment held while its output is limited the way the increment pushes
+    constant ext_limit : natural := 4;
+    constant ext_block : natural := 5;
     -- dest <- numerator / denominator at the radix
     function mi_div ( dest, numerator, denominator : natural) return microinstruction;
     -- dest <- sqrt(radicand) at the radix, the radicand unsigned
@@ -185,6 +190,8 @@ package generic_microinstruction_pkg is
     -- dest <- sin(2 pi angle), cos(2 pi angle), the angle in turns
     function mi_sin ( dest, angle : natural) return microinstruction;
     function mi_cos ( dest, angle : natural) return microinstruction;
+    function mi_limit ( dest, value, limit : natural) return microinstruction;
+    function mi_block ( dest, value, direction : natural) return microinstruction;
 
     function encode ( instruction : microinstruction; width : natural) return std_logic_vector;
     function encode ( program : microprogram; width : natural) return ram_array;
@@ -231,6 +238,16 @@ package body generic_microinstruction_pkg is
     begin
         return (command => command, dest => 0, arg1 => argument, arg2 => 0, arg3 => 0, single => true, relative => false, placed => false);
     end mi;
+
+    function mi_limit ( dest, value, limit : natural) return microinstruction is
+    begin
+        return mi(ext, dest, value, limit, ext_limit);
+    end mi_limit;
+
+    function mi_block ( dest, value, direction : natural) return microinstruction is
+    begin
+        return mi(ext, dest, value, direction, ext_block);
+    end mi_block;
 
     function mi_div ( dest, numerator, denominator : natural) return microinstruction is
     begin

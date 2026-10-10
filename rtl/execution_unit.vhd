@@ -187,6 +187,11 @@ entity execution_unit is
         -- g_data_ram_output_register : the operands arrive a clock earlier
         -- without it
         ;g_data_ram_output_register : boolean := true
+        -- fixed_mult_add : the results rounded to the nearest at the radix,
+        -- half a bit added to the double width sum before it is cut ; off,
+        -- they are truncated (towards minus infinity). An integrator adding
+        -- small products each step, truncated, drifts half a bit a step.
+        ;g_round_result : boolean := false
         -- fixed_math : lut_divider's g_shifter_stages, more stages less
         -- logic in each, 2 clocks more per stage
         ;g_divider_shifter_stages : positive := 2

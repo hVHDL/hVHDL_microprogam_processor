@@ -23,6 +23,8 @@ entity fixed_execution_unit_tb is
       -- the data and program ram word widths
       ;g_data_width        : natural := 32
       ;g_instruction_width : natural := 32
+      -- the results rounded to the nearest instead of truncated
+      ;g_round_result      : boolean := false
   );
 end;
 
@@ -165,18 +167,21 @@ begin
             return program_data(address);
         end m;
 
+        -- with g_round_result half a bit of the result, added before it is cut
+        constant half : signed(2*w-1 downto 0) := shift_left(to_signed(boolean'pos(g_round_result), 2*w), radix - 1);
+
         -- bits radix + w - 1 downto radix of a * b + c * 2**radix
         function mult_add (a, b, c : word) return word is
             variable result : signed(2*w-1 downto 0);
         begin
-            result := signed(a) * signed(b) + shift_left(resize(signed(c), 2*w), radix);
+            result := signed(a) * signed(b) + shift_left(resize(signed(c), 2*w), radix) + half;
             return std_logic_vector(result(radix + w - 1 downto radix));
         end mult_add;
 
         function mult_sub (a, b, c : word) return word is
             variable result : signed(2*w-1 downto 0);
         begin
-            result := signed(a) * signed(b) - shift_left(resize(signed(c), 2*w), radix);
+            result := signed(a) * signed(b) - shift_left(resize(signed(c), 2*w), radix) + half;
             return std_logic_vector(result(radix + w - 1 downto radix));
         end mult_sub;
 
@@ -204,6 +209,7 @@ begin
         test_runner_setup(runner, runner_cfg);
         info("pre-adder register " & boolean'image(g_pre_add_register)
             & ", product register " & boolean'image(g_product_register)
+            & ", rounded " & boolean'image(g_round_result)
             & ", " & integer'image(test_program'length) & " word program ram, "
             & integer'image(g_data_width) & " bit data, " & integer'image(g_instruction_width) & " bit instructions");
 
@@ -263,7 +269,7 @@ begin
 
     u_fixed_mult_add : entity work.execution_unit(fixed_mult_add)
     generic map (g_radix => radix, g_pre_add_register => g_pre_add_register, g_product_register => g_product_register
-            ,g_data_ram_output_register => g_data_ram_output_register)
+            ,g_data_ram_output_register => g_data_ram_output_register, g_round_result => g_round_result)
     port map (clock, instr_in, instr_out);
 
 end vunit_simulation;

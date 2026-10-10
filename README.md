@@ -102,6 +102,20 @@ clock more to the result. `a_add_b_mpy_c`,
 `check_and_saturate_acc` limits it. `mpy_acc` is an encoding with no
 execution unit.
 
+The execution unit's `g_round_result` rounds the result to the nearest,
+half a bit added before it is cut at the radix; off, the default, it is
+truncated towards minus infinity. An integrator that adds a small product
+each round drifts half a bit a round when truncated, which a feedback
+loop around it turns into a steady error of half a bit over the gain.
+
+`fixed_mult_add` also has two `ext` functions of its own, computed beside
+the `fixed_dsp` and written at the multiply-add's latency (a math unit
+next to it ignores them): `ext_limit`, written `mi_limit(dest, value,
+limit)`, dest ← value clamped to ±limit; and `ext_block`, written
+`mi_block(dest, value, direction)`, dest ← value, or 0 when value and
+direction are both above or both below 0 — with the excess of a limit
+(value before minus after) as the direction, an integrator's anti-windup.
+
 ## The math unit
 
 `ext` is a math unit's command: its function code in arg3, its operands in

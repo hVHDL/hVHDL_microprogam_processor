@@ -133,8 +133,12 @@ package body microprogram_assembler_pkg is
     -- the slot of each instruction of code, and after them the scheduled
     -- length : the slot after the last instruction or, if later, the slot
     -- from which all results are readable
-    function latency_of (config : processor_config; command : t_command) return natural is
+    function latency_of (config : processor_config; command : t_command; function_code : natural := 0) return natural is
     begin
+        -- fixed_mult_add's own ext functions are at its result latency
+        if command = ext and (function_code = ext_limit or function_code = ext_block) then
+            return config.result_latency;
+        end if;
         if command = ext then
             assert config.math_latency > 0
                 report "ext in a program for a processor_config without a math unit" severity failure;
@@ -168,12 +172,12 @@ package body microprogram_assembler_pkg is
             assert i.command /= jump and i.command /= set_rpt
                 report "schedule() takes no jump or set_rpt, repeat() makes them" severity failure;
             slot    := next_slot;
-            latency := latency_of(config, i.command);
+            latency := latency_of(config, i.command, i.arg3);
             if reads_arguments(i.command) then
                 slot := maximum(slot, ready(i.arg1));
                 -- ext's arg3 is its function, not an address, and all
-                -- but its division read arg1 only
-                if not (i.command = ext and i.arg3 /= ext_div) then
+                -- but its division, limit and block read arg1 only
+                if not (i.command = ext and i.arg3 /= ext_div and i.arg3 /= ext_limit and i.arg3 /= ext_block) then
                     slot := maximum(slot, ready(i.arg2));
                 end if;
                 if i.command /= ext then

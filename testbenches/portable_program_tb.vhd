@@ -19,6 +19,7 @@ context vunit_lib.vunit_context;
 --   128 : 50 rounds of the boost converter step, repeat()
 --   256 : 100 rounds of the low pass filter y <- (u - y) * g + y, a one
 --         instruction body that reads its own result
+--   700 : fixed_mult_add's own ext functions, limit and block, on 72 .. 76
 --
 -- and for the program cache, programs it must not cache :
 --
@@ -115,6 +116,12 @@ architecture vunit_simulation of portable_program_tb is
             , mi(get_acc_and_zero, 9, 0, 0, 65), mi(program_end))));
         retval := place(retval, 440, (mi(acc, 0, 0, 0, 64), mi(program_end)));
         retval := place(retval, 470, schedule(config, chain));
+        -- limit to +-1.0 (73): 2.5 -> 1.0, -3.0 -> -1.0, 0.5 stays; block 0.5 when its direction
+        -- is 2.5 (> 0), not when -3.0, -0.5 when -3.0, and 0.5 against 0 (address 0)
+        retval := place(retval, 700, schedule(config, (
+             mi_limit(30, 72, 73), mi_limit(31, 74, 73), mi_limit(32, 75, 73)
+            ,mi_block(33, 75, 72), mi_block(34, 75, 74), mi_block(35, 76, 74), mi_block(36, 75, 0)
+            ,mi(program_end))));
         for k in 0 to 4 loop
             retval := place(retval, 600 + 20 * k, schedule(config, (mi(mpy_add, 20 + k, 64, 65, 66), mi(program_end))));
         end loop;
@@ -144,7 +151,8 @@ architecture vunit_simulation of portable_program_tb is
             retval(i) := std_logic_vector(resize(signed(x(23 downto 0)) / 4 + 2**radix, w));
         end loop;
         return set_data(retval, boost_converter_data(boost, boost_values)
-            & data_list'((96, 0.0), (97, 3.0), (98, 0.05)), config);
+            & data_list'((96, 0.0), (97, 3.0), (98, 0.05))
+            & data_list'((72, 2.5), (73, 1.0), (74, -3.0), (75, 0.5), (76, -0.5)), config);
     end make_data;
 
     constant program_data : work.dual_port_ram_pkg.ram_array(0 to ref_subtype.address_high)(w-1 downto 0) := make_data;
@@ -456,6 +464,16 @@ begin
             info("program 0 from its static line : " & integer'image(chain_first) & " clocks, 470 : "
                 & integer'image(uncached(470)));
         end if;
+
+        -- the own ext functions
+        run_checked(700);
+        check_word(30, to_fixed(1.0, config));
+        check_word(31, to_fixed(-1.0, config));
+        check_word(32, to_fixed(0.5, config));
+        check_word(33, zero);
+        check_word(34, to_fixed(0.5, config));
+        check_word(35, zero);
+        check_word(36, to_fixed(0.5, config));
 
         info(integer'image(hits) & " runs from the cache");
         check_equal(collisions, 0, "data ram reads in the clock of a write to the address");

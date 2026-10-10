@@ -73,6 +73,14 @@ fixed_tb.add_config(
     name=architecture + "_36_bit_pre_add_and_product_registers",
     generics=dict(g_data_width=36, g_instruction_width=36,
                   g_pre_add_register=True, g_product_register=True))
+# the results rounded to the nearest
+fixed_tb.add_config(
+    name=architecture + "_rounded",
+    generics=dict(g_round_result=True))
+fixed_tb.add_config(
+    name=architecture + "_36_bit_pre_add_and_product_registers_rounded",
+    generics=dict(g_data_width=36, g_instruction_width=36,
+                  g_pre_add_register=True, g_product_register=True, g_round_result=True))
 # no ram output registers
 fixed_tb.add_config(
     name=architecture + "_no_ram_output_registers",
